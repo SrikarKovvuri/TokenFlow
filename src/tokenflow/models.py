@@ -14,6 +14,8 @@ WorkerName = Annotated[
 
 class HealthStatus(StrEnum):
     UNKNOWN = "unknown"
+    HEALTHY = "healthy"
+    UNHEALTHY = "unhealthy"
 
 
 class WorkerCreate(BaseModel):

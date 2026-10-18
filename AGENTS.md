@@ -14,36 +14,37 @@ kernels or model execution itself.
 Build the project incrementally:
 
 1. Gateway and control-plane foundation.
-2. Simulated workers and request forwarding.
+2. Worker health monitoring and single-worker request forwarding.
 3. Scheduling policies.
 4. Metrics and load testing.
 5. Real vLLM integration and deployment.
 
 Do not introduce features from a later phase unless explicitly requested.
 
-## Current Scope: Phase 1
+## Current Scope: Phase 2
 
-Phase 1 is a small FastAPI control-plane service with:
+Phase 1 established the FastAPI control plane and in-memory worker registry.
+Phase 2 adds:
 
-- Application configuration.
-- Liveness endpoint.
-- In-memory worker registry.
-- Worker CRUD API.
-- OpenAPI documentation.
-- Basic automated API tests.
+- Periodic HTTP health checks against registered workers.
+- `unknown`, `healthy`, and `unhealthy` worker health states.
+- Selection of the first enabled, healthy worker.
+- OpenAI-compatible chat-completion forwarding.
+- Streaming response relay and upstream failure handling.
 
-Phase 1 explicitly excludes:
+Phase 2 explicitly excludes:
 
-- Running simulated or real inference workers.
-- Verifying worker connectivity or health.
-- Proxying or streaming inference requests.
-- Scheduling and load balancing.
+- Hard-coded Columbia or vLLM worker addresses.
+- Slurm job submission and GPU provisioning.
+- Starting or stopping vLLM processes.
+- Round-robin, load-aware scheduling, and automatic retries.
 - Metrics, databases, distributed locks, Ray, and Kubernetes.
 
 ## Worker Definition
 
-During Phase 1, a worker is only a registered inference target. Registration
-does not prove that its process or URL is active.
+A worker is a registry record representing an externally started inference
+server. Registration does not start a process or allocate a GPU. The health
+monitor separately determines whether the endpoint is responsive.
 
 A worker has:
 
@@ -51,14 +52,14 @@ A worker has:
 - `name`: Human-readable label.
 - `base_url`: HTTP URL for future worker communication.
 - `enabled`: Whether it may eventually receive requests.
-- `health_status`: `unknown` during Phase 1.
+- `health_status`: `unknown`, `healthy`, or `unhealthy`.
 - `metadata`: Optional JSON object supplied by the caller.
 - `registered_at`: UTC creation timestamp.
 - `updated_at`: UTC last-update timestamp.
 
 Clients must not modify IDs, health status, or timestamps.
 
-## Phase 1 HTTP API
+## HTTP API
 
 - `GET /healthz`: Return service liveness, name, and version.
 - `POST /v1/workers`: Register a worker and return `201`.
@@ -66,14 +67,14 @@ Clients must not modify IDs, health status, or timestamps.
 - `GET /v1/workers/{worker_id}`: Return one worker or `404`.
 - `PATCH /v1/workers/{worker_id}`: Update mutable worker fields.
 - `DELETE /v1/workers/{worker_id}`: Remove a worker and return `204`.
-
-Do not add `/v1/chat/completions` until request forwarding is implemented.
+- `POST /v1/chat/completions`: Forward a request to one healthy worker and
+  relay either its JSON response or SSE stream.
 
 ## Local Topology
 
-The gateway will normally run on port `8000`. In Phase 2, local workers may run
-on separate ports such as `8101`, `8102`, and `8103`. Worker ports do not need
-to be active during Phase 1.
+The gateway normally runs on port `8000`. A vLLM worker will eventually run in
+an allocated Columbia compute environment. Do not commit its URL; register a
+reachable address at runtime after vLLM is ready.
 
 ## Registry and Concurrency
 
@@ -81,8 +82,9 @@ Use an in-memory dictionary for the first registry. Registry contents may be
 lost when the gateway restarts. Assume one gateway process because multiple
 processes would have independent registries.
 
-Keep concurrency handling lightweight. An `asyncio.Lock` may protect compound
-registry operations, but do not add distributed coordination in Phase 1.
+Keep concurrency handling lightweight. Registry methods contain no suspension
+points while accessing the dictionary, so the single-event-loop implementation
+does not currently use a lock. Do not add distributed coordination yet.
 
 ## Initial Technology Choices
 
@@ -97,24 +99,23 @@ Use asynchronous APIs where network I/O will eventually occur. Keep domain
 models, API routes, and registry logic separate without adding unnecessary
 abstraction.
 
-## Phase 1 Completion Criteria
+## Phase 2 Completion Criteria
 
-Phase 1 is complete when:
+Phase 2 is complete when:
 
-- The FastAPI application starts locally.
-- `/healthz` responds successfully.
-- Worker CRUD works through HTTP and `/docs`.
-- Invalid input, duplicates, and missing workers return appropriate errors.
-- Tests cover the primary success and error paths.
+- A registered worker is marked healthy or unhealthy by HTTP polling.
+- Requests return `503` when no healthy worker exists.
+- Non-streaming and streaming requests are relayed without buffering streams.
+- Worker connection errors and timeouts produce gateway errors.
+- No real worker address is stored in source control.
 - The test suite passes.
 
 ## Future Direction
 
-Phase 2 will add simulated workers, worker health checks, forwarding,
-streaming, cancellation, and failure handling. Phase 3 will introduce a
-scheduler interface, round-robin routing, active-request tracking, and
-least-active-request routing. Later phases will add inference-aware metrics,
-benchmarking, real vLLM workers, and cluster deployment.
+Phase 3 will introduce multiple replicas, a scheduler interface, round-robin
+routing, active-request tracking, and least-active-request routing. Later
+phases will add Slurm-aware provisioning, inference metrics, benchmarking,
+and production deployment.
 
 vLLM should be expected to run in Linux, WSL2, or remote GPU infrastructure
 rather than natively on Windows.
