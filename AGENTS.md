@@ -95,9 +95,21 @@ does not currently use a lock. Do not add distributed coordination yet.
 - `pyproject.toml` for project metadata and dependencies.
 - `src/tokenflow` package layout.
 
-Use asynchronous APIs where network I/O will eventually occur. Keep domain
-models, API routes, and registry logic separate without adding unnecessary
-abstraction.
+Use asynchronous APIs where network I/O will eventually occur.
+
+## Code Layout
+
+- `provisioner`: Future GPU allocation and worker startup. This phase does not
+  implement it.
+- `worker_manager`: Worker models, in-memory registry, health polling, and the
+  worker HTTP API.
+- `scheduler`: Healthy-worker selection and chat-completion proxying. The
+  current policy selects the first enabled, healthy worker.
+- `main.py`: Creates the application, exposes gateway liveness, and connects
+  the components.
+
+Do not add Slurm calls to the provisioner or extra scheduling policies until
+those phases are requested.
 
 ## Phase 2 Completion Criteria
 

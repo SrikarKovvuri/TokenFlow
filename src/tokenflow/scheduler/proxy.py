@@ -1,49 +1,30 @@
 from collections.abc import AsyncIterator
-from typing import Annotated, Any
+from typing import Any
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import HTTPException, Response, status
 from fastapi.responses import StreamingResponse
 
-from tokenflow.api.dependencies import get_registry, get_worker_client
-from tokenflow.registry import NoAvailableWorkerError, WorkerRegistry
+from tokenflow.worker_manager.models import Worker
 
 
-router = APIRouter(prefix="/v1", tags=["inference"])
-Registry = Annotated[WorkerRegistry, Depends(get_registry)]
-WorkerClient = Annotated[httpx.AsyncClient, Depends(get_worker_client)]
-
-
-@router.post("/chat/completions")
-async def create_chat_completion(
+async def forward_chat_completion(
+    *,
+    worker: Worker,
     payload: dict[str, Any],
-    request: Request,
-    registry: Registry,
-    client: WorkerClient,
+    request_id: str,
+    client: httpx.AsyncClient,
 ) -> Response:
-    try:
-        worker = await registry.get_available()
-    except NoAvailableWorkerError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=str(exc),
-        ) from exc
-
-    worker_url = (
-        f"{str(worker.base_url).rstrip('/')}/v1/chat/completions"
-    )
+    """Relay one chat-completion request to the selected worker."""
+    worker_url = f"{str(worker.base_url).rstrip('/')}/v1/chat/completions"
     upstream_request = client.build_request(
         "POST",
         worker_url,
         json=payload,
-        headers={"X-Request-ID": request.state.request_id},
+        headers={"X-Request-ID": request_id},
     )
-
     try:
-        upstream_response = await client.send(
-            upstream_request,
-            stream=True,
-        )
+        upstream_response = await client.send(upstream_request, stream=True)
     except httpx.TimeoutException as exc:
         raise HTTPException(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
@@ -56,9 +37,8 @@ async def create_chat_completion(
         ) from exc
 
     response_headers = _response_headers(upstream_response)
-    should_stream = payload.get("stream") is True
 
-    if should_stream and upstream_response.is_success:
+    if payload.get("stream") is True and upstream_response.is_success:
         return StreamingResponse(
             _stream_upstream(upstream_response),
             status_code=upstream_response.status_code,

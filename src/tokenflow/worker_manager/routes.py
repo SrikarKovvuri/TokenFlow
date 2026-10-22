@@ -1,29 +1,25 @@
-from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
 
-from tokenflow.api.dependencies import get_registry
-from tokenflow.models import Worker, WorkerCreate, WorkerUpdate
-from tokenflow.registry import (
+from tokenflow.worker_manager.models import Worker, WorkerCreate, WorkerUpdate
+from tokenflow.worker_manager.registry import (
     DuplicateWorkerError,
     WorkerNotFoundError,
-    WorkerRegistry,
 )
 
 
 router = APIRouter(prefix="/v1/workers", tags=["workers"])
-Registry = Annotated[WorkerRegistry, Depends(get_registry)]
 
 
 @router.post("", response_model=Worker, status_code=status.HTTP_201_CREATED)
 async def create_worker(
     worker_data: WorkerCreate,
+    request: Request,
     response: Response,
-    registry: Registry,
 ) -> Worker:
     try:
-        worker = await registry.create(worker_data)
+        worker = await request.app.state.worker_registry.create(worker_data)
     except DuplicateWorkerError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -35,14 +31,14 @@ async def create_worker(
 
 
 @router.get("", response_model=list[Worker])
-async def list_workers(registry: Registry) -> list[Worker]:
-    return await registry.list()
+async def list_workers(request: Request) -> list[Worker]:
+    return await request.app.state.worker_registry.list()
 
 
 @router.get("/{worker_id}", response_model=Worker)
-async def get_worker(worker_id: UUID, registry: Registry) -> Worker:
+async def get_worker(worker_id: UUID, request: Request) -> Worker:
     try:
-        return await registry.get(worker_id)
+        return await request.app.state.worker_registry.get(worker_id)
     except WorkerNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -54,10 +50,13 @@ async def get_worker(worker_id: UUID, registry: Registry) -> Worker:
 async def update_worker(
     worker_id: UUID,
     worker_data: WorkerUpdate,
-    registry: Registry,
+    request: Request,
 ) -> Worker:
     try:
-        return await registry.update(worker_id, worker_data)
+        return await request.app.state.worker_registry.update(
+            worker_id,
+            worker_data,
+        )
     except WorkerNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -75,9 +74,9 @@ async def update_worker(
     status_code=status.HTTP_204_NO_CONTENT,
     response_class=Response,
 )
-async def delete_worker(worker_id: UUID, registry: Registry) -> Response:
+async def delete_worker(worker_id: UUID, request: Request) -> Response:
     try:
-        await registry.delete(worker_id)
+        await request.app.state.worker_registry.delete(worker_id)
     except WorkerNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

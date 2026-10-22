@@ -3,9 +3,10 @@ import asyncio
 import httpx
 import pytest
 
-from tokenflow.health_monitor import WorkerHealthMonitor
-from tokenflow.models import HealthStatus, WorkerCreate, WorkerUpdate
-from tokenflow.registry import NoAvailableWorkerError, WorkerRegistry
+from tokenflow.scheduler.selection import NoAvailableWorkerError, select_first_healthy
+from tokenflow.worker_manager.health_monitor import WorkerHealthMonitor
+from tokenflow.worker_manager.models import HealthStatus, WorkerCreate, WorkerUpdate
+from tokenflow.worker_manager.registry import WorkerRegistry
 
 
 def test_health_check_marks_responsive_worker_healthy() -> None:
@@ -32,11 +33,11 @@ def test_health_check_marks_responsive_worker_healthy() -> None:
 
         updated = await registry.get(worker.id)
         assert updated.health_status is HealthStatus.HEALTHY
-        assert (await registry.get_available()).id == worker.id
+        assert (await select_first_healthy(registry)).id == worker.id
 
         await registry.update(worker.id, WorkerUpdate(enabled=False))
         with pytest.raises(NoAvailableWorkerError):
-            await registry.get_available()
+            await select_first_healthy(registry)
 
         reenabled = await registry.update(
             worker.id,
@@ -71,7 +72,7 @@ def test_health_check_marks_unreachable_worker_unhealthy() -> None:
         updated = await registry.get(worker.id)
         assert updated.health_status is HealthStatus.UNHEALTHY
         with pytest.raises(NoAvailableWorkerError):
-            await registry.get_available()
+            await select_first_healthy(registry)
 
     asyncio.run(scenario())
 

@@ -1,24 +1,23 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from datetime import UTC, datetime
 from uuid import uuid4
 
 import httpx
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from tokenflow.api.dependencies import get_registry
 from tokenflow.main import create_app
-from tokenflow.models import HealthStatus, Worker
-from tokenflow.registry import NoAvailableWorkerError
+from tokenflow.worker_manager.models import HealthStatus, Worker
 
 
 class StubRegistry:
     def __init__(self, worker: Worker | None) -> None:
         self._worker = worker
 
-    async def get_available(self) -> Worker:
+    async def list(self) -> list[Worker]:
         if self._worker is None:
-            raise NoAvailableWorkerError()
-        return self._worker
+            return []
+        return [self._worker]
 
 
 class TrackingStream(httpx.AsyncByteStream):
@@ -32,6 +31,18 @@ class TrackingStream(httpx.AsyncByteStream):
 
     async def aclose(self) -> None:
         self.closed = True
+
+
+def make_app(
+    handler: Callable[[httpx.Request], object],
+    worker: Worker | None,
+) -> FastAPI:
+    app = create_app(
+        worker_transport=httpx.MockTransport(handler),
+        enable_health_monitor=False,
+    )
+    app.state.worker_registry = StubRegistry(worker)
+    return app
 
 
 def healthy_worker() -> Worker:
@@ -58,13 +69,7 @@ def test_non_streaming_request_is_forwarded() -> None:
             json={"choices": [{"message": {"content": "hello"}}]},
         )
 
-    app = create_app(
-        worker_transport=httpx.MockTransport(handler),
-        enable_health_monitor=False,
-    )
-    app.dependency_overrides[get_registry] = lambda: StubRegistry(
-        healthy_worker()
-    )
+    app = make_app(handler, healthy_worker())
 
     with TestClient(app) as client:
         response = client.post(
@@ -95,13 +100,7 @@ def test_streaming_request_is_relayed_and_closed() -> None:
             stream=stream,
         )
 
-    app = create_app(
-        worker_transport=httpx.MockTransport(handler),
-        enable_health_monitor=False,
-    )
-    app.dependency_overrides[get_registry] = lambda: StubRegistry(
-        healthy_worker()
-    )
+    app = make_app(handler, healthy_worker())
 
     with TestClient(app) as client:
         response = client.post(
@@ -125,11 +124,7 @@ def test_no_available_worker_returns_service_unavailable() -> None:
     ) -> httpx.Response:
         raise AssertionError(f"Unexpected request to {request.url}")
 
-    app = create_app(
-        worker_transport=httpx.MockTransport(unexpected_handler),
-        enable_health_monitor=False,
-    )
-    app.dependency_overrides[get_registry] = lambda: StubRegistry(None)
+    app = make_app(unexpected_handler, None)
 
     with TestClient(app) as client:
         response = client.post("/v1/chat/completions", json={})
@@ -144,13 +139,7 @@ def test_worker_http_error_is_passed_through() -> None:
             json={"error": {"message": "Unknown model"}},
         )
 
-    app = create_app(
-        worker_transport=httpx.MockTransport(handler),
-        enable_health_monitor=False,
-    )
-    app.dependency_overrides[get_registry] = lambda: StubRegistry(
-        healthy_worker()
-    )
+    app = make_app(handler, healthy_worker())
 
     with TestClient(app) as client:
         response = client.post("/v1/chat/completions", json={})
@@ -163,13 +152,7 @@ def test_worker_connection_failure_returns_bad_gateway() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("worker is offline", request=request)
 
-    app = create_app(
-        worker_transport=httpx.MockTransport(handler),
-        enable_health_monitor=False,
-    )
-    app.dependency_overrides[get_registry] = lambda: StubRegistry(
-        healthy_worker()
-    )
+    app = make_app(handler, healthy_worker())
 
     with TestClient(app) as client:
         response = client.post("/v1/chat/completions", json={})
@@ -181,13 +164,7 @@ def test_worker_timeout_returns_gateway_timeout() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         raise httpx.ReadTimeout("worker timed out", request=request)
 
-    app = create_app(
-        worker_transport=httpx.MockTransport(handler),
-        enable_health_monitor=False,
-    )
-    app.dependency_overrides[get_registry] = lambda: StubRegistry(
-        healthy_worker()
-    )
+    app = make_app(handler, healthy_worker())
 
     with TestClient(app) as client:
         response = client.post("/v1/chat/completions", json={})

@@ -59,9 +59,3 @@ class Worker(WorkerCreate):
     updated_at: datetime
 
     model_config = ConfigDict(extra="forbid", frozen=True)
-
-
-class ServiceHealth(BaseModel):
-    status: str = "ok"
-    service: str
-    version: str

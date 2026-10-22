@@ -2,8 +2,8 @@ import asyncio
 
 import httpx
 
-from tokenflow.models import HealthStatus, Worker
-from tokenflow.registry import WorkerRegistry
+from tokenflow.worker_manager.models import HealthStatus, Worker
+from tokenflow.worker_manager.registry import WorkerRegistry
 
 
 class WorkerHealthMonitor:

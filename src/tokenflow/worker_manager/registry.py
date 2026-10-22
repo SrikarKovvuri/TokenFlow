@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from tokenflow.models import HealthStatus, Worker, WorkerCreate, WorkerUpdate
+from tokenflow.worker_manager.models import HealthStatus, Worker, WorkerCreate, WorkerUpdate
 
 
 class WorkerNotFoundError(LookupError):
@@ -12,11 +12,6 @@ class WorkerNotFoundError(LookupError):
 class DuplicateWorkerError(ValueError):
     def __init__(self, base_url: str) -> None:
         super().__init__(f"A worker with URL '{base_url}' is already registered")
-
-
-class NoAvailableWorkerError(LookupError):
-    def __init__(self) -> None:
-        super().__init__("No enabled, healthy inference worker is available")
 
 
 class WorkerRegistry:
@@ -42,16 +37,6 @@ class WorkerRegistry:
 
     async def get(self, worker_id: UUID) -> Worker:
         return self._get(worker_id)
-
-    async def get_available(self) -> Worker:
-        """Return the first registered worker that can receive traffic."""
-        for worker in self._workers.values():
-            if (
-                worker.enabled
-                and worker.health_status is HealthStatus.HEALTHY
-            ):
-                return worker
-        raise NoAvailableWorkerError()
 
     async def update(
         self,

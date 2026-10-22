@@ -6,12 +6,11 @@ from uuid import uuid4
 import httpx
 from fastapi import FastAPI, Request, Response
 
-from tokenflow.api.health import router as health_router
-from tokenflow.api.inference import router as inference_router
-from tokenflow.api.workers import router as workers_router
 from tokenflow.config import Settings, get_settings
-from tokenflow.health_monitor import WorkerHealthMonitor
-from tokenflow.registry import WorkerRegistry
+from tokenflow.scheduler.routes import router as scheduler_router
+from tokenflow.worker_manager.health_monitor import WorkerHealthMonitor
+from tokenflow.worker_manager.registry import WorkerRegistry
+from tokenflow.worker_manager.routes import router as worker_router
 
 
 def create_app(
@@ -35,14 +34,14 @@ def create_app(
             transport=worker_transport,
         ) as worker_client:
             application.state.worker_client = worker_client
-            monitor = WorkerHealthMonitor(
-                registry,
-                worker_client,
-                interval_seconds=settings.worker_health_interval_seconds,
-                timeout_seconds=settings.worker_health_timeout_seconds,
-            )
             monitor_task: asyncio.Task[None] | None = None
             if enable_health_monitor:
+                monitor = WorkerHealthMonitor(
+                    registry,
+                    worker_client,
+                    interval_seconds=settings.worker_health_interval_seconds,
+                    timeout_seconds=settings.worker_health_timeout_seconds,
+                )
                 monitor_task = asyncio.create_task(monitor.run())
 
             try:
@@ -69,9 +68,16 @@ def create_app(
         response.headers["X-Request-ID"] = request_id
         return response
 
-    application.include_router(health_router)
-    application.include_router(workers_router)
-    application.include_router(inference_router)
+    @application.get("/healthz")
+    async def healthz() -> dict[str, str]:
+        return {
+            "status": "ok",
+            "service": settings.app_name,
+            "version": settings.app_version,
+        }
+
+    application.include_router(worker_router)
+    application.include_router(scheduler_router)
     return application
 
 
