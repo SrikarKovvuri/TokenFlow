@@ -33,11 +33,11 @@ def test_health_check_marks_responsive_worker_healthy() -> None:
 
         updated = await registry.get(worker.id)
         assert updated.health_status is HealthStatus.HEALTHY
-        assert (await select_first_healthy(registry)).id == worker.id
+        assert select_first_healthy(await registry.list()).id == worker.id
 
         await registry.update(worker.id, WorkerUpdate(enabled=False))
         with pytest.raises(NoAvailableWorkerError):
-            await select_first_healthy(registry)
+            select_first_healthy(await registry.list())
 
         reenabled = await registry.update(
             worker.id,
@@ -72,7 +72,7 @@ def test_health_check_marks_unreachable_worker_unhealthy() -> None:
         updated = await registry.get(worker.id)
         assert updated.health_status is HealthStatus.UNHEALTHY
         with pytest.raises(NoAvailableWorkerError):
-            await select_first_healthy(registry)
+            select_first_healthy(await registry.list())
 
     asyncio.run(scenario())
 

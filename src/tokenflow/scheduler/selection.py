@@ -1,5 +1,4 @@
 from tokenflow.worker_manager.models import HealthStatus, Worker
-from tokenflow.worker_manager.registry import WorkerRegistry
 
 
 class NoAvailableWorkerError(LookupError):
@@ -7,9 +6,9 @@ class NoAvailableWorkerError(LookupError):
         super().__init__("No enabled, healthy inference worker is available")
 
 
-async def select_first_healthy(registry: WorkerRegistry) -> Worker:
-    """Return the first registered worker that can receive traffic."""
-    for worker in await registry.list():
+def select_first_healthy(workers: list[Worker]) -> Worker:
+    """Choose from worker state already fetched from the worker manager."""
+    for worker in workers:
         if worker.enabled and worker.health_status is HealthStatus.HEALTHY:
             return worker
     raise NoAvailableWorkerError()
