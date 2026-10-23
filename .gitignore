@@ -8,3 +8,5 @@ htmlcov/
 dist/
 build/
 .env
+
+experiments/results/

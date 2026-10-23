@@ -1,0 +1,18 @@
+{
+  "seed": 42,
+  "tasks": [
+    {"id": "summarization", "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."},
+    {"id": "reasoning", "instruction": "Use the reference records to propose a diagnosis for variable latency. Explain your reasoning and distinguish observations from hypotheses."},
+    {"id": "coding", "instruction": "Write a Python function to parse records like these and calculate mean latency per component. Include an example and explain edge cases."},
+    {"id": "extraction", "instruction": "Extract the last ten record identifiers and their latencies as a JSON array. Return only JSON."}
+  ],
+  "prompt_words": [64, 512, 2048, 8192],
+  "max_tokens": [64, 256, 1024],
+  "concurrency": [1, 2, 4, 8, 16, 32],
+  "stream_modes": [false, true],
+  "requests_per_cell": 64,
+  "warmup_requests": 2,
+  "trials": 2,
+  "timeout_seconds": 300,
+  "cooldown_seconds": 2
+}

@@ -9,6 +9,34 @@ from tokenflow.worker_manager.models import HealthStatus, WorkerCreate, WorkerUp
 from tokenflow.worker_manager.registry import WorkerRegistry
 
 
+@pytest.mark.parametrize("status_code", [200, 503])
+def test_health_result_is_ignored_when_url_changes(status_code: int) -> None:
+    async def scenario() -> None:
+        registry = WorkerRegistry()
+        worker = await registry.create(
+            WorkerCreate(name="worker", base_url="http://old-worker:8101")
+        )
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            assert request.url.host == "old-worker"
+            await registry.update(
+                worker.id, WorkerUpdate(base_url="http://new-worker:8101")
+            )
+            return httpx.Response(status_code)
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            monitor = WorkerHealthMonitor(
+                registry, client, interval_seconds=5, timeout_seconds=1
+            )
+            await monitor.check_once()
+
+        updated = await registry.get(worker.id)
+        assert str(updated.base_url) == "http://new-worker:8101/"
+        assert updated.health_status is HealthStatus.UNKNOWN
+
+    asyncio.run(scenario())
+
+
 def test_health_check_marks_responsive_worker_healthy() -> None:
     async def scenario() -> None:
         async def handler(request: httpx.Request) -> httpx.Response:

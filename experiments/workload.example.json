@@ -1,0 +1,18 @@
+{
+  "requests": [
+    {
+      "model": "replace-with-served-model-name",
+      "messages": [{"role": "user", "content": "Explain how an inference gateway routes a request in three sentences."}],
+      "max_tokens": 128,
+      "temperature": 0,
+      "stream": false
+    },
+    {
+      "model": "replace-with-served-model-name",
+      "messages": [{"role": "user", "content": "Write a Python function that returns the first n Fibonacci numbers."}],
+      "max_tokens": 256,
+      "temperature": 0,
+      "stream": false
+    }
+  ]
+}

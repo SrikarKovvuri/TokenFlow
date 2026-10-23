@@ -48,4 +48,6 @@ class WorkerHealthMonitor:
         except httpx.HTTPError:
             pass
 
-        await self._registry.set_health_status(worker.id, health_status)
+        await self._registry.set_health_status(
+            worker.id, health_status, expected_base_url=str(worker.base_url)
+        )

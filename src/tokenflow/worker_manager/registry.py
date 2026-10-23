@@ -67,10 +67,12 @@ class WorkerRegistry:
         self,
         worker_id: UUID,
         health_status: HealthStatus,
+        *,
+        expected_base_url: str,
     ) -> Worker | None:
-        """Update observed health, ignoring workers removed during a check."""
+        """Apply health only if the checked endpoint is still current."""
         worker = self._workers.get(worker_id)
-        if worker is None:
+        if worker is None or str(worker.base_url) != expected_base_url:
             return None
         if worker.health_status is health_status:
             return worker

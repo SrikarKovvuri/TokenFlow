@@ -60,3 +60,7 @@ pytest
 
 The registry is intentionally process-local and in-memory. Registered workers
 are lost when the gateway restarts.
+
+## Serving experiments
+
+See [experiments](experiments/README.md) for configurable chat workloads and a runner that saves responses, errors, and request timings.
