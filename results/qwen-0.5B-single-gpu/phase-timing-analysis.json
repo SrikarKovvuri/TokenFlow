@@ -1,0 +1,431 @@
+{
+  "method": "Per-request phase means from exact 64-completion counter deltas; two trials pooled. ITL direct deltas include two warmups per cell. No p95 decomposition.",
+  "total_completions_validated": 1056,
+  "counter_resets": false,
+  "per_cell": [
+    {
+      "cell_id": 1,
+      "concurrency": 16,
+      "stream": false,
+      "trial": 1,
+      "measured_requests": 64,
+      "boundary_pre": "2026-10-23T22:47:49.159662+00:00",
+      "boundary_post": "2026-10-23T22:47:51.947729+00:00",
+      "phases": {
+        "request_queue_time_seconds": {
+          "count": 64.0,
+          "sum": 0.0003185536479577422,
+          "mean_seconds": 4.977400749339722e-06
+        },
+        "request_prefill_time_seconds": {
+          "count": 64.0,
+          "sum": 0.2969292064663023,
+          "mean_seconds": 0.004639518851035973
+        },
+        "request_decode_time_seconds": {
+          "count": 64.0,
+          "sum": 37.316185891861096,
+          "mean_seconds": 0.5830654045603296
+        },
+        "e2e_request_latency_seconds": {
+          "count": 64.0,
+          "sum": 37.81752014160156,
+          "mean_seconds": 0.5908987522125244
+        }
+      },
+      "client_mean_seconds": 0.6674330312494021,
+      "client_p95_seconds": 0.7901272949922713,
+      "itl_including_warmups": {
+        "count": 8382.0,
+        "sum": 38.24888156191446,
+        "mean_seconds": 0.004563216602471303,
+        "requests": 66
+      },
+      "decode_derived_token_gap_seconds": 0.004591066177640391
+    },
+    {
+      "cell_id": 4,
+      "concurrency": 32,
+      "stream": true,
+      "trial": 0,
+      "measured_requests": 64,
+      "boundary_pre": "2026-10-23T22:48:20.373945+00:00",
+      "boundary_post": "2026-10-23T22:48:22.693982+00:00",
+      "phases": {
+        "request_queue_time_seconds": {
+          "count": 64.0,
+          "sum": 0.00034479715395718813,
+          "mean_seconds": 5.3874555305810645e-06
+        },
+        "request_prefill_time_seconds": {
+          "count": 64.0,
+          "sum": 0.3531845051329583,
+          "mean_seconds": 0.005518507892702473
+        },
+        "request_decode_time_seconds": {
+          "count": 64.0,
+          "sum": 44.395649474463426,
+          "mean_seconds": 0.693682023038491
+        },
+        "e2e_request_latency_seconds": {
+          "count": 64.0,
+          "sum": 44.99385333061218,
+          "mean_seconds": 0.7030289582908154
+        }
+      },
+      "client_mean_seconds": 0.9575281296911271,
+      "client_p95_seconds": 1.2675870099847089,
+      "itl_including_warmups": {
+        "count": 8382.0,
+        "sum": 45.332525058533065,
+        "mean_seconds": 0.005408318427407906,
+        "requests": 66
+      },
+      "decode_derived_token_gap_seconds": 0.005462063173531425
+    },
+    {
+      "cell_id": 5,
+      "concurrency": 16,
+      "stream": true,
+      "trial": 0,
+      "measured_requests": 64,
+      "boundary_pre": "2026-10-23T22:48:25.721158+00:00",
+      "boundary_post": "2026-10-23T22:48:28.966450+00:00",
+      "phases": {
+        "request_queue_time_seconds": {
+          "count": 64.0,
+          "sum": 0.00020035472698509693,
+          "mean_seconds": 3.1305426091421396e-06
+        },
+        "request_prefill_time_seconds": {
+          "count": 64.0,
+          "sum": 0.29811984417028725,
+          "mean_seconds": 0.004658122565160738
+        },
+        "request_decode_time_seconds": {
+          "count": 64.0,
+          "sum": 37.90415603143629,
+          "mean_seconds": 0.592252437991192
+        },
+        "e2e_request_latency_seconds": {
+          "count": 64.0,
+          "sum": 38.41364407539368,
+          "mean_seconds": 0.6002131886780262
+        }
+      },
+      "client_mean_seconds": 0.6973879281240443,
+      "client_p95_seconds": 0.9345746800085178,
+      "itl_including_warmups": {
+        "count": 8382.0,
+        "sum": 38.84101107553579,
+        "mean_seconds": 0.00463385958906416,
+        "requests": 66
+      },
+      "decode_derived_token_gap_seconds": 0.004663405023552693
+    },
+    {
+      "cell_id": 6,
+      "concurrency": 32,
+      "stream": false,
+      "trial": 0,
+      "measured_requests": 64,
+      "boundary_pre": "2026-10-23T22:48:31.962698+00:00",
+      "boundary_post": "2026-10-23T22:48:34.323298+00:00",
+      "phases": {
+        "request_queue_time_seconds": {
+          "count": 64.0,
+          "sum": 0.00034044496715068817,
+          "mean_seconds": 5.319452611729503e-06
+        },
+        "request_prefill_time_seconds": {
+          "count": 64.0,
+          "sum": 0.34871201089117676,
+          "mean_seconds": 0.005448625170174637
+        },
+        "request_decode_time_seconds": {
+          "count": 64.0,
+          "sum": 40.090587958926335,
+          "mean_seconds": 0.626415436858224
+        },
+        "e2e_request_latency_seconds": {
+          "count": 64.0,
+          "sum": 40.64793348312378,
+          "mean_seconds": 0.635123960673809
+        }
+      },
+      "client_mean_seconds": 0.9204368546861588,
+      "client_p95_seconds": 1.2932943250023528,
+      "itl_including_warmups": {
+        "count": 8382.0,
+        "sum": 41.02782717603259,
+        "mean_seconds": 0.004894753898357503,
+        "requests": 66
+      },
+      "decode_derived_token_gap_seconds": 0.004932405014631685
+    },
+    {
+      "cell_id": 7,
+      "concurrency": 16,
+      "stream": false,
+      "trial": 0,
+      "measured_requests": 64,
+      "boundary_pre": "2026-10-23T22:48:37.228923+00:00",
+      "boundary_post": "2026-10-23T22:48:40.101780+00:00",
+      "phases": {
+        "request_queue_time_seconds": {
+          "count": 64.0,
+          "sum": 0.00023533590137958527,
+          "mean_seconds": 3.6771234590560198e-06
+        },
+        "request_prefill_time_seconds": {
+          "count": 64.0,
+          "sum": 0.298079973901622,
+          "mean_seconds": 0.004657499592212844
+        },
+        "request_decode_time_seconds": {
+          "count": 64.0,
+          "sum": 37.99217422725633,
+          "mean_seconds": 0.5936277223008801
+        },
+        "e2e_request_latency_seconds": {
+          "count": 64.0,
+          "sum": 38.47781038284302,
+          "mean_seconds": 0.6012157872319221
+        }
+      },
+      "client_mean_seconds": 0.6980586640611364,
+      "client_p95_seconds": 0.8549563000065971,
+      "itl_including_warmups": {
+        "count": 8382.0,
+        "sum": 38.9267259092303,
+        "mean_seconds": 0.004644085648917955,
+        "requests": 66
+      },
+      "decode_derived_token_gap_seconds": 0.004674234033865198
+    },
+    {
+      "cell_id": 10,
+      "concurrency": 32,
+      "stream": false,
+      "trial": 1,
+      "measured_requests": 64,
+      "boundary_pre": "2026-10-23T22:49:59.426173+00:00",
+      "boundary_post": "2026-10-23T22:50:01.754400+00:00",
+      "phases": {
+        "request_queue_time_seconds": {
+          "count": 64.0,
+          "sum": 0.0003351842751726508,
+          "mean_seconds": 5.237254299572669e-06
+        },
+        "request_prefill_time_seconds": {
+          "count": 64.0,
+          "sum": 0.35460941190831363,
+          "mean_seconds": 0.0055407720610674005
+        },
+        "request_decode_time_seconds": {
+          "count": 64.0,
+          "sum": 42.28349284711294,
+          "mean_seconds": 0.6606795757361397
+        },
+        "e2e_request_latency_seconds": {
+          "count": 64.0,
+          "sum": 42.86042547225952,
+          "mean_seconds": 0.669694148004055
+        }
+      },
+      "client_mean_seconds": 0.8803786843732269,
+      "client_p95_seconds": 1.0827169449927168,
+      "itl_including_warmups": {
+        "count": 8382.0,
+        "sum": 43.21937210508622,
+        "mean_seconds": 0.005156212372355789,
+        "requests": 66
+      },
+      "decode_derived_token_gap_seconds": 0.0052022013837491315
+    },
+    {
+      "cell_id": 11,
+      "concurrency": 32,
+      "stream": true,
+      "trial": 1,
+      "measured_requests": 64,
+      "boundary_pre": "2026-10-23T22:50:04.778008+00:00",
+      "boundary_post": "2026-10-23T22:50:07.128737+00:00",
+      "phases": {
+        "request_queue_time_seconds": {
+          "count": 64.0,
+          "sum": 0.0002804273972287774,
+          "mean_seconds": 4.381678081699647e-06
+        },
+        "request_prefill_time_seconds": {
+          "count": 64.0,
+          "sum": 0.3589090190362185,
+          "mean_seconds": 0.0056079534224409144
+        },
+        "request_decode_time_seconds": {
+          "count": 64.0,
+          "sum": 44.813733788905665,
+          "mean_seconds": 0.700214590451651
+        },
+        "e2e_request_latency_seconds": {
+          "count": 64.0,
+          "sum": 45.44086241722107,
+          "mean_seconds": 0.7100134752690792
+        }
+      },
+      "client_mean_seconds": 1.02522224062659,
+      "client_p95_seconds": 1.489367410026898,
+      "itl_including_warmups": {
+        "count": 8382.0,
+        "sum": 45.7803902188316,
+        "mean_seconds": 0.005461750205062228,
+        "requests": 66
+      },
+      "decode_derived_token_gap_seconds": 0.005513500712217724
+    },
+    {
+      "cell_id": 13,
+      "concurrency": 16,
+      "stream": true,
+      "trial": 1,
+      "measured_requests": 64,
+      "boundary_pre": "2026-10-23T22:50:23.064461+00:00",
+      "boundary_post": "2026-10-23T22:50:26.084469+00:00",
+      "phases": {
+        "request_queue_time_seconds": {
+          "count": 64.0,
+          "sum": 0.00027696997858583927,
+          "mean_seconds": 4.327655915403739e-06
+        },
+        "request_prefill_time_seconds": {
+          "count": 64.0,
+          "sum": 0.3030780180124566,
+          "mean_seconds": 0.004735594031444634
+        },
+        "request_decode_time_seconds": {
+          "count": 64.0,
+          "sum": 39.58751930296421,
+          "mean_seconds": 0.6185549891088158
+        },
+        "e2e_request_latency_seconds": {
+          "count": 64.0,
+          "sum": 40.12137198448181,
+          "mean_seconds": 0.6268964372575283
+        }
+      },
+      "client_mean_seconds": 0.7448256578109067,
+      "client_p95_seconds": 0.9402008899851353,
+      "itl_including_warmups": {
+        "count": 8382.0,
+        "sum": 40.52653049991932,
+        "mean_seconds": 0.004834947566203689,
+        "requests": 66
+      },
+      "decode_derived_token_gap_seconds": 0.004870511725266266
+    }
+  ],
+  "pooled": [
+    {
+      "stream": false,
+      "concurrency": 16,
+      "measured_requests": 128,
+      "phase_means_seconds": {
+        "request_queue_time_seconds": 4.327262104197871e-06,
+        "request_prefill_time_seconds": 0.004648509221624408,
+        "request_decode_time_seconds": 0.5883465634306049,
+        "e2e_request_latency_seconds": 0.5960572697222233
+      },
+      "client_mean_seconds": 0.6827458476552692,
+      "other_engine_seconds": 0.0030578698078898015,
+      "client_minus_engine_seconds": 0.08668857793304596,
+      "itl_with_warmups_mean_seconds": 0.004603651125694629,
+      "decode_derived_token_gap_seconds": 0.004632650105752794
+    },
+    {
+      "stream": false,
+      "concurrency": 32,
+      "measured_requests": 128,
+      "phase_means_seconds": {
+        "request_queue_time_seconds": 5.278353455651086e-06,
+        "request_prefill_time_seconds": 0.005494698615621019,
+        "request_decode_time_seconds": 0.6435475062971818,
+        "e2e_request_latency_seconds": 0.652409054338932
+      },
+      "client_mean_seconds": 0.9004077695296928,
+      "other_engine_seconds": 0.0033615710726735415,
+      "client_minus_engine_seconds": 0.24799871519076078,
+      "itl_with_warmups_mean_seconds": 0.005025483135356646,
+      "decode_derived_token_gap_seconds": 0.005067303199190408
+    },
+    {
+      "stream": true,
+      "concurrency": 16,
+      "measured_requests": 128,
+      "phase_means_seconds": {
+        "request_queue_time_seconds": 3.729099262272939e-06,
+        "request_prefill_time_seconds": 0.004696858298302686,
+        "request_decode_time_seconds": 0.6054037135500039,
+        "e2e_request_latency_seconds": 0.6135548129677773
+      },
+      "client_mean_seconds": 0.7211067929674755,
+      "other_engine_seconds": 0.003450512020208407,
+      "client_minus_engine_seconds": 0.10755197999969823,
+      "itl_with_warmups_mean_seconds": 0.004734403577633924,
+      "decode_derived_token_gap_seconds": 0.004766958374409479
+    },
+    {
+      "stream": true,
+      "concurrency": 32,
+      "measured_requests": 128,
+      "phase_means_seconds": {
+        "request_queue_time_seconds": 4.884566806140356e-06,
+        "request_prefill_time_seconds": 0.005563230657571694,
+        "request_decode_time_seconds": 0.696948306745071,
+        "e2e_request_latency_seconds": 0.7065212167799473
+      },
+      "client_mean_seconds": 0.9913751851588586,
+      "other_engine_seconds": 0.004004794810498424,
+      "client_minus_engine_seconds": 0.2848539683789113,
+      "itl_with_warmups_mean_seconds": 0.005435034316235067,
+      "decode_derived_token_gap_seconds": 0.005487781942874575
+    }
+  ],
+  "changes_16_to_32": [
+    {
+      "stream": false,
+      "client_mean_increase_seconds": 0.21766192187442357,
+      "components_seconds": {
+        "request_queue_time_seconds": 9.510913514532149e-07,
+        "request_prefill_time_seconds": 0.0008461893939966103,
+        "request_decode_time_seconds": 0.05520094286657695,
+        "other_engine_seconds": 0.00030370126478374004,
+        "client_minus_engine_seconds": 0.16131013725771481
+      },
+      "share_of_mean_increase": {
+        "request_queue_time_seconds": 4.369580785020961e-06,
+        "request_prefill_time_seconds": 0.003887631730481573,
+        "request_decode_time_seconds": 0.25360863485540763,
+        "other_engine_seconds": 0.0013952889056954823,
+        "client_minus_engine_seconds": 0.7411040749276303
+      }
+    },
+    {
+      "stream": true,
+      "client_mean_increase_seconds": 0.2702683921913831,
+      "components_seconds": {
+        "request_queue_time_seconds": 1.1554675438674167e-06,
+        "request_prefill_time_seconds": 0.0008663723592690076,
+        "request_decode_time_seconds": 0.09154459319506714,
+        "other_engine_seconds": 0.0005542827902900171,
+        "client_minus_engine_seconds": 0.17730198837921307
+      },
+      "share_of_mean_increase": {
+        "request_queue_time_seconds": 4.275259620626315e-06,
+        "request_prefill_time_seconds": 0.003205600004663179,
+        "request_decode_time_seconds": 0.3387173485319821,
+        "other_engine_seconds": 0.0020508605752814673,
+        "client_minus_engine_seconds": 0.6560219156284527
+      }
+    }
+  ]
+}

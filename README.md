@@ -19,7 +19,7 @@ python -m pip install -e ".[dev]"
 ## Run
 
 ```powershell
-uvicorn tokenflow.main:app --reload
+uvicorn tokenflow.main:app --reload --reload-dir src
 ```
 
 The API is available at `http://localhost:8000`, with interactive documentation
@@ -64,3 +64,8 @@ are lost when the gateway restarts.
 ## Serving experiments
 
 See [experiments](experiments/README.md) for configurable chat workloads and a runner that saves responses, errors, and request timings.
+
+With your worker and tunnel running, run `python experiments/smoke.py` for automatic
+local gateway setup, model discovery, worker registration, smoke testing, and a
+printed results summary. The default tunnel endpoint is `http://127.0.0.1:1810`;
+use `--worker` to change it. HPC resource collection remains a separate command.

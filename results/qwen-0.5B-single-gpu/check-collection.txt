@@ -1,0 +1,24 @@
+import json
+from datetime import datetime
+from pathlib import Path
+root = Path(__file__).resolve().parent
+samples = [json.loads(line) for line in (root / 'vllm-metrics.jsonl').read_text().splitlines()]
+cells = [json.loads(line) for line in (root / 'serving/cells.jsonl').read_text().splitlines()]
+coverage = []
+for cell in cells:
+    start, end = datetime.fromisoformat(cell['started_at']), datetime.fromisoformat(cell['finished_at'])
+    matching = [r for r in samples if start <= datetime.fromisoformat(r['timestamp']) <= end]
+    names = sorted({m['name'] for r in matching for m in r.get('metrics', []) if m['value'] is not None})
+    coverage.append({'cell_id': cell['cell_id'], 'concurrency': cell['concurrency'],
+        'stream': cell['stream'], 'trial': cell['trial'], 'vllm_samples': len(matching),
+        'scrape_errors': sum('error' in r for r in matching), 'available_metrics': names})
+report = {'cells': len(cells), 'requests': sum(c['requests'] for c in cells),
+    'successes': sum(c['successes'] for c in cells), 'failures': sum(c['failures'] for c in cells),
+    'warmup_failures': sum(c['warmup_failures'] for c in cells),
+    'raw_vllm_samples': len(samples), 'scrape_errors': sum('error' in r for r in samples),
+    'measurement_started_at': min(c['started_at'] for c in cells),
+    'measurement_finished_at': max(c['finished_at'] for c in cells),
+    'hpc_resource_file_pending': True, 'coverage_by_cell': coverage}
+(root / 'collection-status.json').write_text(json.dumps(report, indent=2))
+print(json.dumps({k: v for k, v in report.items() if k != 'coverage_by_cell'}, indent=2))
+print('Minimum per-cell vLLM samples:', min(r['vllm_samples'] for r in coverage))

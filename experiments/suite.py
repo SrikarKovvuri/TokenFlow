@@ -162,7 +162,7 @@ async def run_suite(args):
         return
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=False)
-    (output / "suite-source.py").write_text(Path(__file__).read_text(encoding="utf-8"), encoding="utf-8")
+    (output / "suite-source.txt").write_text(Path(__file__).read_text(encoding="utf-8"), encoding="utf-8")
     (output / "manifest.json").write_text(json.dumps({"started_at": utc_now(), "model": args.model,
         "target": args.target, "config": config, "cells": cells,
         "load_model": "closed-loop fixed concurrency", "prompt_unit": "context words, not tokens"}, indent=2))

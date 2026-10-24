@@ -13,6 +13,15 @@ def aggregate_samples(samples, start, end):
         if isinstance(value, (int, float)):
             values.setdefault(key, []).append(value)
     for row in rows:
+        if row.get("kind") == "vllm":
+            prefix = "vllm:" + row["endpoint"]
+            add(prefix + ":samples", 1)
+            if "error" in row:
+                add(prefix + ":scrape_errors", 1)
+            add(prefix + ":scrape_seconds", row.get("scrape_seconds"))
+            for metric in row.get("metrics", []):
+                add(prefix + ":" + metric["name"] + metric["labels"], metric["value"])
+            continue
         prefix = f"{row['label']}:{row['hostname']}"
         add(prefix + ":samples", 1)
         for key in ("cpu_percent", "memory_percent", "memory_used_bytes", "disk_percent", "disk_free_bytes"):
@@ -20,7 +29,7 @@ def aggregate_samples(samples, start, end):
         for key, value in row.get("rates", {}).items():
             add(prefix + ":" + key, value)
         for gpu in row.get("gpus", []):
-            for key in ("utilization.gpu", "utilization.memory", "memory.used", "power.draw", "temperature.gpu"):
+            for key in ("utilization.gpu", "utilization.memory", "memory.used", "memory.total", "power.draw", "temperature.gpu"):
                 add(prefix + ":gpu:" + gpu["uuid"] + ":" + key, gpu.get(key))
         tree = row.get("process_tree", [])
         if tree:
@@ -29,9 +38,10 @@ def aggregate_samples(samples, start, end):
                 add(prefix + ":process_tree_cpu_percent", sum(p["cpu_percent"] for p in tree))
     result = {}
     for key, series in values.items():
-        if key.endswith(":samples"):
+        if key.endswith((":samples", ":scrape_errors")):
             result[key] = len(series)
         else:
+            result[key + ":observations"] = len(series)
             result[key + ":mean"] = sum(series) / len(series)
             result[key + ":max"] = max(series)
     return result

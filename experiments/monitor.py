@@ -47,6 +47,7 @@ class Sampler:
         self.previous_time = None
 
     def sample(self):
+        started_wall = datetime.now(UTC)
         now = time.monotonic()
         memory = psutil.virtual_memory()
         disk = psutil.disk_usage(self.disk_path)
@@ -93,6 +94,10 @@ class Sampler:
             except (psutil.NoSuchProcess, psutil.AccessDenied) as exc:
                 row["process_error"] = str(exc)
         row.update(gpu_sample())
+        finished_wall = datetime.now(UTC)
+        row["sample_started_at"] = started_wall.isoformat()
+        row["sample_finished_at"] = finished_wall.isoformat()
+        row["timestamp"] = (started_wall + (finished_wall - started_wall) / 2).isoformat()
         return row
 
 
@@ -113,12 +118,19 @@ if __name__ == "__main__":
     deadline = time.monotonic() + args.duration
     try:
         with output.open("x", encoding="utf-8") as handle:
+            first_sample = True
             while time.monotonic() < deadline:
                 started = time.monotonic()
                 row = sampler.sample()
                 row["label"] = args.label
                 handle.write(json.dumps(row) + "\n")
                 handle.flush()
+                if first_sample:
+                    print(f"Monitoring {row['hostname']} at {row['timestamp']}; output={output}", flush=True)
+                    print("Visible GPU UUIDs:", [g["uuid"] for g in row["gpus"]], flush=True)
+                    if "gpu_error" in row:
+                        print("GPU collection error:", row["gpu_error"], flush=True)
+                    first_sample = False
                 time.sleep(min(max(0, deadline - time.monotonic()),
                                max(0, args.interval - (time.monotonic() - started))))
     except KeyboardInterrupt:

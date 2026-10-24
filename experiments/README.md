@@ -19,7 +19,50 @@ sampling uses `nvidia-smi` from the installed NVIDIA driver. Copy this directory
 the HPC compute environment to collect worker telemetry there. Run the monitor
 inside the allocated compute node, rather than on its login node.
 
-## Start small
+## One-command local smoke test
+
+With your HPC worker and SSH tunnel already running, run this from the repo root:
+
+```powershell
+python experiments/smoke.py
+```
+
+The default worker URL is `http://127.0.0.1:1810` and the local gateway URL is
+`http://127.0.0.1:8000`. For a different tunnel port:
+
+```powershell
+python experiments/smoke.py --worker http://127.0.0.1:YOUR_TUNNEL_PORT
+```
+
+This checks worker health, discovers the served model, reuses an existing healthy
+TokenFlow gateway or starts a temporary local one, registers/reuses the worker,
+waits for healthy status, runs the four smoke cells, exports `summary.csv`, and
+prints pass/fail counts, latency, first-content timing, and successful requests/sec.
+Results go into a new timestamped directory under `experiments/results`.
+Setup errors or failed measured/warmup requests produce a nonzero exit code.
+If several models are served, select one with `--model MODEL_ID`.
+
+A gateway started by this command is stopped afterward, including on failure or
+Ctrl+C. An existing gateway stays running. Its matching worker is reused and, if
+necessary, enabled. The command refuses gateways with other enabled workers so
+the test cannot silently route to a different worker. Use
+`--gateway http://127.0.0.1:8001` for a separate temporary gateway in that case.
+Gateway startup logs are saved beside the results directory as `*-gateway.log`.
+The project dependencies must already be installed; this command does not install
+packages or configure the HPC allocation, inference engine, or SSH tunnel.
+
+The HPC monitor remains a separate command on the compute node:
+
+```bash
+python experiments/monitor.py --label worker --interval 1 --duration 1800 --disk-path /tmp --output experiments/results/worker-smoke-01.jsonl
+```
+
+After stopping the monitor and copying its JSONL file locally, add its samples to
+the completed run with `summarize.py RUN_DIRECTORY --telemetry LOCAL_MONITOR_FILE`.
+You can also pass already copied sample files to `smoke.py --telemetry FILE`;
+only samples overlapping the new run's cell timestamps are matched.
+
+## Manual smoke test
 
 Set the model to the exact name served by your inference worker:
 
@@ -138,7 +181,7 @@ python experiments/summarize.py experiments/results/full-01 --telemetry experime
 Output files:
 
 - `manifest.json`: resolved configuration, target/model, seeded cell order, and load model.
-- `suite-source.py`: snapshot of the runner used to generate the workload.
+- `suite-source.txt`: snapshot of the runner used to generate the workload. This is a text file so Python reload watchers do not restart the gateway and clear its registry.
 - `warmup-NNNN.json`: warmup responses, kept outside measured summaries.
 - `requests-NNNN.jsonl`: one flushed result per measured request, including timestamps,
   prompt hash and character count, request ID, status/error, response or streamed
@@ -180,3 +223,95 @@ python experiments/run.py --workload experiments/workload.example.json --repeat 
 
 Resource APIs follow the [psutil documentation](https://psutil.readthedocs.io/stable/)
 and [NVIDIA System Management Interface documentation](https://docs.nvidia.com/deploy/nvidia-smi/index.html).
+
+## Reusable model-comparison baseline
+
+With a running worker and tunnel, use the same setup command with `--baseline`:
+
+```powershell
+python experiments/smoke.py --baseline --worker http://127.0.0.1:YOUR_TUNNEL_PORT
+```
+
+`baseline.json` pins one summarization task, 128 context words, a 128-token output
+cap, concurrency 1/4/16/32, JSON and SSE, and two trials. Each cell has 64 measured
+requests and two warmups: 16 cells, 1,024 measured requests, and 32 warmups total.
+The printed summary and CSV use the same metrics as the smoke test. Results use
+new timestamped baseline directories by default. Reuse this configuration after
+switching models and record the actual server-reported token counts and output
+lengths; the same text does not imply identical tokenization across models.
+
+Before comparing models, predict how throughput and latency will change with
+concurrency. Inspect failures first, then compare cells with the same prompt,
+output cap, mode, and concurrency. Warmup and prefix-cache behavior can affect
+both trials. This is a short engineering baseline, not a claim of peak GPU
+throughput or a model-quality evaluation. Record hardware/engine settings and
+collect compute-node telemetry separately before attributing changes to GPU use.
+
+Health probes use a dedicated HTTP client with idle connection reuse disabled.
+This avoids false unhealthy states from reused connections that a worker or SSH
+forwarding path has closed. Failed probes still mark workers unhealthy; logs now
+include the HTTP status or transport exception and elapsed time. No inference
+retry or timeout increase is used to hide errors. The source snapshot uses `.txt`
+so writing experiment results does not trigger Python reload watchers. Prefer a
+gateway without `--reload` when benchmarking.
+
+## Concurrency sweep with simultaneous telemetry
+
+Run the unchanged `baseline.json` again with live vLLM scrapes using:
+
+```powershell
+python experiments/telemetry_baseline.py --worker http://127.0.0.1:YOUR_TUNNEL_PORT --output experiments/results/qwen-telemetry-01
+```
+
+Keep the HPC monitor as a separate process. Before the benchmark begins, start it
+on the allocated GPU compute node, using the current `experiments/monitor.py`:
+
+```bash
+python experiments/monitor.py --label qwen-worker --interval 0.5 --duration 3600 --disk-path /tmp --output /tmp/tokenflow-qwen-telemetry-01.jsonl
+```
+
+If necessary, copy `monitor.py` and `requirements.txt` to the cluster first and
+install the latter in your monitoring environment. Use `~/monitor.py` instead of
+`experiments/monitor.py` if that is where you copied the script. Do not run the
+resource monitor on the login node. Verify the visible GPU UUIDs belong to your
+allocation. Clocks on the load generator and compute node must be synchronized.
+
+Start the monitor **10 seconds before confirming readiness for the benchmark**.
+Keep it running through setup, all 16 measured cells, and the final idle period.
+The benchmark collects vLLM metrics for 10 seconds before and after the sweep.
+Stop the HPC monitor with Ctrl+C **after the benchmark prints its final results**.
+Share or copy back this exact file:
+
+```text
+/tmp/tokenflow-qwen-telemetry-01.jsonl
+```
+
+The local run directory contains `vllm-metrics.jsonl` (full raw Prometheus responses,
+selected gauges, labels, UTC scrape start/end/midpoint, HTTP status or scrape error),
+`environment.json` (model and engine identity/configuration), and
+`token-preflight.json` (actual worker token counts for the workload). The
+`serving/` subdirectory contains raw request JSONL files, warmup results,
+`manifest.json`, timestamped cell windows in `cells.jsonl`, and `summary.csv`.
+
+After copying the HPC file locally, join both sources to the measured cell windows:
+
+```powershell
+python experiments/summarize.py experiments/results/qwen-telemetry-01/serving --telemetry experiments/results/qwen-telemetry-01/vllm-metrics.jsonl experiments/results/tokenflow-qwen-telemetry-01.jsonl
+```
+
+Each CSV row keeps concurrency, JSON/SSE mode, trial, throughput, and latency next
+to per-series mean/max resource and engine gauges. Observation counts expose
+missing coverage. `vllm:gpu_cache_usage_perc` and `vllm:kv_cache_usage_perc` are
+retained separately when both are exported; they are fractions (0 to 1) of the KV
+cache allocation, not percentages of total VRAM. They must not be summed. Running
+and waiting request counts retain engine/model labels; gauges are not combined
+across engines automatically. GPU VRAM used/total is in MiB, GPU compute utilization
+is percent, and host resource measurements describe the compute node as a whole.
+
+Unavailable gauges and scrape failures are saved explicitly; missing data is not
+zero. A 0.5-second scrape interval does not guarantee the engine refreshes its
+underlying gauges at that rate. Short cells can miss activity peaks or contain
+repeated/stale gauge values. Aggregates use sample means/maxima, not time-weighted
+means. Inspect raw UTC samples, counts, and refresh cadence before attributing a
+bottleneck; throughput alone is insufficient evidence of GPU saturation or KV
+cache pressure. Gauge-only scrapes do not establish causation.

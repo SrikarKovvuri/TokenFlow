@@ -1,9 +1,14 @@
 import asyncio
+import logging
+from time import perf_counter
 
 import httpx
 
 from tokenflow.worker_manager.models import HealthStatus, Worker
 from tokenflow.worker_manager.registry import WorkerRegistry
+
+
+logger = logging.getLogger("uvicorn.error")
 
 
 class WorkerHealthMonitor:
@@ -38,6 +43,7 @@ class WorkerHealthMonitor:
         health_url = f"{str(worker.base_url).rstrip('/')}/health"
         health_status = HealthStatus.UNHEALTHY
 
+        started = perf_counter()
         try:
             response = await self._client.get(
                 health_url,
@@ -45,8 +51,16 @@ class WorkerHealthMonitor:
             )
             if response.status_code == httpx.codes.OK:
                 health_status = HealthStatus.HEALTHY
-        except httpx.HTTPError:
-            pass
+            else:
+                logger.warning(
+                    "Worker %s health check returned HTTP %d after %.3fs",
+                    worker.id, response.status_code, perf_counter() - started,
+                )
+        except httpx.HTTPError as exc:
+            logger.warning(
+                "Worker %s health check failed after %.3fs: %s: %r",
+                worker.id, perf_counter() - started, type(exc).__name__, str(exc),
+            )
 
         await self._registry.set_health_status(
             worker.id, health_status, expected_base_url=str(worker.base_url)

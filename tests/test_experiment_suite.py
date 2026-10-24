@@ -111,7 +111,8 @@ def test_sweep_bounds_concurrency_and_exports_results(tmp_path, monkeypatch):
     assert cell["usage_coverage_requests"] == 5
     assert cell["completion_tokens_per_second"] > 0
     assert len((output / "requests-0000.jsonl").read_text().splitlines()) == 5
-    assert (output / "suite-source.py").exists()
+    assert (output / "suite-source.txt").exists()
+    assert not list(output.rglob("*.py")), "Result artifacts must not trigger Python reload watchers"
     exported = load("summarize").export(output, [])
     assert exported[0]["task"] == config["tasks"][0]["id"]
     assert (output / "summary.csv").exists()

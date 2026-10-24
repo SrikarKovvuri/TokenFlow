@@ -1,0 +1,108 @@
+{
+  "points": [
+    {
+      "stream": false,
+      "concurrency": 1,
+      "rps": 1.8749767001190556,
+      "p95": 0.5664612849999685
+    },
+    {
+      "stream": false,
+      "concurrency": 4,
+      "rps": 6.4817921798824205,
+      "p95": 0.6697516649903262
+    },
+    {
+      "stream": false,
+      "concurrency": 16,
+      "rps": 22.12149262012898,
+      "p95": 0.8036431200132937
+    },
+    {
+      "stream": false,
+      "concurrency": 32,
+      "rps": 30.342891265111607,
+      "p95": 1.2511706850011248
+    },
+    {
+      "stream": true,
+      "concurrency": 1,
+      "rps": 1.8501429081461136,
+      "p95": 0.5832067549781641
+    },
+    {
+      "stream": true,
+      "concurrency": 4,
+      "rps": 6.7222219094576054,
+      "p95": 0.6310237549943849
+    },
+    {
+      "stream": true,
+      "concurrency": 16,
+      "rps": 20.972969479976193,
+      "p95": 0.9411201599927154
+    },
+    {
+      "stream": true,
+      "concurrency": 32,
+      "rps": 27.999179099234247,
+      "p95": 1.4694484249994275
+    }
+  ],
+  "marginal_changes": [
+    {
+      "stream": false,
+      "start": 1,
+      "end": 4,
+      "extra_rps": 4.606815479763365,
+      "extra_p95_seconds": 0.10329037999035773,
+      "throughput_gain_percent": 245.69987880227237,
+      "p95_increase_percent": 18.234322931771672
+    },
+    {
+      "stream": false,
+      "start": 4,
+      "end": 16,
+      "extra_rps": 15.639700440246559,
+      "extra_p95_seconds": 0.1338914550229675,
+      "throughput_gain_percent": 241.28666896769067,
+      "p95_increase_percent": 19.99120898413913
+    },
+    {
+      "stream": false,
+      "start": 16,
+      "end": 32,
+      "extra_rps": 8.221398644982628,
+      "extra_p95_seconds": 0.4475275649878311,
+      "throughput_gain_percent": 37.164755498920265,
+      "p95_increase_percent": 55.68735099485804
+    },
+    {
+      "stream": true,
+      "start": 1,
+      "end": 4,
+      "extra_rps": 4.872079001311492,
+      "extra_p95_seconds": 0.0478170000162208,
+      "throughput_gain_percent": 263.33527966190616,
+      "p95_increase_percent": 8.198979111277804
+    },
+    {
+      "stream": true,
+      "start": 4,
+      "end": 16,
+      "extra_rps": 14.250747570518588,
+      "extra_p95_seconds": 0.31009640499833047,
+      "throughput_gain_percent": 211.9946018215938,
+      "p95_increase_percent": 49.14179577931892
+    },
+    {
+      "stream": true,
+      "start": 16,
+      "end": 32,
+      "extra_rps": 7.026209619258054,
+      "extra_p95_seconds": 0.5283282650067121,
+      "throughput_gain_percent": 33.50126278477772,
+      "p95_increase_percent": 56.138236908111885
+    }
+  ]
+}

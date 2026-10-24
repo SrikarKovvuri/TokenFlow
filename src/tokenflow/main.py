@@ -29,16 +29,25 @@ def create_app(
             settings.worker_request_timeout_seconds,
             connect=settings.worker_connect_timeout_seconds,
         )
-        async with httpx.AsyncClient(
-            timeout=timeout,
-            transport=worker_transport,
-        ) as worker_client:
+        async with (
+            httpx.AsyncClient(
+                timeout=timeout,
+                transport=worker_transport,
+            ) as worker_client,
+            # A fresh connection per probe avoids stale keep-alive sockets across
+            # SSH tunnels and keeps health polling independent of inference traffic.
+            httpx.AsyncClient(
+                timeout=settings.worker_health_timeout_seconds,
+                transport=worker_transport,
+                limits=httpx.Limits(max_keepalive_connections=0),
+            ) as health_client,
+        ):
             application.state.worker_client = worker_client
             monitor_task: asyncio.Task[None] | None = None
             if enable_health_monitor:
                 monitor = WorkerHealthMonitor(
                     registry,
-                    worker_client,
+                    health_client,
                     interval_seconds=settings.worker_health_interval_seconds,
                     timeout_seconds=settings.worker_health_timeout_seconds,
                 )

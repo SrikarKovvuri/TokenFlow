@@ -136,3 +136,18 @@ def test_disabled_worker_is_not_health_checked() -> None:
         assert updated.health_status is HealthStatus.UNKNOWN
 
     asyncio.run(scenario())
+
+
+def test_health_transport_errors_are_logged(caplog):
+    async def scenario():
+        registry = WorkerRegistry()
+        await registry.create(WorkerCreate(name="worker", base_url="http://worker"))
+        async def handler(request):
+            raise httpx.RemoteProtocolError("Server disconnected without sending a response.", request=request)
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            monitor = WorkerHealthMonitor(registry, client, interval_seconds=5, timeout_seconds=1)
+            await monitor.check_once()
+        assert (await registry.list())[0].health_status is HealthStatus.UNHEALTHY
+    asyncio.run(scenario())
+    assert "RemoteProtocolError" in caplog.text
+    assert "Server disconnected" in caplog.text

@@ -1,0 +1,238 @@
+{
+  "cells": 16,
+  "requests": 1024,
+  "successes": 1024,
+  "failures": 0,
+  "warmup_failures": 0,
+  "raw_vllm_samples": 466,
+  "scrape_errors": 0,
+  "measurement_started_at": "2026-10-23T22:47:36.662451+00:00",
+  "measurement_finished_at": "2026-10-23T22:51:39.405044+00:00",
+  "hpc_resource_file_pending": true,
+  "coverage_by_cell": [
+    {
+      "cell_id": 0,
+      "concurrency": 4,
+      "stream": true,
+      "trial": 1,
+      "vllm_samples": 17,
+      "scrape_errors": 0,
+      "available_metrics": [
+        "vllm:gpu_cache_usage_perc",
+        "vllm:kv_cache_usage_perc",
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting"
+      ]
+    },
+    {
+      "cell_id": 1,
+      "concurrency": 16,
+      "stream": false,
+      "trial": 1,
+      "vllm_samples": 5,
+      "scrape_errors": 0,
+      "available_metrics": [
+        "vllm:gpu_cache_usage_perc",
+        "vllm:kv_cache_usage_perc",
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting"
+      ]
+    },
+    {
+      "cell_id": 2,
+      "concurrency": 4,
+      "stream": false,
+      "trial": 1,
+      "vllm_samples": 18,
+      "scrape_errors": 0,
+      "available_metrics": [
+        "vllm:gpu_cache_usage_perc",
+        "vllm:kv_cache_usage_perc",
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting"
+      ]
+    },
+    {
+      "cell_id": 3,
+      "concurrency": 4,
+      "stream": true,
+      "trial": 0,
+      "vllm_samples": 18,
+      "scrape_errors": 0,
+      "available_metrics": [
+        "vllm:gpu_cache_usage_perc",
+        "vllm:kv_cache_usage_perc",
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting"
+      ]
+    },
+    {
+      "cell_id": 4,
+      "concurrency": 32,
+      "stream": true,
+      "trial": 0,
+      "vllm_samples": 4,
+      "scrape_errors": 0,
+      "available_metrics": [
+        "vllm:gpu_cache_usage_perc",
+        "vllm:kv_cache_usage_perc",
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting"
+      ]
+    },
+    {
+      "cell_id": 5,
+      "concurrency": 16,
+      "stream": true,
+      "trial": 0,
+      "vllm_samples": 6,
+      "scrape_errors": 0,
+      "available_metrics": [
+        "vllm:gpu_cache_usage_perc",
+        "vllm:kv_cache_usage_perc",
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting"
+      ]
+    },
+    {
+      "cell_id": 6,
+      "concurrency": 32,
+      "stream": false,
+      "trial": 0,
+      "vllm_samples": 4,
+      "scrape_errors": 0,
+      "available_metrics": [
+        "vllm:gpu_cache_usage_perc",
+        "vllm:kv_cache_usage_perc",
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting"
+      ]
+    },
+    {
+      "cell_id": 7,
+      "concurrency": 16,
+      "stream": false,
+      "trial": 0,
+      "vllm_samples": 5,
+      "scrape_errors": 0,
+      "available_metrics": [
+        "vllm:gpu_cache_usage_perc",
+        "vllm:kv_cache_usage_perc",
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting"
+      ]
+    },
+    {
+      "cell_id": 8,
+      "concurrency": 1,
+      "stream": false,
+      "trial": 1,
+      "vllm_samples": 60,
+      "scrape_errors": 0,
+      "available_metrics": [
+        "vllm:gpu_cache_usage_perc",
+        "vllm:kv_cache_usage_perc",
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting"
+      ]
+    },
+    {
+      "cell_id": 9,
+      "concurrency": 1,
+      "stream": true,
+      "trial": 0,
+      "vllm_samples": 60,
+      "scrape_errors": 0,
+      "available_metrics": [
+        "vllm:gpu_cache_usage_perc",
+        "vllm:kv_cache_usage_perc",
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting"
+      ]
+    },
+    {
+      "cell_id": 10,
+      "concurrency": 32,
+      "stream": false,
+      "trial": 1,
+      "vllm_samples": 4,
+      "scrape_errors": 0,
+      "available_metrics": [
+        "vllm:gpu_cache_usage_perc",
+        "vllm:kv_cache_usage_perc",
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting"
+      ]
+    },
+    {
+      "cell_id": 11,
+      "concurrency": 32,
+      "stream": true,
+      "trial": 1,
+      "vllm_samples": 4,
+      "scrape_errors": 0,
+      "available_metrics": [
+        "vllm:gpu_cache_usage_perc",
+        "vllm:kv_cache_usage_perc",
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting"
+      ]
+    },
+    {
+      "cell_id": 12,
+      "concurrency": 4,
+      "stream": false,
+      "trial": 0,
+      "vllm_samples": 17,
+      "scrape_errors": 0,
+      "available_metrics": [
+        "vllm:gpu_cache_usage_perc",
+        "vllm:kv_cache_usage_perc",
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting"
+      ]
+    },
+    {
+      "cell_id": 13,
+      "concurrency": 16,
+      "stream": true,
+      "trial": 1,
+      "vllm_samples": 5,
+      "scrape_errors": 0,
+      "available_metrics": [
+        "vllm:gpu_cache_usage_perc",
+        "vllm:kv_cache_usage_perc",
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting"
+      ]
+    },
+    {
+      "cell_id": 14,
+      "concurrency": 1,
+      "stream": false,
+      "trial": 0,
+      "vllm_samples": 59,
+      "scrape_errors": 0,
+      "available_metrics": [
+        "vllm:gpu_cache_usage_perc",
+        "vllm:kv_cache_usage_perc",
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting"
+      ]
+    },
+    {
+      "cell_id": 15,
+      "concurrency": 1,
+      "stream": true,
+      "trial": 1,
+      "vllm_samples": 62,
+      "scrape_errors": 0,
+      "available_metrics": [
+        "vllm:gpu_cache_usage_perc",
+        "vllm:kv_cache_usage_perc",
+        "vllm:num_requests_running",
+        "vllm:num_requests_waiting"
+      ]
+    }
+  ]
+}
