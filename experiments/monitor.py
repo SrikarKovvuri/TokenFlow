@@ -8,10 +8,12 @@ import platform
 import socket
 import subprocess
 import time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import psutil
+
+UTC = timezone.utc  # Keep the standalone HPC monitor compatible with Python 3.9.
 
 GPU_FIELDS = ["index", "uuid", "utilization.gpu", "utilization.memory", "memory.used",
               "memory.total", "power.draw", "temperature.gpu"]

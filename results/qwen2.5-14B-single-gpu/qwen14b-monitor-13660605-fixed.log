@@ -1,0 +1,2 @@
+Monitoring ins093 at 2026-10-25T23:33:12.191570+00:00; output=/insomnia001/home/srk2211/vllm-runtime/results/qwen14b-worker-13660605-fixed.jsonl
+Visible GPU UUIDs: ['GPU-0d79d040-4919-325d-ced4-45d4b94a5595']

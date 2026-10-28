@@ -1,0 +1,14 @@
+INCOMPLETE BASELINE: do not treat this run as a completed model comparison.
+576/1024 measured requests passed; 9 complete cells succeeded, 7 cells failed.
+At approximately 2026-10-25 20:26:04 America/New_York, the first request in cell 9
+(zero-based) lost its SSE stream. Subsequent direct vLLM scrapes and gateway
+requests failed. Gateway later returned 503 because the registered worker was
+unreachable. Allocation expiry, worker termination, and tunnel failure have not
+yet been distinguished; cluster job status/accounting and server logs are needed.
+Hardware telemetry retrieved October 28, 2026 and joined into serving/summary.csv.
+Local file: qwen14b-worker-13660605-fixed.jsonl (6,340 samples, no GPU errors).
+All nine successful cells have hardware coverage. Analysis is in README.md,
+analysis.json, completed-cells.csv and performance-and-gpu.png.
+Recording ends at 20:26:04.911 Eastern, close to the worker connectivity failure;
+the root cause remains unconfirmed without cluster accounting/shutdown logs.
+Keep all raw requests and metrics, including failures, as diagnostic evidence.

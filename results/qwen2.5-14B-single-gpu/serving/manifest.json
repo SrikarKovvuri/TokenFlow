@@ -1,0 +1,215 @@
+{
+  "started_at": "2026-10-26T00:11:19.794115+00:00",
+  "model": "tokenflow-model",
+  "target": "http://127.0.0.1:8001",
+  "config": {
+    "seed": 42,
+    "tasks": [
+      {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      }
+    ],
+    "prompt_words": [
+      128
+    ],
+    "max_tokens": [
+      128
+    ],
+    "concurrency": [
+      1,
+      4,
+      16,
+      32
+    ],
+    "stream_modes": [
+      false,
+      true
+    ],
+    "requests_per_cell": 64,
+    "warmup_requests": 2,
+    "trials": 2,
+    "timeout_seconds": 300,
+    "cooldown_seconds": 2
+  },
+  "cells": [
+    {
+      "task": {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      },
+      "prompt_words": 128,
+      "max_tokens": 128,
+      "concurrency": 4,
+      "stream": true,
+      "trial": 1
+    },
+    {
+      "task": {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      },
+      "prompt_words": 128,
+      "max_tokens": 128,
+      "concurrency": 16,
+      "stream": false,
+      "trial": 1
+    },
+    {
+      "task": {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      },
+      "prompt_words": 128,
+      "max_tokens": 128,
+      "concurrency": 4,
+      "stream": false,
+      "trial": 1
+    },
+    {
+      "task": {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      },
+      "prompt_words": 128,
+      "max_tokens": 128,
+      "concurrency": 4,
+      "stream": true,
+      "trial": 0
+    },
+    {
+      "task": {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      },
+      "prompt_words": 128,
+      "max_tokens": 128,
+      "concurrency": 32,
+      "stream": true,
+      "trial": 0
+    },
+    {
+      "task": {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      },
+      "prompt_words": 128,
+      "max_tokens": 128,
+      "concurrency": 16,
+      "stream": true,
+      "trial": 0
+    },
+    {
+      "task": {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      },
+      "prompt_words": 128,
+      "max_tokens": 128,
+      "concurrency": 32,
+      "stream": false,
+      "trial": 0
+    },
+    {
+      "task": {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      },
+      "prompt_words": 128,
+      "max_tokens": 128,
+      "concurrency": 16,
+      "stream": false,
+      "trial": 0
+    },
+    {
+      "task": {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      },
+      "prompt_words": 128,
+      "max_tokens": 128,
+      "concurrency": 1,
+      "stream": false,
+      "trial": 1
+    },
+    {
+      "task": {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      },
+      "prompt_words": 128,
+      "max_tokens": 128,
+      "concurrency": 1,
+      "stream": true,
+      "trial": 0
+    },
+    {
+      "task": {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      },
+      "prompt_words": 128,
+      "max_tokens": 128,
+      "concurrency": 32,
+      "stream": false,
+      "trial": 1
+    },
+    {
+      "task": {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      },
+      "prompt_words": 128,
+      "max_tokens": 128,
+      "concurrency": 32,
+      "stream": true,
+      "trial": 1
+    },
+    {
+      "task": {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      },
+      "prompt_words": 128,
+      "max_tokens": 128,
+      "concurrency": 4,
+      "stream": false,
+      "trial": 0
+    },
+    {
+      "task": {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      },
+      "prompt_words": 128,
+      "max_tokens": 128,
+      "concurrency": 16,
+      "stream": true,
+      "trial": 1
+    },
+    {
+      "task": {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      },
+      "prompt_words": 128,
+      "max_tokens": 128,
+      "concurrency": 1,
+      "stream": false,
+      "trial": 0
+    },
+    {
+      "task": {
+        "id": "summarization",
+        "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+      },
+      "prompt_words": 128,
+      "max_tokens": 128,
+      "concurrency": 1,
+      "stream": true,
+      "trial": 1
+    }
+  ],
+  "load_model": "closed-loop fixed concurrency",
+  "prompt_unit": "context words, not tokens"
+}

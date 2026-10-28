@@ -18,9 +18,9 @@ Start the separate monitor command on the allocated compute node before starting
 the model. Its output is in home storage, accessible through the login node.
 
 ```bash
-apptainer exec --nv "$HOME/vllm-runtime/containers/vllm.sif" python3 -c 'import psutil; print(psutil.__version__)'
+python3 -c 'import psutil; print(psutil.__version__)'
 mkdir -p "$HOME/vllm-runtime/results"
-apptainer exec --nv "$HOME/vllm-runtime/containers/vllm.sif" python3 "$HOME/vllm-runtime/monitor.py" --label qwen14b-worker --interval 0.5 --duration 7200 --disk-path /tmp --output "$HOME/vllm-runtime/results/qwen14b-worker-01.jsonl" > "$HOME/vllm-runtime/results/qwen14b-monitor-01.log" 2>&1 &
+python3 "$HOME/vllm-runtime/monitor.py" --label qwen14b-worker --interval 0.5 --duration 7200 --disk-path /tmp --output "$HOME/vllm-runtime/results/qwen14b-worker-01.jsonl" > "$HOME/vllm-runtime/results/qwen14b-monitor-01.log" 2>&1 &
 echo "Monitor PID: $!"
 ```
 
@@ -62,3 +62,8 @@ remaining after downloading; do not start a sweep close to job expiry. If the
 container lacks psutil or startup fails, preserve the error and fix that before
 running the benchmark. The earlier 0.5B run lacks physical GPU telemetry, so that
 portion cannot be compared directly without another monitored 0.5B run.
+
+The standalone monitor supports Python 3.9. Run it with host Python and psutil,
+not in another Apptainer instance: this avoids simultaneous SIF extractions.
+The Oct 25 run used job 13660605 and hardware output
+qwen14b-worker-13660605-fixed.jsonl; preserve that file for joining results.

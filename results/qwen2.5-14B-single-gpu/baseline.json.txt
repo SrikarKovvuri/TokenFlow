@@ -1,0 +1,30 @@
+{
+  "seed": 42,
+  "tasks": [
+    {
+      "id": "summarization",
+      "instruction": "Summarize the reference records, identify the three most important patterns, and explain their implications."
+    }
+  ],
+  "prompt_words": [
+    128
+  ],
+  "max_tokens": [
+    128
+  ],
+  "concurrency": [
+    1,
+    4,
+    16,
+    32
+  ],
+  "stream_modes": [
+    false,
+    true
+  ],
+  "requests_per_cell": 64,
+  "warmup_requests": 2,
+  "trials": 2,
+  "timeout_seconds": 300,
+  "cooldown_seconds": 2
+}

@@ -1,0 +1,1274 @@
+{
+  "scope": "9 fully successful cells only; seven interrupted cells excluded from performance aggregates",
+  "hardware": {
+    "samples": 6340,
+    "first": "2026-10-25T23:33:12.191570+00:00",
+    "last": "2026-10-26T00:26:04.911371+00:00",
+    "gpu_errors": 0
+  },
+  "histogram_counter_resets": false,
+  "per_cell": [
+    {
+      "cell_id": 0,
+      "concurrency": 4,
+      "stream": true,
+      "trial": 1,
+      "started_at": "2026-10-26T00:11:32.152917+00:00",
+      "finished_at": "2026-10-26T00:13:11.546476+00:00",
+      "successful_requests_per_second": 0.6439162820858042,
+      "elapsed_seconds": 99.39180260000285,
+      "requests": 64,
+      "latency_mean": 6.210436354688682,
+      "latency_p95": 6.5204493900062515,
+      "output_tokens": {
+        "n": 64,
+        "mean": 128,
+        "min": 128,
+        "max": 128
+      },
+      "input_tokens": {
+        "n": 64,
+        "mean": 390.984375,
+        "min": 383,
+        "max": 396
+      },
+      "first_content": {
+        "n": 64,
+        "mean": 0.3925083874974007,
+        "min": 0.13756140001351014,
+        "max": 0.6949235000065528
+      },
+      "hardware_samples": 198,
+      "hardware_max_gap_seconds": 0.5195698738098145,
+      "gpu_errors": 0,
+      "gpu_utilization.gpu": {
+        "n": 198,
+        "mean": 96.13131313131314,
+        "min": 21.0,
+        "max": 100.0
+      },
+      "gpu_utilization.memory": {
+        "n": 198,
+        "mean": 96.02525252525253,
+        "min": 15.0,
+        "max": 100.0
+      },
+      "gpu_memory.used": {
+        "n": 198,
+        "mean": 43836.0,
+        "min": 43836.0,
+        "max": 43836.0
+      },
+      "gpu_memory.total": {
+        "n": 198,
+        "mean": 49140.0,
+        "min": 49140.0,
+        "max": 49140.0
+      },
+      "gpu_power.draw": {
+        "n": 198,
+        "mean": 280.85656565656564,
+        "min": 206.68,
+        "max": 295.34
+      },
+      "gpu_temperature.gpu": {
+        "n": 198,
+        "mean": 60.66161616161616,
+        "min": 44.0,
+        "max": 70.0
+      },
+      "cpu_percent": {
+        "n": 198,
+        "mean": 14.117676767676768,
+        "min": 2.9,
+        "max": 16.8
+      },
+      "memory_percent": {
+        "n": 198,
+        "mean": 22.345959595959595,
+        "min": 22.3,
+        "max": 22.4
+      },
+      "memory_used_bytes": {
+        "n": 198,
+        "mean": 57622062214.464645,
+        "min": 57605918720,
+        "max": 57634824192
+      },
+      "disk_free_bytes": {
+        "n": 198,
+        "mean": 30394650624,
+        "min": 30394650624,
+        "max": 30394650624
+      },
+      "vllm:num_requests_running": {
+        "n": 129,
+        "mean": 3.6744186046511627,
+        "min": 0.0,
+        "max": 4.0
+      },
+      "vllm:num_requests_waiting": {
+        "n": 129,
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "vllm:kv_cache_usage_perc": {
+        "n": 129,
+        "mean": 0.02228096929322926,
+        "min": 0.0,
+        "max": 0.02782571182053495
+      },
+      "phase_means_seconds": {
+        "request_queue_time_seconds": 1.5737561625428498e-05,
+        "request_prefill_time_seconds": 0.21959693407916347,
+        "request_decode_time_seconds": 5.765299953916838,
+        "e2e_request_latency_seconds": 6.023799955844879
+      },
+      "phase_boundary_counts": [
+        2.0,
+        66.0
+      ],
+      "client_minus_engine_seconds": 0.18663639884380245,
+      "itl_including_warmups": {
+        "observations": 8382.0,
+        "mean_seconds": 0.04533762970622171
+      },
+      "matched_0_5b": {
+        "cell_id": 0,
+        "rps": 6.79912697509849,
+        "p95_seconds": 0.6266948799820966,
+        "throughput_ratio_14b_to_0_5b": 0.0947057297862093,
+        "p95_ratio_14b_to_0_5b": 10.404504007105542
+      }
+    },
+    {
+      "cell_id": 1,
+      "concurrency": 16,
+      "stream": false,
+      "trial": 1,
+      "started_at": "2026-10-26T00:13:24.886533+00:00",
+      "finished_at": "2026-10-26T00:13:49.965196+00:00",
+      "successful_requests_per_second": 2.551934020480423,
+      "elapsed_seconds": 25.07901829999173,
+      "requests": 64,
+      "latency_mean": 6.240511739059912,
+      "latency_p95": 6.321407384987106,
+      "output_tokens": {
+        "n": 64,
+        "mean": 128,
+        "min": 128,
+        "max": 128
+      },
+      "input_tokens": {
+        "n": 64,
+        "mean": 390.984375,
+        "min": 383,
+        "max": 396
+      },
+      "first_content": null,
+      "hardware_samples": 50,
+      "hardware_max_gap_seconds": 0.5141198635101318,
+      "gpu_errors": 0,
+      "gpu_utilization.gpu": {
+        "n": 50,
+        "mean": 95.96,
+        "min": 62.0,
+        "max": 98.0
+      },
+      "gpu_utilization.memory": {
+        "n": 50,
+        "mean": 99.42,
+        "min": 71.0,
+        "max": 100.0
+      },
+      "gpu_memory.used": {
+        "n": 50,
+        "mean": 43836.0,
+        "min": 43836.0,
+        "max": 43836.0
+      },
+      "gpu_memory.total": {
+        "n": 50,
+        "mean": 49140.0,
+        "min": 49140.0,
+        "max": 49140.0
+      },
+      "gpu_power.draw": {
+        "n": 50,
+        "mean": 297.3464,
+        "min": 271.84,
+        "max": 299.15
+      },
+      "gpu_temperature.gpu": {
+        "n": 50,
+        "mean": 72.4,
+        "min": 69.0,
+        "max": 73.0
+      },
+      "cpu_percent": {
+        "n": 50,
+        "mean": 14.156,
+        "min": 13.6,
+        "max": 15.5
+      },
+      "memory_percent": {
+        "n": 50,
+        "mean": 22.395999999999997,
+        "min": 22.3,
+        "max": 22.4
+      },
+      "memory_used_bytes": {
+        "n": 50,
+        "mean": 57634310389.76,
+        "min": 57617625088,
+        "max": 57644429312
+      },
+      "disk_free_bytes": {
+        "n": 50,
+        "mean": 30394650624,
+        "min": 30394650624,
+        "max": 30394650624
+      },
+      "vllm:num_requests_running": {
+        "n": 38,
+        "mean": 14.68421052631579,
+        "min": 0.0,
+        "max": 16.0
+      },
+      "vllm:num_requests_waiting": {
+        "n": 38,
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "vllm:kv_cache_usage_perc": {
+        "n": 38,
+        "mean": 0.0883304572907679,
+        "min": 0.0,
+        "max": 0.10785159620362383
+      },
+      "phase_means_seconds": {
+        "request_queue_time_seconds": 9.284165571443737e-06,
+        "request_prefill_time_seconds": 0.052793579881836195,
+        "request_decode_time_seconds": 5.996622563408891,
+        "e2e_request_latency_seconds": 6.074868943542242
+      },
+      "phase_boundary_counts": [
+        68.0,
+        132.0
+      ],
+      "client_minus_engine_seconds": 0.16564279551766958,
+      "itl_including_warmups": {
+        "observations": 8382.0,
+        "mean_seconds": 0.04710557728421265
+      },
+      "matched_0_5b": {
+        "cell_id": 1,
+        "rps": 23.019544924615506,
+        "p95_seconds": 0.7901272949922713,
+        "throughput_ratio_14b_to_0_5b": 0.11085944699764944,
+        "p95_ratio_14b_to_0_5b": 8.000492357435823
+      }
+    },
+    {
+      "cell_id": 2,
+      "concurrency": 4,
+      "stream": false,
+      "trial": 1,
+      "started_at": "2026-10-26T00:14:03.366414+00:00",
+      "finished_at": "2026-10-26T00:15:37.403917+00:00",
+      "successful_requests_per_second": 0.6805786578779224,
+      "elapsed_seconds": 94.03762409999035,
+      "requests": 64,
+      "latency_mean": 5.8617220609421565,
+      "latency_p95": 5.9686714149691396,
+      "output_tokens": {
+        "n": 64,
+        "mean": 128,
+        "min": 128,
+        "max": 128
+      },
+      "input_tokens": {
+        "n": 64,
+        "mean": 390.984375,
+        "min": 383,
+        "max": 396
+      },
+      "first_content": null,
+      "hardware_samples": 188,
+      "hardware_max_gap_seconds": 0.5193009376525879,
+      "gpu_errors": 0,
+      "gpu_utilization.gpu": {
+        "n": 188,
+        "mean": 96.6436170212766,
+        "min": 27.0,
+        "max": 98.0
+      },
+      "gpu_utilization.memory": {
+        "n": 188,
+        "mean": 99.62765957446808,
+        "min": 30.0,
+        "max": 100.0
+      },
+      "gpu_memory.used": {
+        "n": 188,
+        "mean": 43836.0,
+        "min": 43836.0,
+        "max": 43836.0
+      },
+      "gpu_memory.total": {
+        "n": 188,
+        "mean": 49140.0,
+        "min": 49140.0,
+        "max": 49140.0
+      },
+      "gpu_power.draw": {
+        "n": 188,
+        "mean": 296.9743617021277,
+        "min": 270.31,
+        "max": 298.81
+      },
+      "gpu_temperature.gpu": {
+        "n": 188,
+        "mean": 74.92021276595744,
+        "min": 72.0,
+        "max": 76.0
+      },
+      "cpu_percent": {
+        "n": 188,
+        "mean": 14.377659574468085,
+        "min": 13.5,
+        "max": 16.0
+      },
+      "memory_percent": {
+        "n": 188,
+        "mean": 22.38563829787234,
+        "min": 22.3,
+        "max": 22.4
+      },
+      "memory_used_bytes": {
+        "n": 188,
+        "mean": 57630415087.65958,
+        "min": 57619783680,
+        "max": 57642123264
+      },
+      "disk_free_bytes": {
+        "n": 188,
+        "mean": 30394650624,
+        "min": 30394650624,
+        "max": 30394650624
+      },
+      "vllm:num_requests_running": {
+        "n": 138,
+        "mean": 3.869565217391304,
+        "min": 0.0,
+        "max": 4.0
+      },
+      "vllm:num_requests_waiting": {
+        "n": 138,
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "vllm:kv_cache_usage_perc": {
+        "n": 138,
+        "mean": 0.023497580372885168,
+        "min": 0.0,
+        "max": 0.02761000862812768
+      },
+      "phase_means_seconds": {
+        "request_queue_time_seconds": 7.796807039994746e-06,
+        "request_prefill_time_seconds": 0.04690547689824598,
+        "request_decode_time_seconds": 5.696117255982244,
+        "e2e_request_latency_seconds": 5.767233021557331
+      },
+      "phase_boundary_counts": [
+        134.0,
+        198.0
+      ],
+      "client_minus_engine_seconds": 0.09448903938482545,
+      "itl_including_warmups": {
+        "observations": 8382.0,
+        "mean_seconds": 0.04481323661533322
+      },
+      "matched_0_5b": {
+        "cell_id": 2,
+        "rps": 6.64408935893023,
+        "p95_seconds": 0.6327431300072931,
+        "throughput_ratio_14b_to_0_5b": 0.10243370025768331,
+        "p95_ratio_14b_to_0_5b": 9.433008644282465
+      }
+    },
+    {
+      "cell_id": 3,
+      "concurrency": 4,
+      "stream": true,
+      "trial": 0,
+      "started_at": "2026-10-26T00:15:50.674827+00:00",
+      "finished_at": "2026-10-26T00:17:24.214050+00:00",
+      "successful_requests_per_second": 0.6842012208975103,
+      "elapsed_seconds": 93.53973370004678,
+      "requests": 64,
+      "latency_mean": 5.835899604687256,
+      "latency_p95": 5.870933859987417,
+      "output_tokens": {
+        "n": 64,
+        "mean": 128,
+        "min": 128,
+        "max": 128
+      },
+      "input_tokens": {
+        "n": 64,
+        "mean": 390.984375,
+        "min": 383,
+        "max": 396
+      },
+      "first_content": {
+        "n": 64,
+        "mean": 0.1193163000016284,
+        "min": 0.07715719996485859,
+        "max": 0.18337300000712276
+      },
+      "hardware_samples": 187,
+      "hardware_max_gap_seconds": 0.5285100936889648,
+      "gpu_errors": 0,
+      "gpu_utilization.gpu": {
+        "n": 187,
+        "mean": 96.84491978609626,
+        "min": 95.0,
+        "max": 98.0
+      },
+      "gpu_utilization.memory": {
+        "n": 187,
+        "mean": 100.0,
+        "min": 100.0,
+        "max": 100.0
+      },
+      "gpu_memory.used": {
+        "n": 187,
+        "mean": 43836.0,
+        "min": 43836.0,
+        "max": 43836.0
+      },
+      "gpu_memory.total": {
+        "n": 187,
+        "mean": 49140.0,
+        "min": 49140.0,
+        "max": 49140.0
+      },
+      "gpu_power.draw": {
+        "n": 187,
+        "mean": 297.0614438502674,
+        "min": 283.89,
+        "max": 299.1
+      },
+      "gpu_temperature.gpu": {
+        "n": 187,
+        "mean": 75.75935828877006,
+        "min": 75.0,
+        "max": 76.0
+      },
+      "cpu_percent": {
+        "n": 187,
+        "mean": 14.452941176470588,
+        "min": 11.9,
+        "max": 17.0
+      },
+      "memory_percent": {
+        "n": 187,
+        "mean": 22.4,
+        "min": 22.4,
+        "max": 22.4
+      },
+      "memory_used_bytes": {
+        "n": 187,
+        "mean": 57638231187.850266,
+        "min": 57626140672,
+        "max": 57650139136
+      },
+      "disk_free_bytes": {
+        "n": 187,
+        "mean": 30394650624,
+        "min": 30394650624,
+        "max": 30394650624
+      },
+      "vllm:num_requests_running": {
+        "n": 150,
+        "mean": 3.8866666666666667,
+        "min": 1.0,
+        "max": 4.0
+      },
+      "vllm:num_requests_waiting": {
+        "n": 150,
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "vllm:kv_cache_usage_perc": {
+        "n": 150,
+        "mean": 0.02359649122807017,
+        "min": 0.005392579810181153,
+        "max": 0.02782571182053495
+      },
+      "phase_means_seconds": {
+        "request_queue_time_seconds": 5.107103788759559e-06,
+        "request_prefill_time_seconds": 0.04606619254627731,
+        "request_decode_time_seconds": 5.702568313849042,
+        "e2e_request_latency_seconds": 5.775098793208599
+      },
+      "phase_boundary_counts": [
+        200.0,
+        264.0
+      ],
+      "client_minus_engine_seconds": 0.060800811478657124,
+      "itl_including_warmups": {
+        "observations": 8382.0,
+        "mean_seconds": 0.04486059666822585
+      },
+      "matched_0_5b": {
+        "cell_id": 3,
+        "rps": 6.6470371351377,
+        "p95_seconds": 0.632920779993583,
+        "throughput_ratio_14b_to_0_5b": 0.10293326289403021,
+        "p95_ratio_14b_to_0_5b": 9.275937914452644
+      }
+    },
+    {
+      "cell_id": 4,
+      "concurrency": 32,
+      "stream": true,
+      "trial": 0,
+      "started_at": "2026-10-26T00:17:37.564225+00:00",
+      "finished_at": "2026-10-26T00:17:51.513686+00:00",
+      "successful_requests_per_second": 4.588102193621436,
+      "elapsed_seconds": 13.949122599966358,
+      "requests": 64,
+      "latency_mean": 6.862454907811298,
+      "latency_p95": 6.998528729969985,
+      "output_tokens": {
+        "n": 64,
+        "mean": 128,
+        "min": 128,
+        "max": 128
+      },
+      "input_tokens": {
+        "n": 64,
+        "mean": 390.984375,
+        "min": 383,
+        "max": 396
+      },
+      "first_content": {
+        "n": 64,
+        "mean": 0.35429308125003445,
+        "min": 0.16822870000032708,
+        "max": 0.5191437999601476
+      },
+      "hardware_samples": 28,
+      "hardware_max_gap_seconds": 0.513401985168457,
+      "gpu_errors": 0,
+      "gpu_utilization.gpu": {
+        "n": 28,
+        "mean": 93.35714285714286,
+        "min": 9.0,
+        "max": 98.0
+      },
+      "gpu_utilization.memory": {
+        "n": 28,
+        "mean": 96.67857142857143,
+        "min": 10.0,
+        "max": 100.0
+      },
+      "gpu_memory.used": {
+        "n": 28,
+        "mean": 43836.0,
+        "min": 43836.0,
+        "max": 43836.0
+      },
+      "gpu_memory.total": {
+        "n": 28,
+        "mean": 49140.0,
+        "min": 49140.0,
+        "max": 49140.0
+      },
+      "gpu_power.draw": {
+        "n": 28,
+        "mean": 295.25,
+        "min": 267.48,
+        "max": 299.27
+      },
+      "gpu_temperature.gpu": {
+        "n": 28,
+        "mean": 74.82142857142857,
+        "min": 71.0,
+        "max": 75.0
+      },
+      "cpu_percent": {
+        "n": 28,
+        "mean": 14.285714285714286,
+        "min": 13.1,
+        "max": 16.0
+      },
+      "memory_percent": {
+        "n": 28,
+        "mean": 22.4,
+        "min": 22.4,
+        "max": 22.4
+      },
+      "memory_used_bytes": {
+        "n": 28,
+        "mean": 57644610560,
+        "min": 57637900288,
+        "max": 57652219904
+      },
+      "disk_free_bytes": {
+        "n": 28,
+        "mean": 30394650624,
+        "min": 30394650624,
+        "max": 30394650624
+      },
+      "vllm:num_requests_running": {
+        "n": 22,
+        "mean": 29.40909090909091,
+        "min": 0.0,
+        "max": 32.0
+      },
+      "vllm:num_requests_waiting": {
+        "n": 22,
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "vllm:kv_cache_usage_perc": {
+        "n": 22,
+        "mean": 0.17668052396266373,
+        "min": 0.0,
+        "max": 0.21721311475409832
+      },
+      "phase_means_seconds": {
+        "request_queue_time_seconds": 1.0511768778087571e-05,
+        "request_prefill_time_seconds": 0.05784406347083859,
+        "request_decode_time_seconds": 6.5368468690576265,
+        "e2e_request_latency_seconds": 6.623071435838938
+      },
+      "phase_boundary_counts": [
+        266.0,
+        330.0
+      ],
+      "client_minus_engine_seconds": 0.23938347197235998,
+      "itl_including_warmups": {
+        "observations": 8382.0,
+        "mean_seconds": 0.05123061928056995
+      },
+      "matched_0_5b": {
+        "cell_id": 4,
+        "rps": 28.84684771367878,
+        "p95_seconds": 1.2675870099847089,
+        "throughput_ratio_14b_to_0_5b": 0.1590503835691489,
+        "p95_ratio_14b_to_0_5b": 5.521142670951172
+      }
+    },
+    {
+      "cell_id": 5,
+      "concurrency": 16,
+      "stream": true,
+      "trial": 0,
+      "started_at": "2026-10-26T00:18:04.874279+00:00",
+      "finished_at": "2026-10-26T00:18:29.851015+00:00",
+      "successful_requests_per_second": 2.562371485057524,
+      "elapsed_seconds": 24.976862400013488,
+      "requests": 64,
+      "latency_mean": 6.222394529690973,
+      "latency_p95": 6.416872924991185,
+      "output_tokens": {
+        "n": 64,
+        "mean": 128,
+        "min": 128,
+        "max": 128
+      },
+      "input_tokens": {
+        "n": 64,
+        "mean": 390.984375,
+        "min": 383,
+        "max": 396
+      },
+      "first_content": {
+        "n": 64,
+        "mean": 0.18462012812142348,
+        "min": 0.09062430000631139,
+        "max": 0.42595569998957217
+      },
+      "hardware_samples": 50,
+      "hardware_max_gap_seconds": 0.5165359973907471,
+      "gpu_errors": 0,
+      "gpu_utilization.gpu": {
+        "n": 50,
+        "mean": 96.48,
+        "min": 94.0,
+        "max": 98.0
+      },
+      "gpu_utilization.memory": {
+        "n": 50,
+        "mean": 100.0,
+        "min": 100.0,
+        "max": 100.0
+      },
+      "gpu_memory.used": {
+        "n": 50,
+        "mean": 43836.0,
+        "min": 43836.0,
+        "max": 43836.0
+      },
+      "gpu_memory.total": {
+        "n": 50,
+        "mean": 49140.0,
+        "min": 49140.0,
+        "max": 49140.0
+      },
+      "gpu_power.draw": {
+        "n": 50,
+        "mean": 297.4656,
+        "min": 272.49,
+        "max": 299.25
+      },
+      "gpu_temperature.gpu": {
+        "n": 50,
+        "mean": 74.98,
+        "min": 74.0,
+        "max": 75.0
+      },
+      "cpu_percent": {
+        "n": 50,
+        "mean": 14.618,
+        "min": 13.4,
+        "max": 15.7
+      },
+      "memory_percent": {
+        "n": 50,
+        "mean": 22.4,
+        "min": 22.4,
+        "max": 22.4
+      },
+      "memory_used_bytes": {
+        "n": 50,
+        "mean": 57640431943.68,
+        "min": 57632481280,
+        "max": 57656647680
+      },
+      "disk_free_bytes": {
+        "n": 50,
+        "mean": 30394650624,
+        "min": 30394650624,
+        "max": 30394650624
+      },
+      "vllm:num_requests_running": {
+        "n": 40,
+        "mean": 15.375,
+        "min": 0.0,
+        "max": 16.0
+      },
+      "vllm:num_requests_waiting": {
+        "n": 40,
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "vllm:kv_cache_usage_perc": {
+        "n": 40,
+        "mean": 0.09266609145815358,
+        "min": 0.0,
+        "max": 0.10763589301121657
+      },
+      "phase_means_seconds": {
+        "request_queue_time_seconds": 8.858172805048525e-06,
+        "request_prefill_time_seconds": 0.05283748148576706,
+        "request_decode_time_seconds": 6.012977630398382,
+        "e2e_request_latency_seconds": 6.090890116989613
+      },
+      "phase_boundary_counts": [
+        332.0,
+        396.0
+      ],
+      "client_minus_engine_seconds": 0.1315044127013607,
+      "itl_including_warmups": {
+        "observations": 8382.0,
+        "mean_seconds": 0.047231314442769595
+      },
+      "matched_0_5b": {
+        "cell_id": 5,
+        "rps": 21.668812782183878,
+        "p95_seconds": 0.9345746800085178,
+        "throughput_ratio_14b_to_0_5b": 0.1182515863150707,
+        "p95_ratio_14b_to_0_5b": 6.866088994549585
+      }
+    },
+    {
+      "cell_id": 6,
+      "concurrency": 32,
+      "stream": false,
+      "trial": 0,
+      "started_at": "2026-10-26T00:18:43.130423+00:00",
+      "finished_at": "2026-10-26T00:18:56.982643+00:00",
+      "successful_requests_per_second": 4.620062817693625,
+      "elapsed_seconds": 13.852625500003342,
+      "requests": 64,
+      "latency_mean": 6.84434231562318,
+      "latency_p95": 6.953888545022346,
+      "output_tokens": {
+        "n": 64,
+        "mean": 128,
+        "min": 128,
+        "max": 128
+      },
+      "input_tokens": {
+        "n": 64,
+        "mean": 390.984375,
+        "min": 383,
+        "max": 396
+      },
+      "first_content": null,
+      "hardware_samples": 27,
+      "hardware_max_gap_seconds": 0.5129880905151367,
+      "gpu_errors": 0,
+      "gpu_utilization.gpu": {
+        "n": 27,
+        "mean": 95.44444444444444,
+        "min": 69.0,
+        "max": 97.0
+      },
+      "gpu_utilization.memory": {
+        "n": 27,
+        "mean": 99.22222222222223,
+        "min": 79.0,
+        "max": 100.0
+      },
+      "gpu_memory.used": {
+        "n": 27,
+        "mean": 43836.0,
+        "min": 43836.0,
+        "max": 43836.0
+      },
+      "gpu_memory.total": {
+        "n": 27,
+        "mean": 49140.0,
+        "min": 49140.0,
+        "max": 49140.0
+      },
+      "gpu_power.draw": {
+        "n": 27,
+        "mean": 297.032962962963,
+        "min": 279.26,
+        "max": 299.54
+      },
+      "gpu_temperature.gpu": {
+        "n": 27,
+        "mean": 74.70370370370371,
+        "min": 72.0,
+        "max": 75.0
+      },
+      "cpu_percent": {
+        "n": 27,
+        "mean": 14.262962962962963,
+        "min": 13.5,
+        "max": 16.4
+      },
+      "memory_percent": {
+        "n": 27,
+        "mean": 22.4,
+        "min": 22.4,
+        "max": 22.4
+      },
+      "memory_used_bytes": {
+        "n": 27,
+        "mean": 57646039646.81481,
+        "min": 57636495360,
+        "max": 57660133376
+      },
+      "disk_free_bytes": {
+        "n": 27,
+        "mean": 30394650624,
+        "min": 30394650624,
+        "max": 30394650624
+      },
+      "vllm:num_requests_running": {
+        "n": 22,
+        "mean": 29.772727272727273,
+        "min": 12.0,
+        "max": 32.0
+      },
+      "vllm:num_requests_waiting": {
+        "n": 22,
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "vllm:kv_cache_usage_perc": {
+        "n": 22,
+        "mean": 0.17934739979606243,
+        "min": 0.06729939603106128,
+        "max": 0.21462467644521144
+      },
+      "phase_means_seconds": {
+        "request_queue_time_seconds": 1.2392058124532923e-05,
+        "request_prefill_time_seconds": 0.057066809607931646,
+        "request_decode_time_seconds": 6.53230543972677,
+        "e2e_request_latency_seconds": 6.615671969950199
+      },
+      "phase_boundary_counts": [
+        398.0,
+        462.0
+      ],
+      "client_minus_engine_seconds": 0.22867034567298106,
+      "itl_including_warmups": {
+        "observations": 8382.0,
+        "mean_seconds": 0.05119721063773166
+      },
+      "matched_0_5b": {
+        "cell_id": 6,
+        "rps": 28.59583843891393,
+        "p95_seconds": 1.2932943250023528,
+        "throughput_ratio_14b_to_0_5b": 0.1615641670225178,
+        "p95_ratio_14b_to_0_5b": 5.37688011969719
+      }
+    },
+    {
+      "cell_id": 7,
+      "concurrency": 16,
+      "stream": false,
+      "trial": 0,
+      "started_at": "2026-10-26T00:19:10.260563+00:00",
+      "finished_at": "2026-10-26T00:19:35.168667+00:00",
+      "successful_requests_per_second": 2.569482603598999,
+      "elapsed_seconds": 24.907738200039603,
+      "requests": 64,
+      "latency_mean": 6.195440073430291,
+      "latency_p95": 6.279734414990526,
+      "output_tokens": {
+        "n": 64,
+        "mean": 128,
+        "min": 128,
+        "max": 128
+      },
+      "input_tokens": {
+        "n": 64,
+        "mean": 390.984375,
+        "min": 383,
+        "max": 396
+      },
+      "first_content": null,
+      "hardware_samples": 50,
+      "hardware_max_gap_seconds": 0.5168330669403076,
+      "gpu_errors": 0,
+      "gpu_utilization.gpu": {
+        "n": 50,
+        "mean": 96.8,
+        "min": 95.0,
+        "max": 98.0
+      },
+      "gpu_utilization.memory": {
+        "n": 50,
+        "mean": 99.98,
+        "min": 99.0,
+        "max": 100.0
+      },
+      "gpu_memory.used": {
+        "n": 50,
+        "mean": 43836.0,
+        "min": 43836.0,
+        "max": 43836.0
+      },
+      "gpu_memory.total": {
+        "n": 50,
+        "mean": 49140.0,
+        "min": 49140.0,
+        "max": 49140.0
+      },
+      "gpu_power.draw": {
+        "n": 50,
+        "mean": 297.7864,
+        "min": 277.52,
+        "max": 299.24
+      },
+      "gpu_temperature.gpu": {
+        "n": 50,
+        "mean": 74.8,
+        "min": 74.0,
+        "max": 75.0
+      },
+      "cpu_percent": {
+        "n": 50,
+        "mean": 14.66,
+        "min": 13.6,
+        "max": 15.7
+      },
+      "memory_percent": {
+        "n": 50,
+        "mean": 22.4,
+        "min": 22.4,
+        "max": 22.4
+      },
+      "memory_used_bytes": {
+        "n": 50,
+        "mean": 57647723724.8,
+        "min": 57637412864,
+        "max": 57658769408
+      },
+      "disk_free_bytes": {
+        "n": 50,
+        "mean": 30394650624,
+        "min": 30394650624,
+        "max": 30394650624
+      },
+      "vllm:num_requests_running": {
+        "n": 39,
+        "mean": 15.743589743589743,
+        "min": 10.0,
+        "max": 16.0
+      },
+      "vllm:num_requests_waiting": {
+        "n": 39,
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "vllm:kv_cache_usage_perc": {
+        "n": 39,
+        "mean": 0.0949038738081016,
+        "min": 0.06729939603106128,
+        "max": 0.1100086281276963
+      },
+      "phase_means_seconds": {
+        "request_queue_time_seconds": 1.1654308764263988e-05,
+        "request_prefill_time_seconds": 0.05338707765258732,
+        "request_decode_time_seconds": 5.997075123963441,
+        "e2e_request_latency_seconds": 6.073589917272329
+      },
+      "phase_boundary_counts": [
+        464.0,
+        528.0
+      ],
+      "client_minus_engine_seconds": 0.12185015615796146,
+      "itl_including_warmups": {
+        "observations": 8382.0,
+        "mean_seconds": 0.04711115130429332
+      },
+      "matched_0_5b": {
+        "cell_id": 7,
+        "rps": 21.29088002824136,
+        "p95_seconds": 0.8549563000065971,
+        "throughput_ratio_14b_to_0_5b": 0.12068465935605761,
+        "p95_ratio_14b_to_0_5b": 7.345094029884416
+      }
+    },
+    {
+      "cell_id": 8,
+      "concurrency": 1,
+      "stream": false,
+      "trial": 1,
+      "started_at": "2026-10-26T00:19:48.457981+00:00",
+      "finished_at": "2026-10-26T00:25:50.249510+00:00",
+      "successful_requests_per_second": 0.1768972841742772,
+      "elapsed_seconds": 361.7918743000482,
+      "requests": 64,
+      "latency_mean": 5.652709985940419,
+      "latency_p95": 5.724573660019087,
+      "output_tokens": {
+        "n": 64,
+        "mean": 128,
+        "min": 128,
+        "max": 128
+      },
+      "input_tokens": {
+        "n": 64,
+        "mean": 390.984375,
+        "min": 383,
+        "max": 396
+      },
+      "first_content": null,
+      "hardware_samples": 723,
+      "hardware_max_gap_seconds": 0.5246059894561768,
+      "gpu_errors": 0,
+      "gpu_utilization.gpu": {
+        "n": 723,
+        "mean": 95.68464730290457,
+        "min": 2.0,
+        "max": 99.0
+      },
+      "gpu_utilization.memory": {
+        "n": 723,
+        "mean": 98.62793914246197,
+        "min": 2.0,
+        "max": 100.0
+      },
+      "gpu_memory.used": {
+        "n": 723,
+        "mean": 43836.0,
+        "min": 43836.0,
+        "max": 43836.0
+      },
+      "gpu_memory.total": {
+        "n": 723,
+        "mean": 49140.0,
+        "min": 49140.0,
+        "max": 49140.0
+      },
+      "gpu_power.draw": {
+        "n": 723,
+        "mean": 296.3195020746888,
+        "min": 252.84,
+        "max": 299.59
+      },
+      "gpu_temperature.gpu": {
+        "n": 723,
+        "mean": 75.84370677731674,
+        "min": 72.0,
+        "max": 77.0
+      },
+      "cpu_percent": {
+        "n": 723,
+        "mean": 13.932365145228216,
+        "min": 7.7,
+        "max": 17.5
+      },
+      "memory_percent": {
+        "n": 723,
+        "mean": 22.2567081604426,
+        "min": 21.8,
+        "max": 22.4
+      },
+      "memory_used_bytes": {
+        "n": 723,
+        "mean": 57307933994.843704,
+        "min": 56247717888,
+        "max": 57681346560
+      },
+      "disk_free_bytes": {
+        "n": 723,
+        "mean": 30394650624,
+        "min": 30394650624,
+        "max": 30394650624
+      },
+      "vllm:num_requests_running": {
+        "n": 543,
+        "mean": 0.9723756906077348,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "vllm:num_requests_waiting": {
+        "n": 543,
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "vllm:kv_cache_usage_perc": {
+        "n": 543,
+        "mean": 0.006032936248782444,
+        "min": 0.0,
+        "max": 0.007118205349439188
+      },
+      "phase_means_seconds": {
+        "request_queue_time_seconds": 5.657115252688527e-05,
+        "request_prefill_time_seconds": 0.044477242037828546,
+        "request_decode_time_seconds": 5.531175290110696,
+        "e2e_request_latency_seconds": 5.576850611716509
+      },
+      "phase_boundary_counts": [
+        530.0,
+        594.0
+      ],
+      "client_minus_engine_seconds": 0.07585937422390998,
+      "itl_including_warmups": {
+        "observations": 8382.0,
+        "mean_seconds": 0.043551836869158506
+      },
+      "matched_0_5b": {
+        "cell_id": 8,
+        "rps": 1.839283949056616,
+        "p95_seconds": 0.5854825799906394,
+        "throughput_ratio_14b_to_0_5b": 0.09617725651605305,
+        "p95_ratio_14b_to_0_5b": 9.777530289817694
+      }
+    }
+  ],
+  "groups": [
+    {
+      "concurrency": 1,
+      "stream": false,
+      "trials": 1,
+      "requests": 64,
+      "rps": 0.1768972841742772,
+      "p95_seconds": 5.724573660019087,
+      "gpu_util_mean": 95.68464730290457,
+      "gpu_vram_mib": 43836.0
+    },
+    {
+      "concurrency": 4,
+      "stream": false,
+      "trials": 1,
+      "requests": 64,
+      "rps": 0.6805786578779224,
+      "p95_seconds": 5.9686714149691396,
+      "gpu_util_mean": 96.6436170212766,
+      "gpu_vram_mib": 43836.0
+    },
+    {
+      "concurrency": 16,
+      "stream": false,
+      "trials": 2,
+      "requests": 128,
+      "rps": 2.5606782468456375,
+      "p95_seconds": 6.318902289983816,
+      "gpu_util_mean": 96.38,
+      "gpu_vram_mib": 43836.0
+    },
+    {
+      "concurrency": 32,
+      "stream": false,
+      "trials": 1,
+      "requests": 64,
+      "rps": 4.620062817693625,
+      "p95_seconds": 6.953888545022346,
+      "gpu_util_mean": 95.44444444444444,
+      "gpu_vram_mib": 43836.0
+    },
+    {
+      "concurrency": 4,
+      "stream": true,
+      "trials": 2,
+      "requests": 128,
+      "rps": 0.6634477828494183,
+      "p95_seconds": 6.375620474998141,
+      "gpu_util_mean": 96.47792207792207,
+      "gpu_vram_mib": 43836.0
+    },
+    {
+      "concurrency": 16,
+      "stream": true,
+      "trials": 1,
+      "requests": 64,
+      "rps": 2.562371485057524,
+      "p95_seconds": 6.416872924991185,
+      "gpu_util_mean": 96.48,
+      "gpu_vram_mib": 43836.0
+    },
+    {
+      "concurrency": 32,
+      "stream": true,
+      "trials": 1,
+      "requests": 64,
+      "rps": 4.588102193621436,
+      "p95_seconds": 6.998528729969985,
+      "gpu_util_mean": 93.35714285714286,
+      "gpu_vram_mib": 43836.0
+    }
+  ],
+  "method": "Hardware and gauges matched by UTC timestamps within measured cell windows. Phase means use exact count deltas of 64 completions, excluding warmups; direct ITL includes two warmups. Sample means are arithmetic, not time weighted. p95 uses linear interpolation of raw request durations. 0.5B comparisons match mode, concurrency and trial.",
+  "limitations": [
+    "Only nine complete cells; uneven replication and no complete SSE concurrency-1 cell.",
+    "No physical GPU telemetry for 0.5B.",
+    "CPU, RAM and disk are host-wide; inference process CPU attribution unavailable.",
+    "GPU utilization is sampled busy time, not proof of compute or bandwidth saturation.",
+    "Model ID is reconstructed from setup; no downloaded model revision was recorded.",
+    "Hardware recording and worker connectivity stop together; Slurm accounting is absent, so cause unconfirmed."
+  ]
+}

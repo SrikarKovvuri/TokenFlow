@@ -1,0 +1,2232 @@
+INFO:     Started server process [31460]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
+INFO:     127.0.0.1:55108 - "GET /healthz HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55108 - "GET /v1/workers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55108 - "POST /v1/workers HTTP/1.1" 201 Created
+INFO:     127.0.0.1:55108 - "GET /v1/workers/84b930f1-9eb2-463b-a785-3ef36aafcbfa HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55108 - "GET /v1/workers/84b930f1-9eb2-463b-a785-3ef36aafcbfa HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55108 - "GET /v1/workers/84b930f1-9eb2-463b-a785-3ef36aafcbfa HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55108 - "GET /v1/workers/84b930f1-9eb2-463b-a785-3ef36aafcbfa HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55108 - "GET /v1/workers/84b930f1-9eb2-463b-a785-3ef36aafcbfa HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55108 - "GET /v1/workers/84b930f1-9eb2-463b-a785-3ef36aafcbfa HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55108 - "GET /v1/workers/84b930f1-9eb2-463b-a785-3ef36aafcbfa HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55108 - "GET /v1/workers/84b930f1-9eb2-463b-a785-3ef36aafcbfa HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55108 - "GET /v1/workers/84b930f1-9eb2-463b-a785-3ef36aafcbfa HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55108 - "GET /v1/workers/84b930f1-9eb2-463b-a785-3ef36aafcbfa HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63179 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:63178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63179 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:63178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63179 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:63178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63179 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63179 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63179 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:63178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63179 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63179 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63179 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63179 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:63180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63179 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63179 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:63179 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63179 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:63179 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:63179 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63178 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63180 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:63683 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:63684 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63685 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63686 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63687 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63688 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:63694 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63690 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63696 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63698 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63700 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63701 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63689 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63691 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63692 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63683 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:63692 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63684 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63685 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63686 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63687 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63688 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63690 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63694 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63689 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63691 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63696 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63698 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63701 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63700 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63683 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:63692 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63684 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63685 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:63686 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63687 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63688 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63689 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63690 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63691 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63696 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63698 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63694 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63701 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63700 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63683 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63692 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63684 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63685 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63686 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63687 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63688 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63689 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63694 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63690 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63696 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63698 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63700 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63701 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63691 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51239 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51240 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51241 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51239 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51240 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51241 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51239 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51240 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51241 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51239 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51240 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51241 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51239 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51240 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51241 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51239 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51240 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51241 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51239 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51240 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51241 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51239 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51240 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51241 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51239 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51240 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51241 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51239 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51240 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51241 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51239 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51240 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51241 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51239 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51240 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51241 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51239 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51240 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51241 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51239 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51240 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51241 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51239 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51240 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51241 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:51239 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51240 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51241 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62881 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62883 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62881 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62883 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62881 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62883 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62881 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62883 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62881 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62883 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62881 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62883 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62881 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62883 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62881 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62883 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62881 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62883 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62881 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62883 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62881 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62883 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62881 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62883 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62881 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62883 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62881 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62883 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62881 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62883 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62881 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:62882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62883 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:53747 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53748 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53749 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53750 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:53751 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53752 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:53753 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53754 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:53755 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:53756 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53758 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53759 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53761 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53763 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53764 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53767 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53769 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53770 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53771 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53774 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53776 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53785 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53777 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53778 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53780 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53783 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53784 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53787 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53788 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53789 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53790 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:53750 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53747 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53748 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53749 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53751 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53752 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53756 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53753 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53754 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53755 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53758 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:53759 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53761 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53763 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53764 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53767 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53769 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:53770 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53771 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53774 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53776 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53785 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53777 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53778 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53780 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53783 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53784 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53787 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53788 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53789 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53790 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59107 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59108 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59109 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59110 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59111 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59112 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59113 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59114 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59115 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59117 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59124 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59119 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59122 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59125 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59126 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59107 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59109 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59108 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59110 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59111 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59112 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59113 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59114 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59115 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59117 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59119 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59122 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59124 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59125 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59126 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59107 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59111 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59109 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59108 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59110 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59112 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59113 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59114 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59115 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59117 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59119 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59122 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59124 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59125 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59126 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59107 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59111 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59109 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59108 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59110 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59112 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59113 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59114 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59115 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59117 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59119 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59122 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59124 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59125 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59126 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59945 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59947 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59951 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59943 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59944 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59946 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59948 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59949 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59950 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59952 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59955 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59956 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59969 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59958 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59973 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59962 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59967 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59965 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59961 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59971 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59974 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:59975 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59977 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59978 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59980 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59981 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59983 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59989 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59985 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59987 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59990 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59945 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59947 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59946 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59943 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59948 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59944 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59949 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59950 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59951 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59952 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59958 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59955 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59956 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59961 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59962 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59965 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59967 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59969 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59971 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59973 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59974 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59975 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59977 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59978 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59980 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59981 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59983 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59985 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59987 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59989 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59990 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:52383 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52384 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52385 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52386 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52387 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52388 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52389 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52390 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52391 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52394 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52398 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52396 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52399 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52401 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52402 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:52383 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:52384 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52385 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:52386 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52387 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52388 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52389 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52390 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:52391 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:52396 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52402 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52394 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52398 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52399 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52401 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:52383 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:52385 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:52384 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:52386 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52387 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52388 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:52389 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52390 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52391 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52396 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52394 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52398 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52399 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52401 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52402 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52383 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52385 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52384 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52386 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52387 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52388 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52389 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52390 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52391 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52394 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52396 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52399 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52398 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52401 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52402 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:64906 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpx\_transports\default.py", line 271, in __aiter__
+    async for part in self._httpcore_stream:
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpcore\_async\connection_pool.py", line 407, in __aiter__
+    raise exc from None
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpcore\_async\connection_pool.py", line 403, in __aiter__
+    async for part in self._stream:
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpcore\_async\http11.py", line 342, in __aiter__
+    raise exc
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpcore\_async\http11.py", line 334, in __aiter__
+    async for chunk in self._connection._receive_response_body(**kwargs):
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpcore\_async\http11.py", line 203, in _receive_response_body
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpcore\_async\http11.py", line 213, in _receive_event
+    with map_exceptions({h11.RemoteProtocolError: RemoteProtocolError}):
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 155, in __exit__
+    self.gen.throw(value)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.RemoteProtocolError: peer closed connection without sending complete message body (incomplete chunked read)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\fastapi\applications.py", line 1216, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\fastapi\telemetry\_asgi.py", line 151, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\middleware\base.py", line 208, in __call__
+    raise app_exc
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\middleware\base.py", line 149, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\fastapi\routing.py", line 2809, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\fastapi\routing.py", line 1837, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\fastapi\routing.py", line 2892, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\fastapi\routing.py", line 1863, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\fastapi\routing.py", line 1326, in handle
+    await effective_context.app(scope, receive, send)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\fastapi\routing.py", line 166, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\fastapi\routing.py", line 153, in app
+    await response(scope, receive, send)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\responses.py", line 276, in __call__
+    async with create_collapsing_task_group() as task_group:
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 222, in __aexit__
+    await self.gen.athrow(value)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\_utils.py", line 112, in create_collapsing_task_group
+    raise exc from exc.__cause__ or context
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\responses.py", line 279, in wrap
+    await func()
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\responses.py", line 253, in stream_response
+    async for chunk in self.body_iterator:
+  File "C:\Users\Srikars Den\OneDrive\Desktop\TokenFlow\src\tokenflow\scheduler\proxy.py", line 64, in _stream_upstream
+    async for chunk in response.aiter_raw():
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpx\_models.py", line 1055, in aiter_raw
+    async for raw_stream_bytes in self.stream:
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpx\_client.py", line 176, in __aiter__
+    async for chunk in self._stream:
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpx\_transports\default.py", line 270, in __aiter__
+    with map_httpcore_exceptions():
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 155, in __exit__
+    self.gen.throw(value)
+  File "C:\Users\Srikars Den\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.RemoteProtocolError: peer closed connection without sending complete message body (incomplete chunked read)
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 502 Bad Gateway
+INFO:     Fetched 1 workers; routed to smoke-worker (84b930f1-9eb2-463b-a785-3ef36aafcbfa) at http://127.0.0.1:18101/
+WARNING:  Worker 84b930f1-9eb2-463b-a785-3ef36aafcbfa health check failed after 0.042s: ReadError: ''
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 502 Bad Gateway
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55147 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55148 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55149 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55150 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55151 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55152 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55153 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55154 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55147 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55148 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55149 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55150 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55147 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55151 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55148 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55149 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+WARNING:  Worker 84b930f1-9eb2-463b-a785-3ef36aafcbfa health check failed after 0.016s: ReadError: ''
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55147 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55148 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55147 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55147 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55148 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55147 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55147 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55147 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55148 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+WARNING:  Worker 84b930f1-9eb2-463b-a785-3ef36aafcbfa health check failed after 0.016s: ReadError: ''
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55147 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55148 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55147 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55147 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55146 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55145 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55142 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55143 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55144 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+WARNING:  Worker 84b930f1-9eb2-463b-a785-3ef36aafcbfa health check failed after 0.023s: ReadError: ''
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+INFO:     No healthy worker among 1 registered workers
+INFO:     127.0.0.1:55133 - "POST /v1/chat/completions HTTP/1.1" 503 Service Unavailable
+WARNING:  Worker 84b930f1-9eb2-463b-a785-3ef36aafcbfa health check failed after 0.019s: ReadError: ''
+WARNING:  Worker 84b930f1-9eb2-463b-a785-3ef36aafcbfa health check failed after 0.031s: ReadError: ''
