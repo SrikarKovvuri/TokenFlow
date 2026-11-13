@@ -150,6 +150,9 @@ profiling evidence if needed. No such experiments were run here.
 - `performance-and-gpu.png` and `.svg`: shareable plots of completed cells.
 - `model-comparison.png` and `.svg`: JSON comparison using matched trials.
 - `analysis.canvas.tsx`: self-contained visual review saved with the experiment.
+- `report.html`: standalone interactive browser report; double-click to open,
+  with no server, cluster connection or installation required. Regenerate with
+  `python results/qwen2.5-14B-single-gpu/build_report.py` from the repository root.
 - `analyze_results.py`: offline regeneration script; requires matplotlib for plots.
 - Original JSONL telemetry, request files, environment and gateway logs are retained.
 - `SHA256SUMS.csv`: evidence and derived-output checksums when the script ran.
