@@ -56,7 +56,7 @@ async def run(args):
             if not await gateway_running(client, args.gateway):
                 process = start_gateway(args.gateway, log)
                 await wait_gateway(client, args.gateway, process, 45)
-            worker_id = await register_worker(client, args.gateway, args.worker)
+            worker_id = await register_worker(client, args.gateway, args.worker, model)
             await wait_worker(client, args.gateway, worker_id, 45)
         # Preserve the measurement code in text files to avoid Python reload watchers.
         for name in ("vllm_metrics.py", "telemetry_baseline.py", "baseline.json"):

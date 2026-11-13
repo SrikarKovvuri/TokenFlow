@@ -3,7 +3,7 @@ import asyncio
 import httpx
 import pytest
 
-from tokenflow.scheduler.selection import NoAvailableWorkerError, select_first_healthy
+from tokenflow.scheduler.selection import NoAvailableWorkerError
 from tokenflow.worker_manager.health_monitor import WorkerHealthMonitor
 from tokenflow.worker_manager.models import HealthStatus, WorkerCreate, WorkerUpdate
 from tokenflow.worker_manager.registry import WorkerRegistry
@@ -45,7 +45,11 @@ def test_health_check_marks_responsive_worker_healthy() -> None:
 
         registry = WorkerRegistry()
         worker = await registry.create(
-            WorkerCreate(name="worker-1", base_url="http://worker:8101")
+            WorkerCreate(
+                name="worker-1",
+                base_url="http://worker:8101",
+                metadata={"model": "test-model"},
+            )
         )
 
         async with httpx.AsyncClient(
@@ -61,11 +65,13 @@ def test_health_check_marks_responsive_worker_healthy() -> None:
 
         updated = await registry.get(worker.id)
         assert updated.health_status is HealthStatus.HEALTHY
-        assert select_first_healthy(await registry.list()).id == worker.id
+        chosen = await registry.assign("test-model")
+        assert chosen.id == worker.id
+        await registry.release(chosen.id)
 
         await registry.update(worker.id, WorkerUpdate(enabled=False))
         with pytest.raises(NoAvailableWorkerError):
-            select_first_healthy(await registry.list())
+            await registry.assign("test-model")
 
         reenabled = await registry.update(
             worker.id,
@@ -83,7 +89,11 @@ def test_health_check_marks_unreachable_worker_unhealthy() -> None:
 
         registry = WorkerRegistry()
         worker = await registry.create(
-            WorkerCreate(name="worker-1", base_url="http://worker:8101")
+            WorkerCreate(
+                name="worker-1",
+                base_url="http://worker:8101",
+                metadata={"model": "test-model"},
+            )
         )
 
         async with httpx.AsyncClient(
@@ -100,7 +110,7 @@ def test_health_check_marks_unreachable_worker_unhealthy() -> None:
         updated = await registry.get(worker.id)
         assert updated.health_status is HealthStatus.UNHEALTHY
         with pytest.raises(NoAvailableWorkerError):
-            select_first_healthy(await registry.list())
+            await registry.assign("test-model")
 
     asyncio.run(scenario())
 

@@ -107,7 +107,7 @@ async def wait_gateway(client, gateway, process, timeout):
             await asyncio.sleep(.25)
 
 
-async def register_worker(client, gateway, worker):
+async def register_worker(client, gateway, worker, model):
     response = await client.get(gateway + "/v1/workers")
     response.raise_for_status()
     workers = response.json()
@@ -119,13 +119,26 @@ async def register_worker(client, gateway, worker):
                          + ". Use an isolated gateway port with --gateway http://127.0.0.1:8001.")
     if matching is None:
         response = await client.post(gateway + "/v1/workers", json={
-            "name": "smoke-worker", "base_url": worker})
+            "name": "smoke-worker",
+            "base_url": worker,
+            "metadata": {"model": model},
+        })
         response.raise_for_status()
         matching = response.json()
-    elif not matching["enabled"]:
-        response = await client.patch(gateway + "/v1/workers/" + matching["id"], json={"enabled": True})
-        response.raise_for_status()
-        matching = response.json()
+    else:
+        changes = {}
+        if not matching["enabled"]:
+            changes["enabled"] = True
+        if (matching.get("metadata") or {}).get("model") != model:
+            metadata = dict(matching.get("metadata") or {})
+            metadata["model"] = model
+            changes["metadata"] = metadata
+        if changes:
+            response = await client.patch(
+                gateway + "/v1/workers/" + matching["id"], json=changes
+            )
+            response.raise_for_status()
+            matching = response.json()
     return matching["id"]
 
 
@@ -191,7 +204,7 @@ async def smoke(args):
                     await wait_gateway(client, args.gateway, process, args.setup_timeout)
                 except TimeoutError as exc:
                     raise SetupError(f"Gateway startup timed out. See {log_path}") from exc
-            worker_id = await register_worker(client, args.gateway, args.worker)
+            worker_id = await register_worker(client, args.gateway, args.worker, model)
             print("Waiting for worker health polling ...", flush=True)
             try:
                 await wait_worker(client, args.gateway, worker_id, args.setup_timeout)

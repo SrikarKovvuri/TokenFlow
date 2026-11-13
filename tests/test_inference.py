@@ -1,23 +1,19 @@
+import asyncio
 from collections.abc import AsyncIterator, Callable
 from datetime import UTC, datetime
 from uuid import uuid4
 
 import httpx
+import anyio
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from tokenflow.main import create_app
+from tokenflow.scheduler.proxy import forward_chat_completion
+from starlette.requests import ClientDisconnect
 from tokenflow.worker_manager.models import HealthStatus, Worker
-
-
-class StubRegistry:
-    def __init__(self, worker: Worker | None) -> None:
-        self._worker = worker
-
-    async def list(self) -> list[Worker]:
-        if self._worker is None:
-            return []
-        return [self._worker]
+from tokenflow.worker_manager.registry import WorkerRegistry
 
 
 class TrackingStream(httpx.AsyncByteStream):
@@ -37,12 +33,14 @@ def make_app(
     handler: Callable[[httpx.Request], object],
     worker: Worker | None,
 ) -> FastAPI:
-    app = create_app(
+    registry = WorkerRegistry()
+    if worker is not None:
+        registry._workers[worker.id] = worker
+    return create_app(
+        registry=registry,
         worker_transport=httpx.MockTransport(handler),
         enable_health_monitor=False,
     )
-    app.state.worker_registry = StubRegistry(worker)
-    return app
 
 
 def healthy_worker() -> Worker:
@@ -116,6 +114,7 @@ def test_streaming_request_is_relayed_and_closed() -> None:
     assert response.headers["content-type"].startswith("text/event-stream")
     assert response.content.endswith(b"data: [DONE]\n\n")
     assert stream.closed is True
+    assert asyncio.run(app.state.worker_registry.list())[0].active_requests == 0
 
 
 def test_no_available_worker_returns_service_unavailable() -> None:
@@ -127,7 +126,10 @@ def test_no_available_worker_returns_service_unavailable() -> None:
     app = make_app(unexpected_handler, None)
 
     with TestClient(app) as client:
-        response = client.post("/v1/chat/completions", json={})
+        response = client.post(
+            "/v1/chat/completions",
+            json={"model": "test-model"},
+        )
 
     assert response.status_code == 503
 
@@ -142,7 +144,10 @@ def test_worker_http_error_is_passed_through() -> None:
     app = make_app(handler, healthy_worker())
 
     with TestClient(app) as client:
-        response = client.post("/v1/chat/completions", json={})
+        response = client.post(
+            "/v1/chat/completions",
+            json={"model": "test-model"},
+        )
 
     assert response.status_code == 400
     assert response.json()["error"]["message"] == "Unknown model"
@@ -155,9 +160,13 @@ def test_worker_connection_failure_returns_bad_gateway() -> None:
     app = make_app(handler, healthy_worker())
 
     with TestClient(app) as client:
-        response = client.post("/v1/chat/completions", json={})
+        response = client.post(
+            "/v1/chat/completions",
+            json={"model": "test-model"},
+        )
 
     assert response.status_code == 502
+    assert asyncio.run(app.state.worker_registry.list())[0].active_requests == 0
 
 
 def test_worker_timeout_returns_gateway_timeout() -> None:
@@ -167,6 +176,79 @@ def test_worker_timeout_returns_gateway_timeout() -> None:
     app = make_app(handler, healthy_worker())
 
     with TestClient(app) as client:
-        response = client.post("/v1/chat/completions", json={})
+        response = client.post(
+            "/v1/chat/completions",
+            json={"model": "test-model"},
+        )
 
     assert response.status_code == 504
+
+
+@pytest.mark.parametrize("failure", ["headers", "body", "upstream", "close", "cancel"])
+def test_stream_cleanup_releases_worker_on_failure(failure: str) -> None:
+    """Drive the ASGI response: buffered TestClient calls miss send failures."""
+    async def scenario() -> None:
+        registry = WorkerRegistry()
+        worker = healthy_worker()
+        registry._workers[worker.id] = worker
+        releases = 0
+
+        class Stream(httpx.AsyncByteStream):
+            closed = False
+
+            async def __aiter__(self):
+                yield b"data: hello\n\n"
+                if failure in ("upstream", "close"):
+                    raise httpx.ReadError("upstream interrupted")
+                yield b"data: [DONE]\n\n"
+
+            async def aclose(self):
+                # Real network cleanup may suspend under a cancellation scope.
+                await anyio.sleep(0)
+                self.closed = True
+                if failure == "close":
+                    raise OSError("upstream close failed")
+
+        stream = Stream()
+
+        async def release():
+            nonlocal releases
+            releases += 1
+            await registry.release(worker.id)
+
+        async def receive():
+            await anyio.sleep_forever()
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(
+            lambda request: httpx.Response(200, stream=stream)
+        )) as client:
+            response = await forward_chat_completion(
+                worker=await registry.assign("test-model"),
+                payload={"model": "test-model", "stream": True},
+                request_id="cleanup-test", client=client, release=release,
+            )
+            assert (await registry.get(worker.id)).active_requests == 1
+            with anyio.CancelScope() as scope:
+                async def send(message):
+                    assert (await registry.get(worker.id)).active_requests == 1
+                    if failure == "headers" and message["type"] == "http.response.start":
+                        raise OSError("client disconnected before body")
+                    if message["type"] == "http.response.body":
+                        if failure == "body":
+                            raise OSError("client disconnected during body")
+                        if failure == "cancel":
+                            scope.cancel()
+                            await anyio.sleep(0)
+
+                if failure == "cancel":
+                    await response({"type": "http", "asgi": {"spec_version": "2.4"}}, receive, send)
+                else:
+                    expected = (ClientDisconnect if failure in ("headers", "body")
+                                else OSError if failure == "close" else httpx.ReadError)
+                    with pytest.raises(expected):
+                        await response({"type": "http", "asgi": {"spec_version": "2.4"}}, receive, send)
+            assert stream.closed
+            assert releases == 1
+            assert (await registry.get(worker.id)).active_requests == 0
+
+    asyncio.run(scenario())

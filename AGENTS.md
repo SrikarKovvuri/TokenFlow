@@ -28,7 +28,7 @@ Phase 2 adds:
 
 - Periodic HTTP health checks against registered workers.
 - `unknown`, `healthy`, and `unhealthy` worker health states.
-- Selection of the first enabled, healthy worker.
+- Selection of the least-busy enabled, healthy worker serving the requested model.
 - OpenAI-compatible chat-completion forwarding.
 - Streaming response relay and upstream failure handling.
 
@@ -37,7 +37,7 @@ Phase 2 explicitly excludes:
 - Hard-coded Columbia or vLLM worker addresses.
 - Slurm job submission and GPU provisioning.
 - Starting or stopping vLLM processes.
-- Round-robin, load-aware scheduling, and automatic retries.
+- Round-robin, automatic retries, and routing metrics beyond active requests.
 - Metrics, databases, distributed locks, Ray, and Kubernetes.
 
 ## Worker Definition
@@ -103,12 +103,13 @@ Use asynchronous APIs where network I/O will eventually occur.
   implement it.
 - `worker_manager`: Worker models, in-memory registry, health polling, and the
   worker HTTP API.
-- `scheduler`: Healthy-worker selection and chat-completion proxying. The
-  current policy selects the first enabled, healthy worker.
+- `scheduler`: Model-pool selection and chat-completion proxying. The current
+  policy chooses the enabled, healthy worker for the requested model with the
+  fewest in-flight requests.
 - `main.py`: Creates the application, exposes gateway liveness, and connects
   the components.
 
-Do not add Slurm calls to the provisioner or extra scheduling policies until
+Do not add Slurm calls to the provisioner or further scheduling policies until
 those phases are requested.
 
 ## Phase 2 Completion Criteria

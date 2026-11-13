@@ -41,10 +41,17 @@ def test_existing_worker_is_reused_without_duplicate_registration():
     methods = []
     async def handler(request):
         methods.append(request.method)
-        return httpx.Response(200, json=[{"id": "worker-id", "base_url": "http://worker/", "enabled": True}])
+        return httpx.Response(200, json=[{
+            "id": "worker-id",
+            "base_url": "http://worker/",
+            "enabled": True,
+            "metadata": {"model": "model"},
+        }])
     async def scenario():
         async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-            return await smoke.register_worker(client, "http://gateway", "http://worker")
+            return await smoke.register_worker(
+                client, "http://gateway", "http://worker", "model"
+            )
     assert asyncio.run(scenario()) == "worker-id"
     assert methods == ["GET"]
 
@@ -56,7 +63,9 @@ def test_competing_worker_prevents_misleading_benchmark():
         return httpx.Response(200, json=[{"id": "other", "base_url": "http://other/", "enabled": True, "name": "other"}])
     async def scenario():
         async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-            await smoke.register_worker(client, "http://gateway", "http://worker")
+            await smoke.register_worker(
+                client, "http://gateway", "http://worker", "model"
+            )
     with pytest.raises(smoke.SetupError, match="Other enabled workers"):
         asyncio.run(scenario())
 
@@ -137,6 +146,50 @@ def test_failed_measurements_return_nonzero(tmp_path, capsys):
              "first_content_p50_seconds": None, "successful_requests_per_second": 1}]
     assert smoke.show_results(rows, tmp_path) == 1
     assert "1/2 measured requests passed" in capsys.readouterr().out
+
+
+def test_telemetry_baseline_registers_discovered_model(tmp_path, monkeypatch):
+    load()  # Make the experiment modules available, as in the script entry point.
+    spec = importlib.util.spec_from_file_location(
+        "telemetry_baseline_command", ROOT / "experiments" / "telemetry_baseline.py"
+    )
+    baseline = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(baseline)
+    registrations = []
+
+    def handler(request):
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "discovered-model"}]})
+        if request.url.path == "/healthz":
+            return httpx.Response(200, json={"status": "ok", "service": "TokenFlow"})
+        if request.url.path == "/v1/workers":
+            if request.method == "GET":
+                return httpx.Response(200, json=[])
+            registrations.append(json.loads(request.content))
+            return httpx.Response(201, json={"id": "worker-id"})
+        return httpx.Response(200, json={})
+
+    client_class = httpx.AsyncClient
+    monkeypatch.setattr(baseline.httpx, "AsyncClient", lambda **kwargs:
+        client_class(transport=httpx.MockTransport(handler), **kwargs))
+
+    async def preflight(*args):
+        return []
+
+    class SetupComplete(Exception):
+        pass
+
+    async def wait_worker(client, gateway, worker_id, timeout):
+        assert worker_id == "worker-id"
+        raise SetupComplete  # Stop before launching the long measured workload.
+
+    monkeypatch.setattr(baseline, "preflight", preflight)
+    monkeypatch.setattr(baseline, "wait_worker", wait_worker)
+    args = argparse.Namespace(output=str(tmp_path / "baseline"),
+        worker="http://worker", gateway="http://gateway", model=None)
+    with pytest.raises(SetupComplete):
+        asyncio.run(baseline.run(args))
+    assert registrations[0]["metadata"] == {"model": "discovered-model"}
 
 
 def test_full_command_starts_gateway_and_benchmarks_fake_worker(tmp_path, monkeypatch, capsys):

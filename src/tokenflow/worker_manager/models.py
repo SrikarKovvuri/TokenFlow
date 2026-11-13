@@ -55,6 +55,7 @@ class WorkerUpdate(BaseModel):
 class Worker(WorkerCreate):
     id: UUID
     health_status: HealthStatus = HealthStatus.UNKNOWN
+    active_requests: int = 0
     registered_at: datetime
     updated_at: datetime
 
