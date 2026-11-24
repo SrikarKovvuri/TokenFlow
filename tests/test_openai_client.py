@@ -2,8 +2,12 @@
 
 import asyncio
 import json
+import os
 import socket
+import ssl
 from contextlib import asynccontextmanager
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import httpx
 import pytest
@@ -18,9 +22,9 @@ openai = pytest.importorskip("openai", reason="Install tokenflow[dev] for the SD
 
 
 @asynccontextmanager
-async def loopback_server(app):
+async def loopback_server(app, port=0):
     with socket.socket() as listener:
-        listener.bind(("127.0.0.1", 0))
+        listener.bind(("127.0.0.1", port))
         port = listener.getsockname()[1]
         config = uvicorn.Config(app, log_config=None, access_log=False, ws="none")
         server = uvicorn.Server(config)
@@ -36,6 +40,60 @@ async def loopback_server(app):
         finally:
             server.should_exit = True
             await asyncio.wait_for(task, timeout=5)
+
+
+@asynccontextmanager
+async def student_endpoint(caddy, tmp_path, gateway_url):
+    if caddy is None:
+        yield gateway_url, True
+        return
+
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        port = listener.getsockname()[1]
+    url = f"https://127.0.0.1:{port}"
+    site = Path(__file__).resolve().parents[1] / "deploy/Caddyfile"
+    config = tmp_path / "Caddyfile"
+    # Import the distributed site verbatim. The test CA is private to this directory.
+    config.write_text(
+        "{\n    admin off\n    persist_config off\n    default_bind 127.0.0.1\n"
+        "    local_certs\n    skip_install_trust\n    auto_https disable_redirects\n"
+        "    storage file_system storage\n}\n"
+        f'import "{site.as_posix()}"\n', encoding="utf-8",
+    )
+    env = {**os.environ, "TOKENFLOW_HOSTNAME": url}
+    for name in ("APPDATA", "LOCALAPPDATA", "XDG_DATA_HOME", "XDG_CONFIG_HOME"):
+        env[name] = str(tmp_path)
+    log = tmp_path / "caddy.log"
+    with log.open("wb") as output:
+        process = await asyncio.create_subprocess_exec(
+            caddy, "run", "--config", str(config), "--adapter", "caddyfile", cwd=tmp_path,
+            env=env, stdout=output, stderr=output,
+        )
+        try:
+            root_cert = tmp_path / "storage/pki/authorities/local/root.crt"
+            async with asyncio.timeout(15):
+                while True:
+                    if process.returncode is not None:
+                        pytest.fail(f"Caddy stopped during startup:\n{log.read_text(errors='replace')}")
+                    if root_cert.is_file():
+                        trust = ssl.create_default_context(cafile=str(root_cert))
+                        async with httpx.AsyncClient(verify=trust, trust_env=False) as client:
+                            try:
+                                if (await client.get(url + "/healthz")).is_success:
+                                    break
+                            except httpx.ConnectError:
+                                pass
+                    await asyncio.sleep(0.05)
+            yield url, trust
+        finally:
+            if process.returncode is None:
+                process.terminate()
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=5)
+                except TimeoutError:
+                    process.kill()
+                    await process.wait()
 
 
 def simulated_worker(first_chunk_received):
@@ -69,8 +127,14 @@ def simulated_worker(first_chunk_received):
     return worker
 
 
-def test_openai_models_chat_and_incremental_stream():
-    async def scenario():
+@pytest.mark.parametrize("through_proxy", [
+    False,
+    pytest.param(True, marks=pytest.mark.skipif(
+        not os.environ.get("TOKENFLOW_TEST_CADDY"), reason="Set TOKENFLOW_TEST_CADDY to a Caddy binary"
+    )),
+], ids=["gateway", "caddy-https"])
+def test_openai_models_chat_and_incremental_stream(through_proxy):
+    async def scenario(tmp_path):
         received = asyncio.Event()
         admin_key = "local-operator-test-only"
         client_key = "local-inference-test-only"
@@ -80,10 +144,12 @@ def test_openai_models_chat_and_incremental_stream():
         ))
         async with (
             loopback_server(simulated_worker(received)) as worker_url,
-            loopback_server(gateway) as gateway_url,
+            loopback_server(gateway, port=8000 if through_proxy else 0) as gateway_url,
+            student_endpoint(os.environ["TOKENFLOW_TEST_CADDY"] if through_proxy else None,
+                             tmp_path, gateway_url) as (public_url, trust),
             httpx.AsyncClient(trust_env=False) as admin,
-            openai.AsyncOpenAI(base_url=f"{gateway_url}/v1", api_key=client_key, max_retries=0,
-                               timeout=5, http_client=httpx.AsyncClient(trust_env=False)) as sdk,
+            openai.AsyncOpenAI(base_url=f"{public_url}/v1", api_key=client_key, max_retries=0,
+                               timeout=5, http_client=httpx.AsyncClient(verify=trust, trust_env=False)) as sdk,
         ):
             registration = await admin.post(
                 f"{gateway_url}/v1/workers", headers={"Authorization": f"Bearer {admin_key}"},
@@ -108,4 +174,5 @@ def test_openai_models_chat_and_incremental_stream():
             assert remainder[0].choices[0].delta.content == "world"
             assert remainder[0].choices[0].finish_reason == "stop"
 
-    asyncio.run(scenario())
+    with TemporaryDirectory(prefix="tokenflow-sdk-") as scratch:
+        asyncio.run(scenario(Path(scratch)))

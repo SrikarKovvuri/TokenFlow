@@ -118,6 +118,13 @@ worker is healthy, run the streaming student example in the README against
 longer request and check that the worker's `active_requests` returns to zero.
 [Caddy streaming behavior](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#streaming)
 
+To check the proxy before deployment, install the development dependencies
+and set `TOKENFLOW_TEST_CADDY` to the absolute path of a Caddy 2 executable.
+With loopback port 8000 free, run
+`python -m pytest tests/test_openai_client.py -q`. The HTTPS case imports the
+shipped site, uses a temporary local CA, and lets the mock worker send its
+second chunk only after the OpenAI client receives the first.
+
 ## Operate and verify
 
 Use a private Bash terminal with `BASE_URL` set to the gateway origin. Enter
