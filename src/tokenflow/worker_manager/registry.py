@@ -79,12 +79,15 @@ class WorkerRegistry:
             demand = max(demand, history.pop()[1])
         history.append((second, demand))
 
-    async def create(self, worker_data: WorkerCreate) -> Worker:
+    async def create(self, worker_data: WorkerCreate, *, worker_id: UUID | None = None) -> Worker:
         self._ensure_url_available(str(worker_data.base_url))
+        worker_id = worker_id or uuid4()
+        if worker_id in self._workers:
+            raise ValueError(f"Worker ID '{worker_id}' is already registered")
         now = datetime.now(UTC)
         worker = Worker(
             **worker_data.model_dump(),
-            id=uuid4(),
+            id=worker_id,
             registered_at=now,
             updated_at=now,
         )
@@ -187,7 +190,10 @@ class WorkerRegistry:
 
     async def delete(self, worker_id: UUID) -> None:
         self._get(worker_id)
-        del self._workers[worker_id]
+        self.discard(worker_id)
+
+    def discard(self, worker_id: UUID) -> None:
+        self._workers.pop(worker_id, None)
         self._inflight.pop(worker_id, None)
 
     def _with_load(self, worker: Worker) -> Worker:

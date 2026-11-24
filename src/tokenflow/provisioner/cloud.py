@@ -118,8 +118,10 @@ class CloudProvisioner:
         if not re.fullmatch(r"[0-9a-f]{32}", key):
             return None
         state = instance["State"]["Name"]
-        if state in {"terminated", "shutting-down"}:
+        if state == "terminated":
             return Resource(key=key, external_id=instance["InstanceId"], phase="terminal")
+        if state == "shutting-down":
+            return Resource(key=key, external_id=instance["InstanceId"], phase="terminating")
         if state == "running" and instance.get("PrivateIpAddress"):
             ip = IPv4Address(instance["PrivateIpAddress"])
             return Resource(key=key, external_id=instance["InstanceId"], phase="running",
@@ -179,7 +181,7 @@ class CloudProvisioner:
     def _terminate(self, pool: PoolSpec, resource: Resource) -> None:
         opts = CloudOptions.model_validate(pool.options)
         for owned in self._discover(pool, resource.key):
-            if owned.external_id == resource.external_id and owned.phase != "terminal":
+            if owned.external_id == resource.external_id and owned.phase not in {"terminating", "terminal"}:
                 self._client(opts.region).terminate_instances(InstanceIds=[owned.external_id])
                 return
 

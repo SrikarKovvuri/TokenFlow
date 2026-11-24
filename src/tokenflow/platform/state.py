@@ -96,10 +96,10 @@ class State:
             "SELECT * FROM allocations WHERE pool = ? ORDER BY created, key", (pool,)
         )]
 
-    def registrations(self) -> dict[str, UUID]:
-        return {row["key"]: UUID(row["worker_id"]) for row in self.db.execute(
-            "SELECT key, worker_id FROM allocations WHERE worker_id IS NOT NULL"
-        )}
+    def worker_ids(self) -> list[UUID]:
+        return [UUID(row["worker_id"]) for row in self.db.execute(
+            "SELECT worker_id FROM allocations WHERE worker_id IS NOT NULL"
+        )]
 
     def save(self, allocation: Allocation) -> None:
         with self.db:

@@ -45,7 +45,7 @@ class Resource:
 
     key: str
     external_id: str
-    phase: Literal["pending", "running", "terminal"]
+    phase: Literal["pending", "running", "terminating", "terminal"]
     base_url: str | None = None
 
 

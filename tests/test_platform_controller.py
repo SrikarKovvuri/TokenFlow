@@ -328,6 +328,47 @@ def test_temporary_inventory_loss_recovers_same_worker_and_confirmed_termination
     asyncio.run(scenario())
 
 
+def test_shutting_down_ec2_instance_holds_its_slot_through_restart(tmp_path, monkeypatch):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(module, "time", SimpleNamespace(time=lambda: now[0], monotonic=lambda: now[0]))
+        inventory = Inventory()
+        pool = spec(provider="cloud", max_replicas=1)
+        path = tmp_path / "state.db"
+        controller = create(path, inventory, pool)
+        await controller.reconcile()
+        _, key = inventory.launches[0]
+        inventory.boot(pool.name, key)
+        await controller.reconcile()
+        [worker] = await controller.registry.list()
+        external_id = inventory.items[pool.name][key].external_id
+
+        # EC2 can start shutting down while the operator still wants a warm worker.
+        inventory.items[pool.name][key] = Resource(key, external_id, "terminating")
+        await controller.reconcile()
+        assert not (await controller.registry.get(worker.id)).enabled
+        controller.close()
+
+        now[0] += 120
+        controller = create(path, inventory, pool)
+        await controller.reconcile()
+        [resource] = controller.status()[0]["resources"]
+        assert resource["external_id"] == external_id
+        assert resource["phase"] == "terminating"
+        assert not await controller.registry.list()
+        assert len(inventory.launches) == 1
+        assert not inventory.terminated
+
+        inventory.items[pool.name][key] = Resource(key, external_id, "terminal")
+        await controller.reconcile()
+        [replacement] = controller.status()[0]["resources"]
+        assert replacement["external_id"] != external_id
+        assert len(inventory.launches) == 2
+        controller.close()
+
+    asyncio.run(scenario())
+
+
 def test_stopped_cloud_instance_hits_readiness_deadline(tmp_path, monkeypatch):
     async def scenario():
         now = [1_000.0]

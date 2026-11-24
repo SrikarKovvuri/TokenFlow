@@ -31,7 +31,11 @@ class Controller:
         self.startup_timeout = startup_timeout_seconds
         self.state = State(state_path, pools)
         self._lock = asyncio.Lock()
-        self._workers = self.state.registrations()
+        # Adopt each durable identity only after its provider confirms a running
+        # endpoint. A reused registry may still hold observations from the old lifespan.
+        for worker_id in self.state.worker_ids():
+            registry.discard(worker_id)
+        self._workers: dict[str, UUID] = {}
         self._origins: dict[str, dict[tuple, str]] = {}
         self._models = {pool.model for pool in pools}
         self._missing_since: dict[tuple[str, str], float] = {}
@@ -81,7 +85,7 @@ class Controller:
                 "retry_at": policy["retry_at"] or None,
                 "resources": [
                     {"key": item.key, "external_id": item.external_id,
-                     "phase": "draining" if item.retiring else item.phase,
+                     "phase": "draining" if item.retiring and item.phase != "terminating" else item.phase,
                      "created": item.created, "last_seen": item.last_seen,
                      "worker_id": self._workers.get(item.key)}
                     for item in self.state.allocations(pool.name)
@@ -177,13 +181,15 @@ class Controller:
                 item = Allocation(key, pool.name, now, now)
             if item.external_id and item.external_id != resource.external_id:
                 raise ValueError(f"Allocation {key} changed provider identity")
+            if resource.phase == "terminating" and not item.retiring:
+                if key in saved:
+                    self.state.failure(pool.name, now, f"Allocation {resource.external_id} is terminating")
+                item.retiring = True
             item.external_id = resource.external_id
             item.last_seen = now
             item.phase = resource.phase
             item.base_url = str(resource.base_url) if resource.base_url else None
             await self._sync_worker(pool, item, now)
-            worker_id = self._workers.get(item.key)
-            item.worker_id = str(worker_id) if worker_id else None
             self.state.save(item)
 
         # Allow eventual consistency after launch/termination; withhold routing to
@@ -224,7 +230,7 @@ class Controller:
                 try:
                     worker = await self.registry.create(WorkerCreate(
                         name=f"{pool.name}-{item.key[:12]}", base_url=item.base_url, metadata=metadata,
-                    ))
+                    ), worker_id=UUID(item.worker_id) if item.worker_id else None)
                 except DuplicateWorkerError:
                     # A draining or manual record still owns this address. Other
                     # workers continue serving while this one awaits registration.
@@ -232,6 +238,7 @@ class Controller:
                         logger.warning("Pool %s cannot register an occupied address: %s", pool.name, item.base_url)
                 else:
                     self._workers[item.key] = worker.id
+                    item.worker_id = str(worker.id)
                     # On restart the health monitor has yet to poll this address.
                     item.unready_since = now
             else:
@@ -393,8 +400,11 @@ class Controller:
                 worker_id = self._workers.get(item.key)
                 if worker_id and (await self.registry.get(worker_id)).active_requests:
                     continue
-                if (item.external_id and (pool.name, item.key) not in self._missing_since
-                        and now >= item.terminate_after):
+                if (
+                    item.external_id and item.phase != "terminating"
+                    and (pool.name, item.key) not in self._missing_since
+                    and now >= item.terminate_after
+                ):
                     # A repeated terminate is harmless (e.g. controller restart
                     # after the provider accepted it but before SQLite committed).
                     item.terminate_after = now + self._inventory_grace()

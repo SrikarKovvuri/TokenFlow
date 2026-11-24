@@ -59,7 +59,8 @@ async def wait_workers(client, count):
             await asyncio.sleep(.01)
 
 
-def test_managed_cold_start_stream_restart_and_drain(tmp_path):
+@pytest.mark.parametrize("reuse_app", [False, True])
+def test_managed_cold_start_stream_restart_and_drain(tmp_path, reuse_app):
     config = json.loads((DEPLOY / "insomnia.example.json").read_text())
     config.update(state_path="state.sqlite3", interval_seconds=.025, idle_seconds=300)
     path = tmp_path / "deployment.json"
@@ -72,11 +73,13 @@ def test_managed_cold_start_stream_restart_and_drain(tmp_path):
     payload = {"model": "qwen-14b", "messages": [{"role": "user", "content": "Hi"}],
                "stream": True}
     seen = set()
+    allow_health = asyncio.Event()
 
     async def engine(req):
         assert req.headers["Authorization"] == "Bearer " + worker_token(SECRET, next(iter(provider.resources)))
         seen.add((req.url.port, req.url.path))
         if req.url.path == "/health":
+            await allow_health.wait()
             return httpx.Response(200)
         if req.url.path == "/v1/models":
             return httpx.Response(200, json={"data": [{"id": "qwen-14b"}]})
@@ -88,9 +91,14 @@ def test_managed_cold_start_stream_restart_and_drain(tmp_path):
         return httpx.Response(200, stream=Events(), headers={"Content-Type": "text/event-stream"})
 
     async def scenario():
+        app = None
+        worker_path = None
+        allow_health.set()
         for restart in (False, True):
-            app = create_app(settings, providers={"slurm": provider},
-                             worker_transport=httpx.MockTransport(engine))
+            provider.offline = restart
+            if app is None or not reuse_app:
+                app = create_app(settings, providers={"slurm": provider},
+                                 worker_transport=httpx.MockTransport(engine))
             async with app.router.lifespan_context(app), httpx.AsyncClient(
                 transport=httpx.ASGITransport(app=app), base_url="http://test",
             ) as client:
@@ -102,6 +110,19 @@ def test_managed_cold_start_stream_restart_and_drain(tmp_path):
                 if not restart:
                     cold = await client.post("/v1/chat/completions", headers=student, json=payload)
                     assert cold.status_code == 503
+                else:
+                    async with asyncio.timeout(5):
+                        while not (await client.get("/v1/pools", headers=admin)).json()[0]["last_error"]:
+                            await asyncio.sleep(.01)
+                        assert (await client.get("/v1/workers", headers=admin)).json() == []
+                        provider.offline = False
+                        while not (await client.get("/v1/workers", headers=admin)).json():
+                            await asyncio.sleep(.01)
+                    adopted = (await client.get(worker_path, headers=admin)).raise_for_status().json()
+                    assert adopted["health_status"] == "unknown"
+                    assert adopted["telemetry"] is None and adopted["active_requests"] == 0
+                    assert (await client.post("/v1/chat/completions", headers=student, json=payload)).status_code == 503
+                    allow_health.set()
                 workers = await wait_workers(client, 1)
                 target = "/v1/workers/" + workers[0]["id"]
                 assert (await client.delete(target, headers=admin)).status_code == 409
@@ -109,7 +130,14 @@ def test_managed_cold_start_stream_restart_and_drain(tmp_path):
                 reply = await client.post("/v1/chat/completions", headers=student, json=payload)
                 assert reply.status_code == 200 and reply.text.endswith("data: [DONE]\n\n")
                 assert provider.launches == 1
-                if restart:
+                if not restart:
+                    worker_path = target
+                    # Simulate the reservation a previous process lost on exit.
+                    await app.state.worker_registry.assign("qwen-14b")
+                    prior = (await client.get(worker_path, headers=admin)).json()
+                    assert prior["telemetry"] is not None and prior["active_requests"] == 1
+                    allow_health.clear()
+                else:
                     path = "/v1/pools/qwen-a6000/limits"
                     limits = {"minimum": 0, "maximum": 0}
                     assert (await client.put(path, headers=student, json=limits)).status_code == 401

@@ -106,9 +106,15 @@ def test_recover_through_next_token_and_repeat_termination(fleet):
                       {"InstanceIds": [INSTANCE_ID]})
     asyncio.run(provider.terminate(pool, recovered))
 
-    terminal = {"Reservations": [{"Instances": [described_instance(state="shutting-down")]}]}
-    stub.add_response("describe_instances", terminal, {"Filters": KEY_FILTERS})
+    shutting_down = {"Reservations": [{"Instances": [described_instance(state="shutting-down")]}]}
+    stub.add_response("describe_instances", shutting_down, {"Filters": KEY_FILTERS})
     asyncio.run(provider.terminate(pool, recovered))
+    stub.add_response("describe_instances", shutting_down, {"Filters": FILTERS})
+    assert asyncio.run(provider.discover(pool)) == [Resource(KEY, INSTANCE_ID, "terminating")]
+
+    terminated = {"Reservations": [{"Instances": [described_instance(state="terminated")]}]}
+    stub.add_response("describe_instances", terminated, {"Filters": FILTERS})
+    assert asyncio.run(provider.discover(pool)) == [Resource(KEY, INSTANCE_ID, "terminal")]
 
 
 def test_partial_inventory_error_does_not_terminate(fleet):
