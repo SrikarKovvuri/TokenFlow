@@ -1,0 +1,20 @@
+[Unit]
+Description=TokenFlow inference gateway and GPU controller
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=tokenflow
+Group=tokenflow
+StateDirectory=tokenflow
+WorkingDirectory=/var/lib/tokenflow
+UMask=0077
+EnvironmentFile=/etc/tokenflow/keys.env
+ExecStart=/opt/tokenflow/venv/bin/tokenflow serve --config /etc/tokenflow/platform.json
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=300
+
+[Install]
+WantedBy=multi-user.target

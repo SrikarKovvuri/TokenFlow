@@ -12,6 +12,12 @@ from tokenflow.worker_manager.registry import (
 router = APIRouter(prefix="/v1/workers", tags=["workers"])
 
 
+def require_manual_worker(worker_id: UUID, request: Request) -> None:
+    controller = request.app.state.controller
+    if controller and controller.owns_worker(worker_id):
+        raise HTTPException(409, "This worker is managed by its pool. Update the pool limits to drain it.")
+
+
 @router.post("", response_model=Worker, status_code=status.HTTP_201_CREATED)
 async def create_worker(
     worker_data: WorkerCreate,
@@ -52,6 +58,7 @@ async def update_worker(
     worker_data: WorkerUpdate,
     request: Request,
 ) -> Worker:
+    require_manual_worker(worker_id, request)
     try:
         return await request.app.state.worker_registry.update(
             worker_id,
@@ -75,6 +82,7 @@ async def update_worker(
     response_class=Response,
 )
 async def delete_worker(worker_id: UUID, request: Request) -> Response:
+    require_manual_worker(worker_id, request)
     try:
         await request.app.state.worker_registry.delete(worker_id)
     except WorkerNotFoundError as exc:

@@ -16,9 +16,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+aws = ["boto3[crt]>=1.42,<2"]
 dev = [
     "pytest>=8.3,<9.0",
 ]
+
+[project.scripts]
+tokenflow = "tokenflow.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

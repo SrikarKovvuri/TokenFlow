@@ -1,30 +1,56 @@
+from datetime import UTC, datetime
+
 from tokenflow.worker_manager.models import HealthStatus, Worker
 
 
 class NoAvailableWorkerError(LookupError):
     def __init__(self, model: str) -> None:
-        super().__init__(
-            f"No enabled, healthy worker is serving model '{model}'"
-        )
+        super().__init__(f"No enabled, healthy worker is serving model '{model}'")
         self.model = model
 
 
-def choose_worker(workers: list[tuple[Worker, int]], model: str) -> Worker:
-    """Pick the least-busy worker that is ready to serve this model.
+class WorkersAtCapacityError(Exception):
+    def __init__(self, model: str) -> None:
+        super().__init__(f"All available workers for model '{model}' are at capacity")
 
-    A worker is ready when it is enabled. It must also be healthy, and its
-    declared model must match the request. Different model names, such as a
-    0.5B deployment and a 14B deployment, stay in separate routing pools.
-    Equal loads keep the earlier worker in the given order.
+
+def choose_worker(
+    workers: list[tuple[Worker, int]], model: str, *, telemetry_age_seconds: float = 30
+) -> Worker:
+    """Estimate delay from outstanding work, parallel capacity and service time.
+
+    Gateway assignments and engine counts overlap. The larger count protects
+    against both a stale idle scrape and load sent directly to the worker.
+    Equal delay favors more KV headroom, then a less busy GPU. Unknown gauges
+    use a neutral midpoint. Identical candidates retain registration order.
     """
-    eligible = [
-        (worker, active_requests)
-        for worker, active_requests in workers
-        if worker.enabled
-        and worker.health_status is HealthStatus.HEALTHY
-        and worker.metadata.get("model") == model
-    ]
-    if not eligible:
-        raise NoAvailableWorkerError(model)
-    worker, _active_requests = min(eligible, key=lambda item: item[1])
-    return worker
+    now = datetime.now(UTC)
+    candidates = []
+    has_healthy = False
+    for worker, active in workers:
+        if (not worker.enabled or worker.health_status != HealthStatus.HEALTHY
+                or worker.metadata.get("model") != model):
+            continue
+        has_healthy = True
+        telemetry = worker.telemetry
+        if telemetry and (now - telemetry.observed_at).total_seconds() > telemetry_age_seconds:
+            telemetry = None
+        outstanding = active
+        kv = gpu = 0.5
+        if telemetry:
+            outstanding = max(active, (telemetry.running or 0) + (telemetry.waiting or 0))
+            if telemetry.kv_cache_usage is not None:
+                kv = telemetry.kv_cache_usage
+            if telemetry.gpu_utilization is not None:
+                gpu = telemetry.gpu_utilization
+        capacity = worker.metadata.get("capacity", 32)
+        if outstanding >= capacity:
+            continue
+        service_time = worker.metadata.get("service_time_seconds", 1.0)
+        estimated_wait = service_time * (outstanding / capacity)
+        candidates.append(((service_time + estimated_wait, kv, gpu), worker))
+    if candidates:
+        return min(candidates, key=lambda candidate: candidate[0])[1]
+    if has_healthy:
+        raise WorkersAtCapacityError(model)
+    raise NoAvailableWorkerError(model)

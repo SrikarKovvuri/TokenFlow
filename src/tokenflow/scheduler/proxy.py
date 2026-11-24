@@ -10,6 +10,10 @@ from starlette.types import Receive, Scope, Send
 from tokenflow.worker_manager.models import Worker
 
 
+class WorkerConnectionError(HTTPException):
+    """Connection setup failed before the inference request could be sent."""
+
+
 class _WorkerStreamingResponse(StreamingResponse):
     """Own upstream cleanup even if sending to the client fails."""
 
@@ -17,7 +21,7 @@ class _WorkerStreamingResponse(StreamingResponse):
         self, upstream: httpx.Response, finish: Callable[[], Awaitable[None]]
     ) -> None:
         super().__init__(
-            upstream.aiter_raw(),
+            upstream.aiter_bytes(),
             status_code=upstream.status_code,
             headers=_response_headers(upstream),
         )
@@ -69,6 +73,12 @@ async def forward_chat_completion(
             headers={"X-Request-ID": request_id},
         )
         upstream_response = await client.send(upstream_request, stream=True)
+    except (httpx.ConnectError, httpx.ConnectTimeout) as exc:
+        await finish()
+        code = 504 if isinstance(exc, httpx.ConnectTimeout) else 502
+        raise WorkerConnectionError(
+            status_code=code, detail="Could not connect to the inference worker"
+        ) from exc
     except httpx.TimeoutException as exc:
         await finish()
         raise HTTPException(
@@ -92,6 +102,10 @@ async def forward_chat_completion(
 
     try:
         content = await upstream_response.aread()
+    except httpx.TimeoutException as exc:
+        raise HTTPException(504, "The inference worker timed out") from exc
+    except httpx.RequestError as exc:
+        raise HTTPException(502, "The inference worker response was interrupted") from exc
     finally:
         await finish()
 
@@ -103,7 +117,7 @@ async def forward_chat_completion(
 
 
 def _response_headers(response: httpx.Response) -> dict[str, str]:
-    allowed_headers = ("content-type", "cache-control")
+    allowed_headers = ("content-type", "cache-control", "retry-after")
     return {
         header: response.headers[header]
         for header in allowed_headers
