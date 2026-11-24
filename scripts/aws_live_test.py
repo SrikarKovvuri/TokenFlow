@@ -8,6 +8,7 @@ from decimal import Decimal, ROUND_CEILING
 import json
 from ipaddress import IPv4Network
 from pathlib import Path
+import re
 import secrets
 import time
 
@@ -199,6 +200,9 @@ def verify_guard(cfn, sfn, iam, stack_name, namespace, account):
     state = sfn.describe_state_machine(stateMachineArn=machine)
     if state["status"] != "ACTIVE" or state["type"] != "STANDARD":
         raise ValueError("Cleanup guard must be an active Standard workflow")
+    definition = guard_definition()
+    if json.loads(state["definition"]) != definition:
+        raise ValueError("Deployed cleanup workflow differs from the checked-in guard definition")
     decision = iam.simulate_principal_policy(
         PolicySourceArn=state["roleArn"], ActionNames=["ec2:TerminateInstances"],
         ResourceArns=[f"arn:aws:ec2:{REGION}:{account}:instance/i-00000000000000000"],
@@ -211,22 +215,61 @@ def verify_guard(cfn, sfn, iam, stack_name, namespace, account):
     )["EvaluationResults"][0]
     if decision["EvalDecision"] != "allowed" or decision.get("MissingContextValues"):
         raise ValueError("Cleanup role is missing tagged-instance termination permission")
-    return machine
+    return machine, state["roleArn"]
 
 
-def arm_guard(sfn, machine, namespace):
+def guard_definition():
+    import yaml
+
+    class TemplateLoader(yaml.SafeLoader):
+        pass
+
+    # CloudFormation uses these scalar tags outside the state-machine definition.
+    # Preserve them as data when reading the trusted local template.
+    for tag in ("!Ref", "!Sub", "!GetAtt"):
+        TemplateLoader.add_constructor(tag, lambda loader, node: {node.tag: loader.construct_scalar(node)})
+    template = yaml.load(GUARD_TEMPLATE.read_text(), Loader=TemplateLoader)
+    return template["Resources"]["Guard"]["Properties"]["Definition"]
+
+
+def arm_guard(sfn, machine, role, namespace):
     deadline = datetime.now(UTC) + timedelta(minutes=30)
     execution = sfn.start_execution(stateMachineArn=machine, name=namespace, input=json.dumps({
+        # Independent invocations for one approved name must not share the
+        # same execution, even if they start within the same second.
+        "attempt": secrets.token_hex(16),
         "deadline": deadline.isoformat(timespec="seconds").replace("+00:00", "Z"),
         "verify_until": (deadline + timedelta(minutes=10)).isoformat(timespec="seconds").replace("+00:00", "Z"),
     }))["executionArn"]
+    try:
+        verify_guard_execution(sfn, execution, machine, role)
+    except Exception:
+        # StartExecution succeeded and RunInstances has not been called. This
+        # invocation owns the execution and can safely stop it on a failed check.
+        try:
+            if sfn.describe_execution(executionArn=execution)["status"] == "RUNNING":
+                sfn.stop_execution(executionArn=execution, cause="Pre-launch guard verification failed")
+        except Exception as stop_error:
+            print(f"Could not confirm pre-launch guard cleanup for {execution}: {stop_error}", flush=True)
+        raise
+    return execution, deadline
+
+
+def verify_guard_execution(sfn, execution, machine, role):
     for _ in range(60):
         if sfn.describe_execution(executionArn=execution)["status"] != "RUNNING":
             break
         events = sfn.get_execution_history(executionArn=execution, reverseOrder=True, maxResults=20)["events"]
         if any(e["type"] == "WaitStateEntered" and e["stateEnteredEventDetails"]["name"] == "WaitForDeadline"
                for e in events):
-            return execution, deadline
+            # Capture the definition and role for this specific execution. A
+            # change between inspecting the machine and starting it must not
+            # allow an instance to launch under an unverified deadline.
+            snapshot = sfn.describe_state_machine_for_execution(executionArn=execution)
+            if (snapshot["stateMachineArn"] != machine or snapshot["roleArn"] != role
+                    or json.loads(snapshot["definition"]) != guard_definition()):
+                raise ValueError("Active cleanup execution differs from the verified workflow or role")
+            return
         time.sleep(2)
     raise RuntimeError(f"Cleanup guard did not reach its deadline wait: {execution}")
 
@@ -314,7 +357,9 @@ async def run(args):
         raise ValueError("--local-checkpoint must be an absolute path on the AMI")
     if args.image and not args.local_checkpoint:
         raise ValueError("Overriding the image requires pre-staged assets")
-    namespace = "tf-test-" + secrets.token_hex(8)
+    namespace = args.namespace if args.namespace is not None else "tf-test-" + secrets.token_hex(8)
+    if not re.fullmatch(r"tf-test-[0-9a-f]{16}", namespace):
+        raise ValueError("Expected --namespace tf-test- followed by 16 lowercase hexadecimal characters")
     out = (args.output / namespace).resolve()
     out.mkdir(parents=True)
     print(f"Run directory {out}; cleanup execution {namespace}", flush=True)
@@ -330,8 +375,8 @@ async def run(args):
     )
     cfn, sfn, ec2 = (session.client(service) for service in ("cloudformation", "stepfunctions", "ec2"))
     provider = CloudProvisioner(namespace, session=session)
-    machine = verify_guard(cfn, sfn, session.client("iam"), args.guard_stack, namespace, report["account"])
-    guard, deadline = arm_guard(sfn, machine, namespace)
+    machine, role = verify_guard(cfn, sfn, session.client("iam"), args.guard_stack, namespace, report["account"])
+    guard, deadline = arm_guard(sfn, machine, role, namespace)
     report.update(namespace=namespace, guard=guard, deadline=deadline.isoformat())
     (out / "run.json").write_text(json.dumps(report, indent=2))
     if datetime.now(UTC) >= deadline - timedelta(minutes=22):
@@ -363,6 +408,7 @@ async def run(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--namespace", help="fresh namespace preapproved in a live-test policy (default: random)")
     parser.add_argument("--expected-account", help="12-digit credit-owning account ID, required for --execute")
     parser.add_argument("--ami", required=True, help="GPU-ready Linux AMI with Docker and NVIDIA container runtime")
     parser.add_argument("--subnet", required=True)

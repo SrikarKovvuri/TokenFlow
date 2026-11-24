@@ -85,7 +85,7 @@ def test_missing_guard_and_replacement_launch_fail_closed():
     sfn = MagicMock()
     sfn.describe_execution.return_value = {"status": "FAILED"}
     with pytest.raises(RuntimeError, match="did not reach"):
-        live.arm_guard(sfn, "machine", "run")
+        live.arm_guard(sfn, "machine", "role", "run")
     with pytest.raises(RuntimeError, match="one EC2 launch"):
         asyncio.run(live.AdoptOnly("run").launch(None, "new-key"))
 
@@ -95,7 +95,8 @@ def test_guard_verifies_role_can_terminate_before_gpu_launch():
     cfn.get_template.return_value = {"TemplateBody": live.GUARD_TEMPLATE.read_text()}
     cfn.describe_stacks.return_value = {"Stacks": [{"StackStatus": "CREATE_COMPLETE",
                                                     "Outputs": [{"OutputKey": "Machine", "OutputValue": "machine"}]}]}
-    sfn.describe_state_machine.return_value = {"type": "STANDARD", "status": "ACTIVE", "roleArn": "role"}
+    sfn.describe_state_machine.return_value = {"type": "STANDARD", "status": "ACTIVE", "roleArn": "role",
+                                               "definition": json.dumps(live.guard_definition())}
     iam.simulate_principal_policy.return_value = {"EvaluationResults": [{"EvalDecision": "implicitDeny"}]}
     with pytest.raises(ValueError, match="permission"):
         live.verify_guard(cfn, sfn, iam, "stack", "tf-test-0123456789abcdef", "123456789012")
@@ -135,7 +136,10 @@ def aws_run(monkeypatch, tmp_path):
     cfn.get_template.return_value = {"TemplateBody": live.GUARD_TEMPLATE.read_text()}
     cfn.describe_stacks.return_value = {"Stacks": [{"StackStatus": "CREATE_COMPLETE",
         "Outputs": [{"OutputKey": "Machine", "OutputValue": "machine"}]}]}
-    sfn.describe_state_machine.return_value = {"type": "STANDARD", "status": "ACTIVE", "roleArn": "role"}
+    sfn.describe_state_machine.return_value = {"type": "STANDARD", "status": "ACTIVE", "roleArn": "role",
+                                               "definition": json.dumps(live.guard_definition())}
+    sfn.describe_state_machine_for_execution.return_value = {
+        "stateMachineArn": "machine", "roleArn": "role", "definition": json.dumps(live.guard_definition())}
     services["iam"].simulate_principal_policy.return_value = {"EvaluationResults": [{"EvalDecision": "allowed"}]}
     sfn.start_execution.return_value = {"executionArn": "execution"}
     sfn.describe_execution.return_value = {"status": "RUNNING"}
@@ -175,8 +179,54 @@ def aws_run(monkeypatch, tmp_path):
     ec2.describe_network_interfaces.return_value = {"NetworkInterfaces": []}
     args = SimpleNamespace(ami="ami-abcdef", subnet="subnet-abc", worker_group="sg-abc",
         execute=True, confirm_private_route=True, local_checkpoint="/models/qwen", image=None,
-        output=tmp_path, guard_stack="test-guard")
+        output=tmp_path, guard_stack="test-guard", namespace="tf-test-0123456789abcdef")
     return args, vm, ec2, sfn
+
+
+@pytest.mark.parametrize("stage,field", [
+    ("machine", "definition"), ("execution", "definition"),
+    ("execution", "roleArn"), ("execution", "stateMachineArn"),
+])
+def test_changed_cleanup_workflow_blocks_gpu_launch(aws_run, stage, field):
+    args, _, ec2, sfn = aws_run
+    target = sfn.describe_state_machine if stage == "machine" else sfn.describe_state_machine_for_execution
+    if field == "definition":
+        # The execution would enter the expected wait and then finish without
+        # terminating the instance. The stored CloudFormation template still matches.
+        definition = json.loads(target.return_value[field])
+        definition["States"]["WaitForDeadline"]["Next"] = "Finished"
+        target.return_value[field] = json.dumps(definition)
+    else:
+        target.return_value[field] = "different-resource"
+    with pytest.raises(ValueError, match="differs"):
+        asyncio.run(live.run(args))
+    ec2.run_instances.assert_not_called()
+    if stage == "machine":
+        sfn.start_execution.assert_not_called()
+    else:
+        sfn.stop_execution.assert_called_once_with(executionArn="execution", cause="Pre-launch guard verification failed")
+
+
+def test_competing_invocations_cannot_share_an_armed_standard_execution(aws_run):
+    args, _, ec2, sfn = aws_run
+    attempts = []
+
+    def start_execution(stateMachineArn, name, input):
+        assert name == args.namespace
+        # Standard workflows join a running execution for identical name and
+        # input. A different input under the same name is rejected by AWS.
+        attempt = json.loads(input)["attempt"]
+        if attempts and attempt != attempts[0]:
+            raise RuntimeError("ExecutionAlreadyExists")
+        attempts.append(attempt)
+        return {"executionArn": "execution"}
+
+    sfn.start_execution.side_effect = start_execution
+    live.arm_guard(sfn, "machine", "role", args.namespace)
+    with pytest.raises(RuntimeError, match="ExecutionAlreadyExists"):
+        asyncio.run(live.run(args))
+    ec2.run_instances.assert_not_called()
+    sfn.stop_execution.assert_not_called()
 
 
 @pytest.mark.parametrize("incomplete_stream", [False, True])

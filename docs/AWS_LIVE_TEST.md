@@ -70,10 +70,11 @@ aws cloudformation deploy --region us-east-1 --stack-name tokenflow-gpu-test-gua
   --template-file deploy/aws-test-guard.yaml --capabilities CAPABILITY_IAM
 ```
 
-The execution name is a fresh random test namespace. Before requesting a GPU,
-the launcher checks the stack template, simulates the guard role's tagged
-termination permission, and verifies that the execution successfully queried
-EC2 and entered its deadline wait. At the deadline the workflow repeatedly
+The execution name is a fresh test namespace. Before requesting a GPU,
+the launcher compares the deployed state machine with the checked-in definition
+and simulates the guard role's tagged termination permission. After the guard
+queries EC2 and enters its deadline wait, the launcher verifies the definition
+and role AWS associates with that specific execution. At the deadline the workflow repeatedly
 discovers this test's tagged instances and requests termination. It checks for
 late inventory through ten minutes after the deadline and continues polling
 while tagged instances remain visible. This runs in AWS if the control host or
@@ -83,17 +84,19 @@ client disappears. IAM policy simulation cannot rule out every runtime denial.
 ## Run and inspect
 
 Set `ACCOUNT_ID` to the 12-digit account that owns the approved credit. The launcher checks it against STS before querying billing or EC2, then repeats its price, quota, network and credit checks on execution.
-This example uses the fixed public image and checkpoint.
+Set `RUN_NAMESPACE` to the fresh namespace approved for the operator's live-test policy. This example uses the fixed public image and checkpoint. [Render the local operator policy](AWS_OPERATOR.md#4-scope-the-single-gpu-integration-test)
 
 ```bash
 python scripts/aws_live_test.py --ami "$AMI" --subnet "$SUBNET" \
   --worker-group "$WORKER_SG" --source-group "$CONTROL_SG" \
-  --expected-account "$ACCOUNT_ID" --confirm-private-route --confirm-artifact-egress --execute
+  --expected-account "$ACCOUNT_ID" --namespace "$RUN_NAMESPACE" \
+  --confirm-private-route --confirm-artifact-egress --execute
 ```
 
 The caller needs read access to STS, AWS Billing credits, EC2 inventory and network configuration,
 Service Quotas, Price List, CloudFormation and IAM policy simulation, plus
-execution/history/stop access to the guard. It needs the regular launch/tag
+execution/history/stop access to the guard, including
+`states:DescribeStateMachineForExecution` on that execution. It needs the regular launch/tag
 and scoped termination permissions of the cloud provider. The control host
 does not pass a worker instance profile. The guard role can terminate only
 instances tagged for live tests.

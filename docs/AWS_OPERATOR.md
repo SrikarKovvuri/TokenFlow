@@ -50,4 +50,17 @@ Review and provision the replacement inline policy. Instance launches require th
 
 TokenFlow tags the **instance** during `RunInstances`. Its EBS volumes and network interface are authorized as resources of that launch. For cleanup and cost checks, obtain their IDs through the instance's block-device mappings and network interfaces. IAM matches the resource key's 32-character length. The provisioner validates its hexadecimal format during discovery.
 
-The worker policy assumes an AMI and model that can run without an instance profile. A profile for gated artifacts requires a separate grant on its specific role. Billing limits, total runtime, aggregate disks and total replica count need separate controls. The guarded live-test script also requires its own cleanup workflow permissions and per-run namespace. Use the dedicated guard role and approval process for that workflow. Keep the generated account-specific JSON outside source control.
+The worker policy assumes an AMI and model that can run without an instance profile. A profile for gated artifacts requires a separate grant on its specific role. Billing limits, total runtime, aggregate disks and total replica count need separate controls. Keep the generated account-specific JSON outside source control.
+
+## 4. Scope the single-GPU integration test
+
+For the guarded T4 test, render a policy for the exact namespace the launcher will use. Use the physical role name for `CleanupRole` shown under **Resources** in the approved CloudFormation stack. An administrator installs the stack separately.
+
+```powershell
+$run = 'tf-test-' + [guid]::NewGuid().ToString('N').Substring(0, 16)
+$guard = 'tokenflow-gpu-test-guard'
+$role = Read-Host "Physical IAM role name for CleanupRole"
+python scripts/aws_operator_policy.py live-test --account-id $account --region us-east-1 --namespace $run --ami $ami --subnet $subnet --security-group $group --guard-stack $guard --guard-role $role --output $policy
+```
+
+Use the `$run` value for `--namespace` on the control host. This policy permits private `g4dn.xlarge` launches with exactly that namespace, inspection of the named stack and guard role, and verification and stopping of the named execution. AWS authorizes starting an execution at the state machine level. Anyone with this grant can start the guard with other execution names, so grant it only to trusted test operators. Keep student inference access separate. The launcher limits the test to one instance and checks the cost estimate before launch. [Step Functions resource permissions](https://docs.aws.amazon.com/service-authorization/latest/reference/list_stepfunctions.html), [live test instructions](AWS_LIVE_TEST.md)

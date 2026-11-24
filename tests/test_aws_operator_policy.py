@@ -138,3 +138,40 @@ def test_resource_inputs_cannot_broaden_grants(flag, bad):
     result = render("workers", *WORKERS, flag, bad)
     assert result.returncode != 0
     assert not result.stdout
+
+
+RUN_NAME = "tf-test-1234567890abcdef"
+LIVE_TEST = [
+    "--namespace", RUN_NAME, "--ami", "ami-12345678", "--subnet", "subnet-12345678",
+    "--security-group", "sg-12345678", "--guard-role", "TestCleanupRole",
+]
+
+
+def test_live_test_policy_matches_launch_and_cleanup_for_one_approved_namespace():
+    policy = by_id(render("live-test", *LIVE_TEST, "--guard-stack", "TestGuard"))
+    ec2_launch = policy["LaunchNamedWorker"]["Condition"]["StringEquals"]
+    assert ec2_launch["aws:RequestTag/TokenFlowNamespace"] == RUN_NAME
+    assert ec2_launch["aws:RequestTag/TokenFlowPool"] == "live-test"
+    assert ec2_launch["ec2:InstanceType"] == "g4dn.xlarge"
+    assert policy["TerminateOwnedWorkers"]["Condition"]["StringEquals"]["ec2:ResourceTag/TokenFlowNamespace"] == RUN_NAME
+    assert policy["ReadCleanupStack"]["Resource"] == f"arn:aws:cloudformation:{REGION}:{ACCOUNT}:stack/TestGuard/*"
+    assert set(policy["ReadCleanupStack"]["Action"]) == {"cloudformation:GetTemplate", "cloudformation:DescribeStacks"}
+    assert policy["CheckCleanupRole"]["Resource"] == f"arn:aws:iam::{ACCOUNT}:role/TestCleanupRole"
+    assert policy["CheckCleanupRole"]["Action"] == "iam:SimulatePrincipalPolicy"
+    states = f"arn:aws:states:{REGION}:{ACCOUNT}"
+    assert policy["ArmCleanup"]["Resource"] == f"{states}:stateMachine:TestGuard"
+    assert set(policy["ArmCleanup"]["Action"]) == {"states:DescribeStateMachine", "states:StartExecution"}
+    assert policy["VerifyAndFinishThisRun"]["Resource"] == f"{states}:execution:TestGuard:{RUN_NAME}"
+    assert set(policy["VerifyAndFinishThisRun"]["Action"]) == {
+        "states:DescribeExecution", "states:DescribeStateMachineForExecution",
+        "states:GetExecutionHistory", "states:StopExecution",
+    }
+
+
+@pytest.mark.parametrize("flag,value", [
+    ("--namespace", "tokenflow-demo"), ("--guard-stack", "Test*"), ("--guard-role", "*"), ("--region", "us-west-2"),
+])
+def test_guard_policy_rejects_ambiguous_resources(flag, value):
+    result = render("live-test", *LIVE_TEST, flag, value)
+    assert result.returncode != 0
+    assert not result.stdout

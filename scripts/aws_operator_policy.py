@@ -99,29 +99,57 @@ def worker_statements(account, region, namespace, pool, ami, subnet, groups, ins
     ]
 
 
+def live_test_guard_statements(account, region, namespace, stack, role):
+    if region != "us-east-1":
+        raise ValueError("The guarded GPU test runs in us-east-1")
+    checked(namespace, r"tf-test-[0-9a-f]{16}", "live-test namespace")
+    checked(stack, r"[A-Za-z][A-Za-z0-9-]{0,79}", "cleanup stack and state machine name")
+    checked(role, r"[A-Za-z0-9_+=,.@-]{1,64}", "cleanup IAM role name")
+    states = f"arn:aws:states:{region}:{account}"
+    return [
+        allow("ReadCleanupStack", ["cloudformation:DescribeStacks", "cloudformation:GetTemplate"],
+              f"arn:aws:cloudformation:{region}:{account}:stack/{stack}/*"),
+        allow("CheckCleanupRole", "iam:SimulatePrincipalPolicy", f"arn:aws:iam::{account}:role/{role}"),
+        allow("ArmCleanup", ["states:DescribeStateMachine", "states:StartExecution"],
+              f"{states}:stateMachine:{stack}"),
+        allow("VerifyAndFinishThisRun", ["states:DescribeExecution", "states:DescribeStateMachineForExecution",
+                                         "states:GetExecutionHistory", "states:StopExecution"],
+              f"{states}:execution:{stack}:{namespace}"),
+    ]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     modes = parser.add_subparsers(dest="mode", required=True)
     bootstrap = modes.add_parser("bootstrap", help="inspect inventory, price, credit and G/VT quota")
     workers = modes.add_parser("workers", help="add launches and termination for one approved GPU pool")
-    for mode in (bootstrap, workers):
+    live_test = modes.add_parser("live-test", help="limit the guarded T4 test to one deployment namespace")
+    for mode in (bootstrap, workers, live_test):
         mode.add_argument("--account-id", required=True)
         mode.add_argument("--region", default="us-east-1")
         mode.add_argument("--allow-quota-request", action="store_true")
         mode.add_argument("--output", type=Path, help="write UTF-8 JSON to this local file (default: stdout)")
-    workers.add_argument("--namespace", required=True)
+    for mode in (workers, live_test):
+        mode.add_argument("--namespace", required=True)
+        mode.add_argument("--ami", required=True)
+        mode.add_argument("--subnet", required=True)
+        mode.add_argument("--security-group", action="append", required=True)
     workers.add_argument("--pool", required=True)
-    workers.add_argument("--ami", required=True)
-    workers.add_argument("--subnet", required=True)
-    workers.add_argument("--security-group", action="append", required=True)
     workers.add_argument("--instance-type", required=True)
+    live_test.set_defaults(pool="live-test", instance_type="g4dn.xlarge")
+    live_test.add_argument("--guard-stack", default="tokenflow-gpu-test-guard")
+    live_test.add_argument("--guard-role", required=True, help="physical IAM role name created by the cleanup stack")
     args = parser.parse_args()
     try:
         policy = bootstrap_policy(args.account_id, args.region, args.allow_quota_request)
-        if args.mode == "workers":
+        if args.mode in {"workers", "live-test"}:
             policy["Statement"].extend(worker_statements(
                 args.account_id, args.region, args.namespace, args.pool,
                 args.ami, args.subnet, args.security_group, args.instance_type,
+            ))
+        if args.mode == "live-test":
+            policy["Statement"].extend(live_test_guard_statements(
+                args.account_id, args.region, args.namespace, args.guard_stack, args.guard_role,
             ))
     except ValueError as exc:
         parser.error(str(exc))
