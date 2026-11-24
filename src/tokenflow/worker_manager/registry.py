@@ -1,5 +1,6 @@
 from collections import deque
 from collections.abc import Iterable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from time import monotonic
 from uuid import UUID, uuid4
@@ -8,6 +9,13 @@ from tokenflow.scheduler.selection import NoAvailableWorkerError, choose_worker
 from tokenflow.worker_manager.models import HealthStatus, Worker, WorkerCreate, WorkerTelemetry, WorkerUpdate
 
 DEMAND_HISTORY_SECONDS = 300
+
+
+@dataclass
+class TelemetryProbe:
+    worker: Worker
+    started_at: datetime
+    gateway_overlap: int
 
 
 class WorkerNotFoundError(LookupError):
@@ -31,6 +39,8 @@ class WorkerRegistry:
     def __init__(self, *, telemetry_age_seconds: float = 30) -> None:
         self._workers: dict[UUID, Worker] = {}
         self._inflight: dict[UUID, int] = {}
+        self._prior_endpoint: dict[UUID, int] = {}
+        self._probes: dict[UUID, TelemetryProbe] = {}
         self._telemetry_age_seconds = telemetry_age_seconds
         self._demand: dict[str, deque[tuple[int, int]]] = {}
         self._cold_arrivals: dict[str, float] = {}
@@ -58,13 +68,7 @@ class WorkerRegistry:
     def capacity_for_gateway(self, worker: Worker) -> int:
         """Slots available for both current and incoming gateway reservations."""
         sample = worker.fresh_telemetry(datetime.now(UTC), self._telemetry_age_seconds)
-        if sample is None:
-            return worker.capacity
-        # Work queued beyond this engine's limit is already pinned there. Adding
-        # replicas can absorb future arrivals, but cannot move that backlog.
-        occupied = min(worker.capacity, sample.requests)
-        external = max(0, occupied - worker.active_requests)
-        return worker.capacity - external
+        return worker.gateway_capacity(sample)
 
     def _record_arrival(self, model: str) -> None:
         history = self._demand.get(model)
@@ -115,13 +119,24 @@ class WorkerRegistry:
         self._inflight[worker.id] = self._inflight.get(worker.id, 0) + 1
         return self._with_load(worker)
 
-    async def release(self, worker_id: UUID) -> None:
+    async def release(self, worker_id: UUID, *, registered_at: datetime | None = None) -> None:
         """Drop one in-flight reservation, including after cancellation."""
+        worker = self._workers.get(worker_id)
+        if registered_at is not None and (worker is None or registered_at != worker.registered_at):
+            return  # A managed allocation can re-register with the same ID.
         current = self._inflight.get(worker_id, 0)
+        # The engine does not identify individual gateway requests in its gauges.
+        # A release during a scrape might finish one of the original leases.
+        probe = self._probes.get(worker_id)
+        if current and probe and probe.gateway_overlap:
+            probe.gateway_overlap -= 1
         if current <= 1:
             self._inflight.pop(worker_id, None)
+            self._prior_endpoint.pop(worker_id, None)
         else:
             self._inflight[worker_id] = current - 1
+            if worker_id in self._prior_endpoint:
+                self._prior_endpoint[worker_id] = min(self._prior_endpoint[worker_id], current - 1)
 
     async def update(
         self,
@@ -145,6 +160,7 @@ class WorkerRegistry:
         ):
             updated_data["health_status"] = HealthStatus.UNKNOWN
             updated_data["telemetry"] = None
+            self._reset_endpoint(worker_id)
         if "metadata" in changes and changes["metadata"] != worker.metadata:
             updated_data["telemetry"] = None
         updated_data["updated_at"] = datetime.now(UTC)
@@ -174,18 +190,44 @@ class WorkerRegistry:
         updated_data["health_status"] = health_status
         if health_status is not HealthStatus.HEALTHY:
             updated_data["telemetry"] = None
+            self._reset_endpoint(worker_id)
         updated_data["updated_at"] = datetime.now(UTC)
         updated_worker = Worker.model_validate(updated_data)
         self._workers[worker_id] = updated_worker
         return updated_worker
 
+    def _reset_endpoint(self, worker_id: UUID) -> None:
+        self._probes.pop(worker_id, None)
+        if self._inflight.get(worker_id):
+            self._prior_endpoint[worker_id] = self._inflight[worker_id]
+
+    def _possible_overlap(self, worker_id: UUID) -> int:
+        # Leases still draining from an earlier endpoint may never appear on
+        # this engine. Their count is an upper bound until completions arrive.
+        return self._inflight.get(worker_id, 0) - self._prior_endpoint.get(worker_id, 0)
+
+    def begin_telemetry_probe(self, worker_id: UUID) -> TelemetryProbe:
+        probe = TelemetryProbe(self._get(worker_id), datetime.now(UTC), self._possible_overlap(worker_id))
+        self._probes[worker_id] = probe
+        return probe
+
     async def set_telemetry(
-        self, worker_id: UUID, telemetry: WorkerTelemetry | None, *, expected_base_url: str
+        self, worker_id: UUID, telemetry: WorkerTelemetry | None, *, expected_base_url: str,
+        probe: TelemetryProbe | None = None,
     ) -> None:
         worker = self._workers.get(worker_id)
+        if probe is not None and self._probes.get(worker_id) is not probe:
+            return  # A newer probe or registration has superseded this one.
         if (worker is None or not worker.enabled or str(worker.base_url) != expected_base_url
-                or worker.health_status != HealthStatus.HEALTHY):
+                or worker.health_status != HealthStatus.HEALTHY or (probe and probe.worker is not worker)):
             return
+        self._probes.pop(worker_id, None)
+        if telemetry is not None:
+            overlap = probe.gateway_overlap if probe else self._possible_overlap(worker_id)
+            telemetry = telemetry.model_copy(update={
+                "gateway_overlap": min(telemetry.requests, overlap),
+                "observed_at": min(telemetry.observed_at, probe.started_at) if probe else telemetry.observed_at,
+            })
         self._workers[worker_id] = worker.model_copy(update={"telemetry": telemetry})
 
     async def delete(self, worker_id: UUID) -> None:
@@ -195,6 +237,8 @@ class WorkerRegistry:
     def discard(self, worker_id: UUID) -> None:
         self._workers.pop(worker_id, None)
         self._inflight.pop(worker_id, None)
+        self._prior_endpoint.pop(worker_id, None)
+        self._probes.pop(worker_id, None)
 
     def _with_load(self, worker: Worker) -> Worker:
         # Copy the live count onto the response without changing the stored record.

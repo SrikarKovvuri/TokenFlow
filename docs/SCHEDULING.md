@@ -16,12 +16,19 @@ workers. GPU names alone do not determine serving speed.
 For each candidate the gateway computes
 
 ```text
-outstanding    = max(gateway reservations, engine running + engine waiting)
+external       = max(0, engine running + engine waiting − sampled gateway overlap)
+outstanding    = current gateway reservations + external
 estimated wait = service time × outstanding / capacity
 routing score  = service time + estimated wait
 ```
 
-The maximum avoids counting gateway requests twice. A worker at capacity
+The gateway records its reservations when the scrape starts. Reservations that
+end during the scrape reduce the possible overlap. New arrivals consume
+additional slots. The engine reports counts without request IDs,
+so this is an estimate. After an endpoint changes, draining requests are
+excluded from the overlap estimate. The estimated external load stays fixed
+until the next sample or expiry. New gateway leases use the remaining slots,
+and releasing a lease returns its slot. A worker at capacity
 receives no new reservations. Among the remaining workers the lowest score
 wins. This estimates relative delay under similar workloads. Long prompts,
 output lengths and continuous batching affect actual completion time. The
@@ -42,7 +49,8 @@ must describe only that worker's allocated GPUs.
   accepts both `vllm:kv_cache_usage_perc` and the older
   `vllm:gpu_cache_usage_perc`. [vLLM metrics](https://docs.vllm.ai/en/stable/design/metrics/)
 - SGLang reports `sglang:num_running_reqs`, `sglang:num_queue_reqs` and
-  `sglang:token_usage` with metrics enabled. [SGLang production metrics](https://sgl-project.github.io/references/production_metrics.html)
+  `sglang:token_usage` with metrics enabled. The usage fraction tracks the
+  busiest memory pool in a hybrid model. [SGLang production metrics](https://github.com/sgl-project/sglang/blob/main/docs/docs/references/production_metrics.mdx)
 - The GPU sampler reports `DCGM_FI_DEV_GPU_UTIL` in percent. TokenFlow exposes
   this as a fraction in `GET /v1/workers` alongside the sample's UTC time.
 
@@ -75,12 +83,18 @@ poll outlasts its usual demand window. The gateway stores no prompt for
 replay. Once Slurm accepts the first job, it can keep its queue position for
 hours. The startup deadline begins when Slurm runs it. The first successful
 health check starts its idle grace period. Send the chat request again once
-the worker is healthy. A warm minimum of one avoids this scale-from-zero wait.
+the worker is healthy. The [student example](../examples/student_chat.py)
+does this automatically within its wait budget. It recognizes HTTP 503 with
+`X-TokenFlow-Admission: waiting-for-worker`. The gateway emits this marker
+before forwarding when a managed pool with a positive replica ceiling can
+supply or recover a worker for the model. A pool can be waiting for Slurm,
+booting, or recovering an unhealthy engine. A warm minimum of one avoids the
+initial scale-from-zero wait.
 Pausing every pool for a model clears its recorded demand.
 
 The autoscaler compares recent gateway demand with the capacity available to
-that model. Healthy manual workers count toward supply. Fresh engine requests
-above a worker's live gateway reservations occupy some of its slots, up to
+that model. Healthy manual workers count toward supply. Estimated external
+requests occupy some of a worker's slots, up to
 its configured capacity. For example, if direct clients fill all four slots
 on a manual worker and TokenFlow receives one more request, one additional
 slot can satisfy that demand. The requests already queued at the engine

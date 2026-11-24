@@ -19,8 +19,7 @@ def choose_worker(
 ) -> Worker:
     """Estimate delay from outstanding work, parallel capacity and service time.
 
-    Gateway assignments and engine counts overlap. The larger count protects
-    against both a stale idle scrape and load sent directly to the worker.
+    Account for gateway leases plus the engine's estimated external load.
     Equal delay favors more KV headroom, then a less busy GPU. Unknown gauges
     use a neutral midpoint. Identical candidates retain registration order.
     """
@@ -33,17 +32,17 @@ def choose_worker(
             continue
         has_healthy = True
         telemetry = worker.fresh_telemetry(now, telemetry_age_seconds)
-        outstanding = active
+        capacity = worker.capacity
+        gateway_capacity = worker.gateway_capacity(telemetry)
+        if active >= gateway_capacity:
+            continue
+        outstanding = active + (capacity - gateway_capacity)
         kv = gpu = 0.5
         if telemetry:
-            outstanding = max(active, telemetry.requests)
             if telemetry.kv_cache_usage is not None:
                 kv = telemetry.kv_cache_usage
             if telemetry.gpu_utilization is not None:
                 gpu = telemetry.gpu_utilization
-        capacity = worker.capacity
-        if outstanding >= capacity:
-            continue
         service_time = worker.metadata.get("service_time_seconds", 1.0)
         estimated_wait = service_time * (outstanding / capacity)
         candidates.append(((service_time + estimated_wait, kv, gpu), worker))

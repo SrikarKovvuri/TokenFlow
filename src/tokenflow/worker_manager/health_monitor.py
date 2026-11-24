@@ -89,9 +89,10 @@ class WorkerHealthMonitor:
         gpu_port = current.metadata.get("gpu_metrics_port")
         if type(gpu_port) is int and 1 <= gpu_port <= 65535:
             urls.append(engine_metrics.copy_with(port=gpu_port, path="/metrics"))
+        probe = self._registry.begin_telemetry_probe(worker.id)
         scrapes = await asyncio.gather(*(self._scrape(url) for url in urls))
         await self._registry.set_telemetry(
-            worker.id, read_telemetry(*scrapes), expected_base_url=str(worker.base_url)
+            worker.id, read_telemetry(*scrapes), expected_base_url=str(worker.base_url), probe=probe,
         )
 
     async def _read_bounded(self, url: str | httpx.URL, limit: int) -> bytes:

@@ -84,6 +84,96 @@ def test_heterogeneous_service_estimate_and_drain():
     asyncio.run(scenario())
 
 
+def test_engine_load_leaves_one_slot_for_a_burst_until_the_next_sample():
+    async def scenario():
+        registry = WorkerRegistry()
+        fast = await add_worker(registry, "h100", capacity=4, service_time_seconds=1)
+        slow = await add_worker(registry, "a6000", capacity=4, service_time_seconds=3)
+        url = str(fast.base_url)
+        sample = WorkerTelemetry(observed_at=datetime.now(UTC), running=2, waiting=1)
+        await registry.set_telemetry(fast.id, sample, expected_base_url=url)
+        assert registry.capacity_for_gateway(await registry.get(fast.id)) == 1
+        first, second = await asyncio.gather(registry.assign("qwen"), registry.assign("qwen"))
+        assert (first.id, second.id) == (fast.id, slow.id)
+        assert registry.capacity_for_gateway(first) == 1
+        # The refresh observes this gateway's lease among four engine requests.
+        await registry.set_telemetry(fast.id, sample.model_copy(update={"running": 3}), expected_base_url=url)
+        await registry.release(first.id)
+        assert registry.capacity_for_gateway(await registry.get(fast.id)) == 1
+        assert (await registry.assign("qwen")).id == fast.id
+        assert (await registry.assign("qwen")).id == slow.id
+        stale = sample.model_copy(update={"observed_at": datetime.now(UTC) - timedelta(minutes=1)})
+        await registry.set_telemetry(fast.id, stale, expected_base_url=url)
+        assert registry.capacity_for_gateway(await registry.get(fast.id)) == 4
+        assert (await registry.assign("qwen")).id == fast.id
+    asyncio.run(scenario())
+
+
+def test_assign_and_release_during_network_probe_cannot_hide_external_work():
+    async def scenario():
+        registry = WorkerRegistry()
+        worker = await add_worker(registry, "l40s", backend="sglang", capacity=4)
+        await registry.assign("qwen")
+        reading, finish = asyncio.Event(), asyncio.Event()
+
+        async def server(request):
+            if request.url.path == "/metrics":
+                reading.set()
+                await finish.wait()
+                return httpx.Response(200, text="sglang:num_running_reqs 3")
+            return httpx.Response(200)
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(server)) as client, asyncio.timeout(2):
+            monitor = WorkerHealthMonitor(registry, client, interval_seconds=1, timeout_seconds=1)
+            polling = asyncio.create_task(monitor.check_once())
+            await reading.wait()
+            await registry.release(worker.id)
+            await registry.assign("qwen")
+            finish.set()
+            await polling
+        current = await registry.get(worker.id)
+        assert current.telemetry.gateway_overlap == 0 and current.active_requests == 1
+        assert registry.capacity_for_gateway(current) == 1
+        with pytest.raises(WorkersAtCapacityError):
+            await registry.assign("qwen")
+    asyncio.run(scenario())
+
+
+def test_superseded_probes_and_old_endpoint_reservations_do_not_mask_new_load():
+    async def scenario():
+        registry = WorkerRegistry()
+        old = await add_worker(registry, "first", capacity=4)
+        await registry.assign("qwen")
+        stale = registry.begin_telemetry_probe(old.id)
+        old_url = str(old.base_url)
+        await registry.update(old.id, WorkerUpdate(base_url="http://other"))
+        await registry.update(old.id, WorkerUpdate(base_url=old_url))
+        await registry.set_health_status(old.id, HealthStatus.HEALTHY, expected_base_url=old_url)
+        busy = WorkerTelemetry(observed_at=datetime.now(UTC), running=3)
+        await registry.set_telemetry(old.id, busy, expected_base_url=old_url, probe=stale)
+        assert (await registry.get(old.id)).telemetry is None
+        earlier = registry.begin_telemetry_probe(old.id)
+        newer = registry.begin_telemetry_probe(old.id)
+        await registry.set_telemetry(old.id, busy, expected_base_url=old_url, probe=newer)
+        await registry.set_telemetry(old.id, None, expected_base_url=old_url, probe=earlier)
+        current = await registry.get(old.id)
+        assert current.telemetry.gateway_overlap == 0
+        assert registry.capacity_for_gateway(current) == 1
+        await registry.release(old.id)
+        assert (await registry.assign("qwen")).id == old.id
+        with pytest.raises(WorkersAtCapacityError):
+            await registry.assign("qwen")
+        # An old stream closing after the same managed worker ID was restored
+        # cannot release a slot on its replacement registration.
+        await registry.delete(old.id)
+        replacement = await registry.create(WorkerCreate(name="restored", base_url=old_url,
+            metadata={"model": "qwen", "capacity": 1}), worker_id=old.id)
+        await registry.set_health_status(old.id, HealthStatus.HEALTHY, expected_base_url=old_url)
+        await registry.assign("qwen")
+        await registry.release(old.id, registered_at=old.registered_at)
+        assert (await registry.get(replacement.id)).active_requests == 1
+    asyncio.run(scenario())
+
 @pytest.mark.parametrize("first, second, chosen", [
     ({"waiting": 4}, {"running": 1}, "second"),
     ({"kv_cache_usage": 0.2}, {"kv_cache_usage": 0.9}, "first"),

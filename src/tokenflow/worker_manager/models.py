@@ -39,6 +39,7 @@ class WorkerTelemetry(BaseModel):
     observed_at: datetime
     running: int | None = Field(default=None, ge=0)
     waiting: int | None = Field(default=None, ge=0)
+    gateway_overlap: int = Field(default=0, ge=0)
     kv_cache_usage: float | None = Field(default=None, ge=0, le=1)
     gpu_utilization: float | None = Field(default=None, ge=0, le=1)
 
@@ -96,6 +97,11 @@ class Worker(WorkerCreate):
     @property
     def capacity(self) -> int:
         return self.metadata.get("capacity", DEFAULT_CAPACITY)
+
+    def gateway_capacity(self, sample: WorkerTelemetry | None) -> int:
+        """Total slots for gateway leases after allowing for sampled external load."""
+        external = max(0, sample.requests - sample.gateway_overlap) if sample else 0
+        return max(0, self.capacity - external)
 
     def fresh_telemetry(self, now: datetime, max_age_seconds: float) -> WorkerTelemetry | None:
         if self.telemetry and (now - self.telemetry.observed_at).total_seconds() <= max_age_seconds:
