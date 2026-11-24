@@ -297,29 +297,52 @@ class Controller:
 
     def _targets(self, pools: list[PoolSpec], workers: dict[UUID, Worker]) -> dict[str, int]:
         limits = {p.name: self._limits(p) for p in pools}
-        targets = {name: minimum for name, (minimum, _) in limits.items()}
-        current = {p.name: sum(not a.retiring for a in self.state.allocations(p.name)) for p in pools}
+        targets: dict[str, int] = {}
+        # Snapshot ready-worker capacity using the same freshness and engine-load
+        # rules as admission. Pending allocations count toward future capacity.
+        ready = {w.id: self.registry.capacity_for_gateway(w) for w in workers.values()
+                 if w.enabled and w.health_status == HealthStatus.HEALTHY}
+        managed_ids = set(self._workers.values())
+        supply = {}
+        for pool in pools:
+            slots = [ready.get(self._workers.get(item.key), pool.capacity)
+                     for item in self.state.allocations(pool.name) if not item.retiring]
+            # Retain existing workers serving direct traffic during ordinary
+            # downscaling. An operator's hard ceiling still takes precedence.
+            busy = sorted((count for count in slots if count < pool.capacity), reverse=True)
+            minimum, maximum = limits[pool.name]
+            targets[pool.name] = min(maximum, max(minimum, len(busy)))
+            supply[pool.name] = busy + [pool.capacity] * (len(slots) - len(busy))
         window = min(300, max(1, self.interval * 2))
         for model in self._models:
             candidates = [p for p in pools if p.model == model]
-            active = sum(w.active_requests for w in workers.values() if w.metadata.get("model") == model)
-            demand = max(active, self.registry.demand_since(model, window))
-            shortfall = demand - sum(targets[p.name] * p.capacity for p in candidates)
-            # Prefer current capacity. For further expansion, choose the pool with
-            # the highest configured request capacity per second per GPU.
+            serving = [w for w in workers.values() if w.metadata.get("model") == model]
+            active = sum(w.active_requests for w in serving)
+            manual_slots = sum(ready.get(w.id, 0) for w in serving if w.id not in managed_ids)
+            shortfall = max(active, self.registry.demand_since(model, window)) - manual_slots
+            for pool in candidates:
+                floor = targets[pool.name]
+                existing = supply[pool.name]
+                shortfall -= sum(existing[:floor]) + max(0, floor - len(existing)) * pool.capacity
+
+            # First use existing workers, including cold starts, before funding
+            # extra replicas in order of configured per-GPU serving capacity.
             candidates.sort(key=lambda p: -p.capacity / (p.service_time_seconds * p.gpu_count))
-            for existing_only in (True, False):
-                for pool in candidates:
+            for pool in candidates:
+                for slots in supply[pool.name][targets[pool.name]:limits[pool.name][1]]:
                     if shortfall <= 0:
                         break
-                    cap = limits[pool.name][1]
-                    if existing_only:
-                        cap = min(cap, current[pool.name])
-                    elif self.state.policy(pool.name)["retry_at"] > time.time():
-                        continue
-                    add = min(max(0, cap - targets[pool.name]), math.ceil(shortfall / pool.capacity))
-                    targets[pool.name] += add
-                    shortfall -= add * pool.capacity
+                    targets[pool.name] += 1
+                    shortfall -= slots
+            for pool in candidates:
+                if shortfall <= 0:
+                    break
+                if self.state.policy(pool.name)["retry_at"] > time.time():
+                    continue
+                room = limits[pool.name][1] - targets[pool.name]
+                add = min(room, math.ceil(shortfall / pool.capacity))
+                targets[pool.name] += add
+                shortfall -= add * pool.capacity
         return targets
 
     async def _resize(self, pool: PoolSpec, target: int, workers: dict[UUID, Worker]) -> None:
@@ -345,7 +368,13 @@ class Controller:
         if target < len(live):
             def drain_order(item: Allocation) -> tuple:
                 worker = workers.get(self._workers.get(item.key))
-                return (worker.active_requests if worker else 0, item.ever_ready, -item.created)
+                slots = pool.capacity
+                if worker and worker.enabled and worker.health_status == HealthStatus.HEALTHY:
+                    slots = self.registry.capacity_for_gateway(worker)
+                # Keep directly used workers first. If the operator's ceiling
+                # forces a choice among them, retain the usable slots we counted.
+                return (slots < pool.capacity, slots, worker.active_requests if worker else 0,
+                        item.ever_ready, -item.created)
 
             for item in sorted(live, key=drain_order)[:len(live) - target]:
                 item.retiring = True

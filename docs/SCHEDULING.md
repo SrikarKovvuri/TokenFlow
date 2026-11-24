@@ -60,6 +60,16 @@ HTTP 503 with the same retry hint. Both responses arrive immediately. Configured
 model pools record recent peak demand, including admission failures, so an
 autoscaler can bring up capacity even when a model starts at zero workers.
 
+The autoscaler compares recent gateway demand with the capacity available to
+that model. Healthy manual workers count toward supply. Fresh engine requests
+above a worker's live gateway reservations occupy some of its slots, up to
+its configured capacity. For example, if direct clients fill all four slots
+on a manual worker and TokenFlow receives one more request, one additional
+slot can satisfy that demand. The requests already queued at the engine
+stay there. Direct traffic alone can keep an existing managed worker running
+through idle scale-down. New replicas require a configured minimum or gateway
+demand. Explicit replica ceilings take precedence, including a pool pause.
+
 On a failed connection attempt the gateway marks that endpoint unhealthy,
 releases the reservation and tries one different eligible worker. It preserves
 the request ID. A successful health probe brings a recovered worker back into

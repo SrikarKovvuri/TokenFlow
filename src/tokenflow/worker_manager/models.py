@@ -11,10 +11,11 @@ WorkerName = Annotated[
     str,
     StringConstraints(strip_whitespace=True, min_length=1, max_length=100),
 ]
+DEFAULT_CAPACITY = 32
 
 
 def _validate_scheduling_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
-    capacity = metadata.get("capacity", 32)
+    capacity = metadata.get("capacity", DEFAULT_CAPACITY)
     if type(capacity) is not int or capacity < 1:
         raise ValueError("metadata.capacity must be a positive integer")
     seconds = metadata.get("service_time_seconds", 1.0)
@@ -42,6 +43,10 @@ class WorkerTelemetry(BaseModel):
     gpu_utilization: float | None = Field(default=None, ge=0, le=1)
 
     model_config = ConfigDict(frozen=True)
+
+    @property
+    def requests(self) -> int:
+        return (self.running or 0) + (self.waiting or 0)
 
 
 class WorkerCreate(BaseModel):
@@ -87,3 +92,12 @@ class Worker(WorkerCreate):
     updated_at: datetime
 
     model_config = ConfigDict(extra="forbid", frozen=True)
+
+    @property
+    def capacity(self) -> int:
+        return self.metadata.get("capacity", DEFAULT_CAPACITY)
+
+    def fresh_telemetry(self, now: datetime, max_age_seconds: float) -> WorkerTelemetry | None:
+        if self.telemetry and (now - self.telemetry.observed_at).total_seconds() <= max_age_seconds:
+            return self.telemetry
+        return None

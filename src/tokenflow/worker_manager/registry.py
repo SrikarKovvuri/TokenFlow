@@ -46,6 +46,17 @@ class WorkerRegistry:
             default=0,
         )
 
+    def capacity_for_gateway(self, worker: Worker) -> int:
+        """Slots available for both current and incoming gateway reservations."""
+        sample = worker.fresh_telemetry(datetime.now(UTC), self._telemetry_age_seconds)
+        if sample is None:
+            return worker.capacity
+        # Work queued beyond this engine's limit is already pinned there. Adding
+        # replicas can absorb future arrivals, but cannot move that backlog.
+        occupied = min(worker.capacity, sample.requests)
+        external = max(0, occupied - worker.active_requests)
+        return worker.capacity - external
+
     def _record_arrival(self, model: str) -> None:
         history = self._demand.get(model)
         if history is None:

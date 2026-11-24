@@ -32,18 +32,16 @@ def choose_worker(
                 or worker.metadata.get("model") != model):
             continue
         has_healthy = True
-        telemetry = worker.telemetry
-        if telemetry and (now - telemetry.observed_at).total_seconds() > telemetry_age_seconds:
-            telemetry = None
+        telemetry = worker.fresh_telemetry(now, telemetry_age_seconds)
         outstanding = active
         kv = gpu = 0.5
         if telemetry:
-            outstanding = max(active, (telemetry.running or 0) + (telemetry.waiting or 0))
+            outstanding = max(active, telemetry.requests)
             if telemetry.kv_cache_usage is not None:
                 kv = telemetry.kv_cache_usage
             if telemetry.gpu_utilization is not None:
                 gpu = telemetry.gpu_utilization
-        capacity = worker.metadata.get("capacity", 32)
+        capacity = worker.capacity
         if outstanding >= capacity:
             continue
         service_time = worker.metadata.get("service_time_seconds", 1.0)

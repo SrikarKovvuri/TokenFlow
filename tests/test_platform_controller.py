@@ -1,4 +1,5 @@
 import asyncio
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -9,7 +10,7 @@ from tokenflow.platform import controller as module
 from tokenflow.platform.controller import Controller
 from tokenflow.provisioner.base import PoolSpec, Resource
 from tokenflow.scheduler.selection import NoAvailableWorkerError, WorkersAtCapacityError
-from tokenflow.worker_manager.models import HealthStatus
+from tokenflow.worker_manager.models import HealthStatus, WorkerCreate, WorkerTelemetry, WorkerUpdate
 from tokenflow.worker_manager.registry import WorkerRegistry
 
 
@@ -400,6 +401,136 @@ def test_pause_while_terminating_prevents_launch_from_old_plan(tmp_path, monkeyp
         assert len(inventory.terminated) == 2
         assert len(inventory.launches) == 1
         assert controller.status()[0]["desired_replicas"] == 0
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_manual_capacity_covers_gateway_demand_until_external_load_exhausts_it(tmp_path):
+    async def scenario():
+        inventory = Inventory()
+        controller = create(tmp_path / "state.db", inventory,
+                            spec("hpc", min_replicas=0, service_time_seconds=2),
+                            spec("aws", provider="cloud", min_replicas=0, capacity=1))
+        registry = controller.registry
+        manual = await registry.create(WorkerCreate(
+            name="manual", base_url="http://manual:8000",
+            metadata={"model": "qwen", "capacity": 2, "pool": "aws"},
+        ))
+        url = str(manual.base_url)
+        await registry.set_health_status(manual.id, HealthStatus.HEALTHY, expected_base_url=url)
+        first = await registry.assign("qwen")
+        # The engine's running request includes TokenFlow's live lease.
+        await registry.set_telemetry(manual.id, WorkerTelemetry(observed_at=datetime.now(UTC), running=1),
+                                     expected_base_url=url)
+        second = await registry.assign("qwen")
+        await controller.reconcile()
+        assert not inventory.launches
+        await registry.release(first.id)
+        await registry.release(second.id)
+
+        await registry.set_telemetry(manual.id, WorkerTelemetry(observed_at=datetime.now(UTC), running=2, waiting=500),
+                                     expected_base_url=url)
+        with pytest.raises(WorkersAtCapacityError):
+            await registry.assign("qwen")
+        await controller.reconcile()
+        await controller.reconcile()
+        # The real gateway peak of two fits one HPC replica. The direct
+        # backlog of 500 stays on the manual worker that received it.
+        assert [name for name, _ in inventory.launches] == ["hpc"]
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("sample_age,expected_extra", [(0, 1), (120, 0)])
+def test_saturated_managed_engine_can_spill_into_another_provider(tmp_path, sample_age, expected_extra):
+    async def scenario():
+        slurm, cloud = Inventory(), Inventory()
+        registry = WorkerRegistry()
+        controller = Controller(
+            [spec("hpc", min_replicas=1, max_replicas=1, capacity=2),
+             spec("aws", provider="cloud", min_replicas=0, max_replicas=4, capacity=1)],
+            {"slurm": slurm, "cloud": cloud}, registry, tmp_path / "state.db",
+        )
+        await controller.reconcile()
+        _, key = slurm.launches[0]
+        slurm.boot("hpc", key)
+        await controller.reconcile()
+        [worker] = await registry.list()
+        url = str(worker.base_url)
+        await registry.set_health_status(worker.id, HealthStatus.HEALTHY, expected_base_url=url)
+        sample = WorkerTelemetry(observed_at=datetime.now(UTC) - timedelta(seconds=sample_age), running=2, waiting=500)
+        await registry.set_telemetry(worker.id, sample, expected_base_url=url)
+        await controller.reconcile()
+        assert not cloud.launches  # Direct engine traffic alone triggers no paid expansion.
+        if expected_extra:
+            with pytest.raises(WorkersAtCapacityError):
+                await registry.assign("qwen")
+        else:
+            assert (await registry.assign("qwen")).id == worker.id
+        for _ in range(4):
+            await controller.reconcile()
+        assert len(slurm.launches) == 1
+        assert len(cloud.launches) == expected_extra
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_missing_manual_capacity_does_not_block_scale_from_zero(tmp_path):
+    async def scenario():
+        inventory = Inventory()
+        controller = create(tmp_path / "state.db", inventory, spec(min_replicas=0))
+        registry = controller.registry
+        for name, model, enabled, health in [
+            ("other", "different", True, HealthStatus.HEALTHY),
+            ("disabled", "qwen", False, HealthStatus.HEALTHY),
+            ("unhealthy", "qwen", True, HealthStatus.UNHEALTHY),
+        ]:
+            worker = await registry.create(WorkerCreate(
+                name=name, base_url=f"http://{name}:8000", metadata={"model": model},
+            ))
+            await registry.set_health_status(worker.id, health, expected_base_url=str(worker.base_url))
+            if not enabled:
+                await registry.update(worker.id, WorkerUpdate(enabled=False))
+        with pytest.raises(NoAvailableWorkerError):
+            await registry.assign("qwen")
+        await controller.reconcile()
+        assert len(inventory.launches) == 1
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_idle_downscale_keeps_externally_busy_worker_until_operator_pauses_pool(tmp_path, monkeypatch):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(module, "time", SimpleNamespace(time=lambda: now[0]))
+        inventory = Inventory()
+        controller = create(tmp_path / "state.db", inventory, spec(min_replicas=2, max_replicas=2))
+        await controller.reconcile()
+        await controller.reconcile()
+        keys = [key for _, key in inventory.launches]
+        for index, key in enumerate(keys):
+            item = inventory.items["big"][key]
+            inventory.items["big"][key] = Resource(key, item.external_id, "running", f"http://gpu{index}:18000")
+        await controller.reconcile()
+        for worker in await controller.registry.list():
+            await controller.registry.set_health_status(worker.id, HealthStatus.HEALTHY,
+                                                        expected_base_url=str(worker.base_url))
+            if worker.metadata["resource_key"] == keys[1]:
+                await controller.registry.set_telemetry(worker.id, WorkerTelemetry(observed_at=datetime.now(UTC), running=1),
+                                                        expected_base_url=str(worker.base_url))
+        controller.set_limits("big", 0, 2)
+        await controller.reconcile()
+        now[0] += 11
+        await controller.reconcile()
+        assert inventory.terminated == [keys[0]]
+        controller.set_limits("big", 0, 0)
+        await controller.reconcile()
+        assert inventory.terminated == keys
+        assert len(inventory.launches) == 2
         controller.close()
 
     asyncio.run(scenario())
