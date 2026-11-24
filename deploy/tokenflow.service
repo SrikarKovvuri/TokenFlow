@@ -8,6 +8,7 @@ Type=simple
 User=tokenflow
 Group=tokenflow
 StateDirectory=tokenflow
+StateDirectoryMode=0700
 WorkingDirectory=/var/lib/tokenflow
 UMask=0077
 EnvironmentFile=/etc/tokenflow/keys.env

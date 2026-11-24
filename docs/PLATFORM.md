@@ -10,24 +10,56 @@ Keep a stable DNS name on the gateway. When Slurm reassigns a node or AWS replac
 
 ## Configure a deployment
 
-1. Install Python 3.11+ and check out the repository on the service host. Create the configuration directory with `sudo install -d -m 0750 /etc/tokenflow`. The service account must have read access to `platform.json` and permission to traverse its parent directory.
-2. Copy the matching example from `deploy/` to `/etc/tokenflow/platform.json`. Give the deployment a unique namespace. Use a local, durable `state_path` and reuse it across restarts. One deployment owns one namespace and one database.
-3. Replace the example paths or AWS IDs. On Insomnia, use the absolute SIF and checkpoint paths on shared storage, and an owner-only shared project directory for `options.state_dir`. Set the allocation account, partition, QoS and GPU resource spelling to those available to the service account. The example uses the A6000. A separate pool can request H100 or L40S with its own capacity and checkpoint. For AWS, supply the GPU-ready AMI, private subnet, security groups and IAM permissions described in the provider guide. The example IDs are placeholders.
-4. Set `capacity` to the maximum number of concurrent requests per worker, and `service_time_seconds` to an initial service-time estimate for this model/hardware. Give interchangeable workers the same served model alias. Use distinct aliases for checkpoints with different semantics. Set `min_replicas` for warm capacity and `max_replicas` as a hard per-pool allocation ceiling. Each replica uses `gpu_count` GPUs.
-
-From the checkout on the **Linux control host**:
+Install Python 3.11+, pip and venv. Run the commands below from the checkout in
+one Bash session on the Linux control host. For Insomnia, set `svc_user` to the
+existing Unix account authorized to submit Slurm jobs and read the shared SIF
+and checkpoints. For AWS, use a dedicated unprivileged Unix account and attach
+the control-plane IAM role to its host. On a fresh AWS control host:
 
 ```bash
+svc_user=tokenflow
+if ! id "$svc_user" >/dev/null 2>&1; then
+  sudo useradd --system --user-group --no-create-home --home-dir /var/lib/tokenflow \
+    --shell /usr/sbin/nologin "$svc_user"
+fi
+```
+
+On a fresh deployment, set `example` to `aws` or `insomnia`. Install the catalog
+under the service user's primary group before running validation. Keep the
+existing catalog when upgrading a deployment.
+
+```bash
+svc_group=$(id -gn "${svc_user:?set the service account first}")
+example=aws
+sudo install -d -o root -g "$svc_group" -m 0750 /etc/tokenflow
+sudo install -o root -g "$svc_group" -m 0640 "deploy/$example.example.json" /etc/tokenflow/platform.json
+sudoedit /etc/tokenflow/platform.json
+```
+
+Give each deployment a unique namespace and a durable local `state_path`. On
+Insomnia, enter the local Slurm account, partition, QoS and GPU resource
+spelling. Choose an owner-only shared project directory for `options.state_dir`.
+On AWS, supply the actual AMI, subnet and security groups. Set `capacity` and
+`service_time_seconds` for each model/hardware combination. Use `min_replicas`
+for warm capacity and `max_replicas` to cap allocations.
+
+Build the wheel and its dependencies as the ordinary operator. Install the
+built wheels in a root-owned environment, then validate the exact catalog and
+executable as the service identity.
+
+```bash
+wheel_dir=$(mktemp -d)
+python3 -m pip wheel --wheel-dir "$wheel_dir" '.[aws]'
 sudo python3 -m venv /opt/tokenflow/venv
-sudo /opt/tokenflow/venv/bin/pip install '.[aws]'
-/opt/tokenflow/venv/bin/tokenflow validate /etc/tokenflow/platform.json
+sudo /opt/tokenflow/venv/bin/pip install --no-index --find-links "$wheel_dir" 'tokenflow[aws]'
+sudo -u "$svc_user" /opt/tokenflow/venv/bin/tokenflow validate /etc/tokenflow/platform.json
 ```
 
 Validation reads the configuration offline. GPU availability, IAM permissions, cluster quotas, driver compatibility and model memory still require live verification. See [provider setup](PROVIDERS.md), [AWS sign-in from Windows](AWS_SIGN_IN.md), and [the bounded single-GPU validation](AWS_LIVE_TEST.md).
 
 ## Start a persistent HTTPS endpoint
 
-On a new deployment create a private environment file. The systemd unit reads it on startup. Keep the worker secret stable across gateway restarts. Give each student an individual inference key in the JSON array. Reserve the administrative key for the operator.
+On a new deployment create a private environment file. The systemd unit reads it on startup. Keep the worker secret stable across gateway restarts. Give each student their individual inference key through the approved credential-sharing channel. The example generates one student key. Reserve the administrative key for the operator.
 
 ```bash
 sudo python3 - <<'PY'
@@ -41,26 +73,65 @@ with Path("/etc/tokenflow/keys.env").open("x") as f:
 PY
 ```
 
-Install `deploy/tokenflow.service` as `/etc/systemd/system/tokenflow.service`. Set its `User` and `Group` to the service account that can submit the jobs or assume the AWS role. The example expects an existing `tokenflow` Unix account. For this account, make `/etc/tokenflow` traversable with `sudo chgrp tokenflow /etc/tokenflow`, and make the catalog readable with `sudo chown root:tokenflow /etc/tokenflow/platform.json` and `sudo chmod 0640 /etc/tokenflow/platform.json`. Keep `keys.env` owned by root and mode 0600. Systemd reads the environment file and creates the durable state directory.
+Keep `keys.env` owned by root and mode 0600. Systemd reads that file and
+creates the durable state directory. Install the unit and set its runtime
+identity to the same account that passed catalog validation.
 
 ```bash
+sudo install -o root -g root -m 0644 deploy/tokenflow.service /etc/systemd/system/tokenflow.service
+sudo install -d -m 0755 /etc/systemd/system/tokenflow.service.d
+printf '[Service]\nUser=%s\nGroup=%s\n' "$svc_user" "$svc_group" | \
+  sudo tee /etc/systemd/system/tokenflow.service.d/identity.conf >/dev/null
+sudo systemd-analyze verify /etc/systemd/system/tokenflow.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now tokenflow
 curl --fail http://127.0.0.1:8000/healthz
 sudo journalctl -u tokenflow -n 50
 ```
 
-Put a TLS reverse proxy in front of the loopback service. For Caddy, install `deploy/Caddyfile` and set `TOKENFLOW_HOSTNAME` in **Caddy's** service environment to the assigned DNS name. Route that name to the service host. Use the campus TLS ingress if the service is reachable only through the campus network. Public ACME validation with the default Caddy configuration requires DNS and inbound certificate-validation connectivity. [Caddy HTTPS setup](https://caddyserver.com/docs/quick-starts/reverse-proxy#https)
+Put a TLS reverse proxy in front of the loopback service. For a dedicated
+host with the packaged Caddy system service installed, set `TOKENFLOW_HOSTNAME`
+in this shell to the assigned DNS name. Route that name to this host. For an
+existing multisite Caddy installation, merge the supplied site block into the
+existing configuration. Public certificate issuance needs working DNS and
+inbound ACME validation. Campus deployments can use the approved TLS ingress.
+[Caddy HTTPS setup](https://caddyserver.com/docs/quick-starts/reverse-proxy#https)
+
+```bash
+: "${TOKENFLOW_HOSTNAME:?set your assigned gateway hostname}"
+sudo install -o root -g root -m 0644 deploy/Caddyfile /etc/caddy/Caddyfile
+sudo install -d -m 0755 /etc/systemd/system/caddy.service.d
+printf '[Service]\nEnvironment=TOKENFLOW_HOSTNAME=%s\n' "$TOKENFLOW_HOSTNAME" | \
+  sudo tee /etc/systemd/system/caddy.service.d/tokenflow.conf >/dev/null
+sudo -H -u caddy env TOKENFLOW_HOSTNAME="$TOKENFLOW_HOSTNAME" \
+  caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+sudo systemctl daemon-reload
+sudo systemctl enable caddy
+sudo systemctl restart caddy
+BASE_URL="https://$TOKENFLOW_HOSTNAME"
+curl --fail "$BASE_URL/healthz"
+```
+
+Caddy flushes `text/event-stream` responses immediately by default. Once a
+worker is healthy, run the streaming student example in the README against
+`$BASE_URL/v1`. Tokens should arrive before the request finishes. Interrupt a
+longer request and check that the worker's `active_requests` returns to zero.
+[Caddy streaming behavior](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#streaming)
 
 ## Operate and verify
 
-Use a private operator terminal with `BASE_URL` set to the gateway origin and `ADMIN_KEY` set to the administrative key. These commands also work through a trusted loopback connection. Each command targets the example Slurm pool.
+Use a private Bash terminal with `BASE_URL` set to the gateway origin. Enter
+the administrative key at the hidden prompt. Curl reads it from standard input
+to keep it out of its process arguments. These examples target the Slurm pool.
 
 ```bash
-curl --fail -H "Authorization: Bearer $ADMIN_KEY" "$BASE_URL/v1/pools"
-curl --fail -H "Authorization: Bearer $ADMIN_KEY" "$BASE_URL/v1/workers"
-curl --fail -X PUT -H "Authorization: Bearer $ADMIN_KEY" -H 'Content-Type: application/json' \
-  -d '{"minimum":1,"maximum":1}' "$BASE_URL/v1/pools/qwen-a6000/limits"
+read -r -s -p 'TokenFlow admin key: ' ADMIN_KEY
+echo
+curl --fail -H @- "$BASE_URL/v1/pools" <<<"Authorization: Bearer $ADMIN_KEY"
+curl --fail -H @- "$BASE_URL/v1/workers" <<<"Authorization: Bearer $ADMIN_KEY"
+curl --fail -X PUT -H @- -H 'Content-Type: application/json' \
+  -d '{"minimum":1,"maximum":1}' "$BASE_URL/v1/pools/qwen-a6000/limits" <<<"Authorization: Bearer $ADMIN_KEY"
+unset ADMIN_KEY
 ```
 
 Watch the pool for a provider job or instance ID, then check that its registered worker becomes healthy and reports telemetry. Run one streaming chat request using the student example in the README. For a cold pool, the first request records demand and can return HTTP 503 while resources start. A busy pool at capacity returns HTTP 429. A warm minimum of one avoids the initial allocation delay.
