@@ -1,9 +1,14 @@
 import json
 import subprocess
 import sys
+from fnmatch import fnmatchcase
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
+
+from tokenflow.provisioner.base import PoolSpec
+from tokenflow.provisioner.cloud import CloudProvisioner
 
 
 SCRIPT = Path(__file__).parents[1] / "scripts/aws_operator_policy.py"
@@ -69,6 +74,60 @@ def test_worker_permissions_match_tagged_private_launch_and_scoped_termination(t
     for statement in statements.values():
         if statement["Action"] in ("ec2:RunInstances", "ec2:CreateTags", "ec2:TerminateInstances"):
             assert statement["Resource"] != "*"
+
+
+def test_policy_covers_actual_provider_launch_without_standalone_tagging(monkeypatch):
+    """Capture the production RunInstances call at the SDK boundary, without AWS."""
+    flags = dict(zip(WORKERS[::2], WORKERS[1::2]))
+    groups = [flags["--security-group"], "sg-87654321"]
+    statements = by_id(render("workers", *WORKERS, "--security-group", groups[1]))
+    pool = PoolSpec(
+        name=flags["--pool"], provider="cloud", model="qwen", checkpoint="/models/qwen",
+        gpu_type="T4", image="vllm/vllm-openai:v0.10.2", max_replicas=1,
+        options={"region": REGION, "instance_type": flags["--instance-type"], "ami_id": flags["--ami"],
+                 "subnet_id": flags["--subnet"], "security_group_ids": groups},
+    )
+    provisioner = CloudProvisioner(flags["--namespace"])
+    sdk = MagicMock()
+    sdk.run_instances.return_value = {"Instances": [{"InstanceId": "i-example"}]}
+    monkeypatch.setattr(provisioner, "_client", lambda region: sdk)
+    provisioner._launch(pool, "1a" * 16)
+    request = sdk.run_instances.call_args.kwargs
+
+    ec2 = f"arn:aws:ec2:{REGION}:{ACCOUNT}"
+    [interface] = request["NetworkInterfaces"]
+    inputs = set(statements["UseApprovedWorkerInputs"]["Resource"])
+    assert inputs == {f"arn:aws:ec2:{REGION}::image/{request['ImageId']}",
+                      f"{ec2}:subnet/{interface['SubnetId']}",
+                      *(f"{ec2}:security-group/{g}" for g in interface["Groups"])}
+    assert request["MinCount"] == request["MaxCount"] == 1
+    assert not interface["AssociatePublicIpAddress"]
+    assert not {"IamInstanceProfile", "KeyName", "LaunchTemplate"} & request.keys()
+
+    tag_on_create = statements["ApplyWorkerTagsOnlyAtLaunch"]
+    [tag_spec] = request["TagSpecifications"]
+    assert tag_spec["ResourceType"] == "instance"
+    assert tag_on_create["Resource"] == f"{ec2}:instance/*"
+    tags = {tag["Key"]: tag["Value"] for tag in tag_spec["Tags"]}
+    context = {f"aws:RequestTag/{k}": v for k, v in tags.items()}
+    context.update({"ec2:CreateAction": "RunInstances", "ec2:InstanceType": request["InstanceType"],
+                    "ec2:MetadataHttpTokens": request["MetadataOptions"]["HttpTokens"],
+                    "ec2:InstanceMarketType": "on-demand"})
+    assert "InstanceMarketOptions" not in request
+    for statement in (statements["LaunchNamedWorker"], tag_on_create):
+        conditions = statement["Condition"]
+        assert set(conditions["ForAllValues:StringEquals"]["aws:TagKeys"]) == set(tags)
+        assert all(context[k] == v for k, v in conditions["StringEquals"].items())
+        assert all(fnmatchcase(context[k], v) for k, v in conditions["StringLike"].items())
+    assert tag_on_create["Condition"]["StringEquals"]["ec2:CreateAction"] == "RunInstances"
+    assert statements["CreateWorkerDisksAtLaunch"]["Resource"] == f"{ec2}:volume/*"
+    assert statements["CreatePrivateWorkerInterface"]["Resource"] == f"{ec2}:network-interface/*"
+    assert statements["LaunchNamedWorker"]["Resource"] == f"{ec2}:instance/*"
+    assert not {"ec2:CreateVolume", "ec2:CreateNetworkInterface", "iam:PassRole"} & {
+        action for entry in statements.values() for action in (
+            [entry["Action"]] if isinstance(entry["Action"], str) else entry["Action"]
+        )
+    }
 
 
 @pytest.mark.parametrize("flag,bad", [

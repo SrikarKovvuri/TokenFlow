@@ -28,7 +28,10 @@ aws configure sso --profile default
 aws sso login --profile default
 aws sts get-caller-identity --profile default
 aws service-quotas get-service-quota --profile default --region us-east-1 --service-code ec2 --quota-code L-DB2E81BA --query 'Quota.{Name:QuotaName,vCPUs:Value}'
+aws service-quotas list-requested-service-quota-change-history-by-quota --profile default --region us-east-1 --service-code ec2 --quota-code L-DB2E81BA --query 'RequestedQuotas[].{Requested:DesiredValue,Status:Status,Created:Created}'
 ```
+
+An empty history means the query returned no recorded requests for this quota. The applied value from `get-service-quota` determines available quota before subtracting usage. [Quota history by quota](https://docs.aws.amazon.com/cli/latest/reference/service-quotas/list-requested-service-quota-change-history-by-quota.html)
 
 ## 3. Add one worker pool
 
@@ -44,5 +47,7 @@ python scripts/aws_operator_policy.py workers --account-id $account --region us-
 ```
 
 Review and provision the replacement inline policy. Instance launches require the configured type, namespace, pool, name tag, a 32-character resource key and IMDSv2. EC2 separately authorizes the approved AMI, subnet, security groups, private interface and newly allocated EBS disks. Repeat `--security-group` for each approved group. Termination requires the same namespace, pool and key tags. Tag writes apply only during launch. Reserve these tag names for TokenFlow across other roles that can create or change EC2 tags. [EC2 launch authorization](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ExamplePolicies_EC2.html), [Tag-on-create authorization](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/supported-iam-actions-tagging.html)
+
+TokenFlow tags the **instance** during `RunInstances`. Its EBS volumes and network interface are authorized as resources of that launch. For cleanup and cost checks, obtain their IDs through the instance's block-device mappings and network interfaces. IAM matches the resource key's 32-character length. The provisioner validates its hexadecimal format during discovery.
 
 The worker policy assumes an AMI and model that can run without an instance profile. A profile for gated artifacts requires a separate grant on its specific role. Billing limits, total runtime, aggregate disks and total replica count need separate controls. The guarded live-test script also requires its own cleanup workflow permissions and per-run namespace. Use the dedicated guard role and approval process for that workflow. Keep the generated account-specific JSON outside source control.

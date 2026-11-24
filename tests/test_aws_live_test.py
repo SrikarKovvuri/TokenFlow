@@ -1,10 +1,13 @@
 import asyncio
 import importlib.util
 from decimal import Decimal
+import json
 from pathlib import Path
+import sys
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+import httpx
 import pytest
 
 spec = importlib.util.spec_from_file_location(
@@ -23,16 +26,31 @@ def test_unpriced_or_ambiguous_compute_rate_blocks_launch():
 
 def test_estimate_rounds_up_and_no_overbudget_launch(monkeypatch):
     session = MagicMock()
-    session.client.return_value.describe_images.return_value = {"Images": [{"State": "available"}]}
+    session.client.return_value.describe_images.return_value = {"Images": [
+        {"State": "available", "BlockDeviceMappings": [{"Ebs": {}}]},
+    ]}
     monkeypatch.setattr(live, "verify_quota", lambda *_: {"quota_vcpus": 4, "committed_vcpus": 0})
     monkeypatch.setattr(live, "promotion_balance", lambda *_: Decimal(50))
     monkeypatch.setattr(live, "check_network", lambda *_: None)
     monkeypatch.setattr(live, "volume_size", lambda *_: 60)
     monkeypatch.setattr(live, "price", lambda _, unit, __: Decimal("0.526") if unit == "Hrs" else Decimal("0.08"))
-    assert live.preflight(session, MagicMock())["estimated_usd"] == "3.07"
+    args = SimpleNamespace(execute=False, expected_account=None, credit_description=None, ami="ami-test")
+    assert live.preflight(session, args)["estimated_usd"] == "3.07"
     monkeypatch.setattr(live, "price", lambda *_: Decimal(20))
     with pytest.raises(ValueError, match="exceeds"):
-        live.preflight(session, MagicMock())
+        live.preflight(session, args)
+
+
+@pytest.mark.parametrize("expected_account", [None, "222222222222"])
+def test_execute_checks_the_approved_account_before_reading_billing_or_ec2(expected_account):
+    session = MagicMock()
+    session.client.return_value.get_caller_identity.return_value = {"Account": "111111111111"}
+    with pytest.raises(ValueError, match="expected-account"):
+        live.preflight(session, SimpleNamespace(execute=True, expected_account=expected_account))
+    if expected_account:
+        session.client.assert_called_once_with("sts")
+    else:
+        session.client.assert_not_called()
 
 
 def test_live_credit_excludes_another_account_and_expired_awards():
@@ -95,3 +113,163 @@ def test_private_vpn_ingress_allows_a_preloaded_worker_without_nat():
     rule["IpRanges"].append({"CidrIp": "0.0.0.0/0"})
     with pytest.raises(ValueError, match="ingress"):
         live.check_network(ec2, args)
+
+
+@pytest.fixture
+def aws_run(monkeypatch, tmp_path):
+    """Fake the service boundary. Keep provisioning, adoption, and ASGI routing real."""
+    services = {name: MagicMock(name=name) for name in (
+        "ec2", "cloudformation", "stepfunctions", "iam",
+    )}
+    session = MagicMock()
+    session.client.side_effect = lambda name, **kwargs: services[name]
+    sdk = MagicMock()
+    sdk.Session.return_value = session
+    monkeypatch.setitem(sys.modules, "boto3", sdk)
+    monkeypatch.setitem(sys.modules, "botocore.config", SimpleNamespace(Config=MagicMock()))
+    # The separate price/credit/quota tests cover the read-only preflight.
+    monkeypatch.setattr(live, "preflight", lambda *_: {
+        "principal_is_root": False, "estimated_usd": "3.07", "account": "123456789012", "ebs_volumes": 1,
+    })
+    cfn, sfn, ec2 = (services[name] for name in ("cloudformation", "stepfunctions", "ec2"))
+    cfn.get_template.return_value = {"TemplateBody": live.GUARD_TEMPLATE.read_text()}
+    cfn.describe_stacks.return_value = {"Stacks": [{"StackStatus": "CREATE_COMPLETE",
+        "Outputs": [{"OutputKey": "Machine", "OutputValue": "machine"}]}]}
+    sfn.describe_state_machine.return_value = {"type": "STANDARD", "status": "ACTIVE", "roleArn": "role"}
+    services["iam"].simulate_principal_policy.return_value = {"EvaluationResults": [{"EvalDecision": "allowed"}]}
+    sfn.start_execution.return_value = {"executionArn": "execution"}
+    sfn.describe_execution.return_value = {"status": "RUNNING"}
+    sfn.get_execution_history.return_value = {"events": [{"type": "WaitStateEntered",
+        "stateEnteredEventDetails": {"name": "WaitForDeadline"}}]}
+    vm = {"InstanceId": "i-test", "State": {"Name": "running"}, "PrivateIpAddress": "10.5.6.7",
+          "BlockDeviceMappings": [{"Ebs": {"VolumeId": "vol-test"}}],
+          "NetworkInterfaces": [{"NetworkInterfaceId": "eni-test"}]}
+    instances = {"Reservations": [{"Instances": [vm]}]}
+
+    def launch(**parameters):
+        sfn.get_execution_history.assert_called_once()
+        assert parameters["MinCount"] == parameters["MaxCount"] == 1
+        assert parameters["InstanceType"] == live.INSTANCE_TYPE
+        assert parameters["NetworkInterfaces"][0]["AssociatePublicIpAddress"] is False
+        assert parameters["NetworkInterfaces"][0]["DeleteOnTermination"] is True
+        vm["Tags"] = parameters["TagSpecifications"][0]["Tags"]
+        tags = {tag["Key"]: tag["Value"] for tag in vm["Tags"]}
+        assert tags["TokenFlowNamespace"] == sfn.start_execution.call_args.kwargs["name"]
+        return {"Instances": [vm]}
+
+    ec2.run_instances.side_effect = launch
+    ec2.get_paginator.return_value.paginate.return_value = [instances]
+    ec2.describe_instances.return_value = instances
+
+    def terminate(InstanceIds):
+        assert InstanceIds == [vm["InstanceId"]]
+        vm["State"]["Name"] = "terminated"
+
+    def confirm_terminated(InstanceIds, WaiterConfig):
+        assert InstanceIds == [vm["InstanceId"]]
+        assert vm["State"]["Name"] == "terminated"
+
+    ec2.terminate_instances.side_effect = terminate
+    ec2.get_waiter.return_value.wait.side_effect = confirm_terminated
+    ec2.describe_volumes.return_value = {"Volumes": []}
+    ec2.describe_network_interfaces.return_value = {"NetworkInterfaces": []}
+    args = SimpleNamespace(ami="ami-abcdef", subnet="subnet-abc", worker_group="sg-abc",
+        execute=True, confirm_private_route=True, local_checkpoint="/models/qwen", image=None,
+        output=tmp_path, guard_stack="test-guard")
+    return args, vm, ec2, sfn
+
+
+@pytest.mark.parametrize("incomplete_stream", [False, True])
+def test_live_run_adopts_one_private_gpu_and_cleans_up_after_inference(aws_run, monkeypatch, incomplete_stream):
+    args, vm, ec2, sfn = aws_run
+    requests = []
+
+    def engine(request):
+        assert request.url.host == vm["PrivateIpAddress"]
+        if request.url.path == "/health":
+            return httpx.Response(200)
+        if request.url.path == "/metrics":
+            if request.url.port == 8001:
+                return httpx.Response(200, text='DCGM_FI_DEV_GPU_UTIL{UUID="GPU-test"} 64')
+            return httpx.Response(200, text="vllm:num_requests_running 0\nvllm:num_requests_waiting 0\n"
+                                              "vllm:kv_cache_usage_perc 0.14")
+        assert request.url.path == "/v1/chat/completions"
+        payload = json.loads(request.content)
+        assert payload["model"] == "qwen-test"
+        requests.append(payload.get("stream", False))
+        if payload.get("stream"):
+            content = b'data: {"choices":[{"delta":{"content":"hello"}}]}\n\n'
+            if not incomplete_stream:
+                content += b"data: [DONE]\n\n"
+            return httpx.Response(200, headers={"content-type": "text/event-stream"}, content=content)
+        return httpx.Response(200, json={"choices": [{"message": {"content": "hello"}}]})
+
+    create_app = live.create_app
+    monkeypatch.setattr(live, "create_app", lambda settings, **kwargs: create_app(
+        settings.model_copy(update={"worker_health_interval_seconds": 0.05}),
+        worker_transport=httpx.MockTransport(engine), **kwargs,
+    ))
+    if incomplete_stream:
+        with pytest.raises(RuntimeError, match="Incomplete streaming"):
+            asyncio.run(live.run(args))
+    else:
+        asyncio.run(live.run(args))
+    assert requests == [False, True]
+    ec2.run_instances.assert_called_once()
+    ec2.terminate_instances.assert_called_once_with(InstanceIds=["i-test"])
+    ec2.get_waiter.return_value.wait.assert_called_once()
+    ec2.describe_volumes.assert_called_once_with(Filters=[{"Name": "volume-id", "Values": ["vol-test"]}])
+    ec2.describe_network_interfaces.assert_called_once_with(
+        Filters=[{"Name": "network-interface-id", "Values": ["eni-test"]}])
+    sfn.stop_execution.assert_called_once()
+    out, = args.output.iterdir()
+    receipt = json.loads((out / "run.json").read_text())
+    assert receipt["guard"] == "execution"
+    assert receipt["instance_id"] == "i-test"
+    if incomplete_stream:
+        assert not (out / "responses.json").exists()
+    else:
+        result = json.loads((out / "responses.json").read_text())
+        assert result["chat"]["choices"][0]["message"]["content"] == "hello"
+        assert result["stream"][-1] == "[DONE]"
+        assert result["worker"]["telemetry"]["gpu_utilization"] == 0.64
+
+
+def test_live_run_leaves_guard_armed_when_release_cannot_be_verified(aws_run, monkeypatch):
+    args, _, ec2, sfn = aws_run
+
+    async def interrupted(*args):
+        raise asyncio.CancelledError
+
+    monkeypatch.setattr(live, "check_gateway", interrupted)
+    ec2.get_waiter.return_value.wait.side_effect = TimeoutError("EC2 termination unconfirmed")
+    with pytest.raises(TimeoutError, match="termination unconfirmed"):
+        asyncio.run(live.run(args))
+    ec2.terminate_instances.assert_called_once_with(InstanceIds=["i-test"])
+    sfn.stop_execution.assert_not_called()
+
+
+def test_live_run_lost_launch_reply_preserves_guard_and_never_reallocates(aws_run):
+    args, _, ec2, sfn = aws_run
+    ec2.run_instances.side_effect = TimeoutError("RunInstances lost its reply")
+    with pytest.raises(TimeoutError, match="lost its reply"):
+        asyncio.run(live.run(args))
+    sfn.get_execution_history.assert_called_once()
+    ec2.run_instances.assert_called_once()
+    sfn.stop_execution.assert_not_called()
+
+
+@pytest.mark.parametrize("missing", ["BlockDeviceMappings", "NetworkInterfaces"])
+def test_missing_attachment_inventory_keeps_guard_armed(aws_run, monkeypatch, missing):
+    args, vm, ec2, sfn = aws_run
+    vm[missing] = []
+
+    async def completed(*args):
+        return {"smoke": "passed"}
+
+    monkeypatch.setattr(live, "check_gateway", completed)
+    with pytest.raises(RuntimeError, match="attachment inventory"):
+        asyncio.run(live.run(args))
+    ec2.terminate_instances.assert_called_once_with(InstanceIds=["i-test"])
+    ec2.get_waiter.return_value.wait.assert_called_once()
+    sfn.stop_execution.assert_not_called()

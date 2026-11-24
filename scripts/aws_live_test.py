@@ -152,8 +152,12 @@ def check_network(ec2, args):
 
 
 def preflight(session, args):
-    ec2 = session.client("ec2")
+    if args.execute and not args.expected_account:
+        raise ValueError("Pass --expected-account with the 12-digit account approved for this run")
     identity = session.client("sts").get_caller_identity()
+    if args.expected_account and identity["Account"] != args.expected_account:
+        raise ValueError("The authenticated AWS account differs from --expected-account")
+    ec2 = session.client("ec2")
     balance = promotion_balance(session.client("billing"), identity["Account"], args.credit_description)
     result = verify_quota(ec2, session.client("service-quotas"))
     check_network(ec2, args)
@@ -179,6 +183,7 @@ def preflight(session, args):
     return {**result, "account": identity["Account"], "principal_is_root": identity["Arn"].endswith(":root"),
             "region": REGION, "instance": INSTANCE_TYPE,
             "hourly_usd": str(hourly), "ebs_gib": gib, "estimated_usd": f"{estimate:.2f}",
+            "ebs_volumes": sum("Ebs" in m for m in image[0]["BlockDeviceMappings"]),
             "eligible_promotion_usd": str(balance), "credit_source": "billing:GetCredits"}
 
 
@@ -238,10 +243,15 @@ def attachments(ec2, instance_id):
     return disks, interfaces
 
 
-def verify_released(ec2, disks, interfaces):
+def verify_released(ec2, disks, interfaces, expected_disks):
+    # This run launches exactly one ENI and an EBS-backed AMI. EC2 can return
+    # incomplete inventory during transitions. An unknown volume is not proof
+    # that all the volumes were deleted.
+    if expected_disks < 1 or len(set(disks)) != expected_disks or len(interfaces) != 1:
+        raise RuntimeError("EC2 attachment inventory was incomplete; release could not be fully verified")
     for _ in range(30):
-        volumes = disks and ec2.describe_volumes(Filters=[{"Name": "volume-id", "Values": disks}])["Volumes"]
-        nics = interfaces and ec2.describe_network_interfaces(
+        volumes = ec2.describe_volumes(Filters=[{"Name": "volume-id", "Values": disks}])["Volumes"]
+        nics = ec2.describe_network_interfaces(
             Filters=[{"Name": "network-interface-id", "Values": interfaces}]
         )["NetworkInterfaces"]
         if not volumes and not nics:
@@ -330,6 +340,8 @@ async def run(args):
     # discovery and HTTP routing without authorizing any replacement instance.
     vm = await provider.launch(pool, secrets.token_hex(16))
     try:
+        report["instance_id"] = vm.external_id
+        (out / "run.json").write_text(json.dumps(report, indent=2))
         print(f"Allocated {vm.external_id}, guard expires {deadline.isoformat()}", flush=True)
         result = await check_gateway(pool, namespace, out, AdoptOnly(namespace, session=session))
         (out / "responses.json").write_text(json.dumps(result, indent=2))
@@ -340,10 +352,10 @@ async def run(args):
             disks, interfaces = attachments(ec2, vm.external_id)
         finally:
             await provider.terminate(pool, vm)
-        ec2.get_waiter("instance_terminated").wait(
-            InstanceIds=[vm.external_id], WaiterConfig={"Delay": 5, "MaxAttempts": 60}
-        )
-        verify_released(ec2, disks, interfaces)
+            ec2.get_waiter("instance_terminated").wait(
+                InstanceIds=[vm.external_id], WaiterConfig={"Delay": 5, "MaxAttempts": 60}
+            )
+        verify_released(ec2, disks, interfaces, report["ebs_volumes"])
         if sfn.describe_execution(executionArn=guard)["status"] == "RUNNING":
             sfn.stop_execution(executionArn=guard, cause="EC2 termination confirmed")
         print(f"Confirmed instance termination: {vm.external_id}", flush=True)
@@ -351,6 +363,7 @@ async def run(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--expected-account", help="12-digit credit-owning account ID, required for --execute")
     parser.add_argument("--ami", required=True, help="GPU-ready Linux AMI with Docker and NVIDIA container runtime")
     parser.add_argument("--subnet", required=True)
     parser.add_argument("--worker-group", required=True)

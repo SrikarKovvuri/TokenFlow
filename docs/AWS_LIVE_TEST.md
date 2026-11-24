@@ -82,13 +82,13 @@ client disappears. IAM policy simulation cannot rule out every runtime denial.
 
 ## Run and inspect
 
-The launcher repeats its price, quota, network and credit checks on execution.
+Set `ACCOUNT_ID` to the 12-digit account that owns the approved credit. The launcher checks it against STS before querying billing or EC2, then repeats its price, quota, network and credit checks on execution.
 This example uses the fixed public image and checkpoint.
 
 ```bash
 python scripts/aws_live_test.py --ami "$AMI" --subnet "$SUBNET" \
   --worker-group "$WORKER_SG" --source-group "$CONTROL_SG" \
-  --confirm-private-route --confirm-artifact-egress --execute
+  --expected-account "$ACCOUNT_ID" --confirm-private-route --confirm-artifact-egress --execute
 ```
 
 The caller needs read access to STS, AWS Billing credits, EC2 inventory and network configuration,
