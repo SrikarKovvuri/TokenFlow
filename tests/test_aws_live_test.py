@@ -188,6 +188,8 @@ def test_live_run_adopts_one_private_gpu_and_cleans_up_after_inference(aws_run, 
         assert request.url.host == vm["PrivateIpAddress"]
         if request.url.path == "/health":
             return httpx.Response(200)
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "qwen-test"}]})
         if request.url.path == "/metrics":
             if request.url.port == 8001:
                 return httpx.Response(200, text='DCGM_FI_DEV_GPU_UTIL{UUID="GPU-test"} 64')

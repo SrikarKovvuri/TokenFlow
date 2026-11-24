@@ -83,6 +83,7 @@ def create_app(
                     health_client,
                     interval_seconds=settings.worker_health_interval_seconds,
                     timeout_seconds=settings.worker_health_timeout_seconds,
+                    managed_worker=application.state.controller.owns_worker if application.state.controller else None,
                 )
                 tasks.append(asyncio.create_task(monitor.run(), name="health-monitor"))
             if application.state.controller:

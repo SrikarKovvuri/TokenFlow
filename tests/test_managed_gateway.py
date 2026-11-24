@@ -63,6 +63,8 @@ def test_managed_cold_start_stream_restart_and_drain(tmp_path):
         seen.add((req.url.port, req.url.path))
         if req.url.path == "/health":
             return httpx.Response(200)
+        if req.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "qwen-14b"}]})
         if req.url.path == "/metrics":
             metrics = ("vllm:num_requests_running 0" if req.url.port == 8100
                        else 'DCGM_FI_DEV_GPU_UTIL{UUID="GPU-one"} 27')

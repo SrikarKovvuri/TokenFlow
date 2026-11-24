@@ -161,3 +161,63 @@ def test_health_transport_errors_are_logged(caplog):
     asyncio.run(scenario())
     assert "RemoteProtocolError" in caplog.text
     assert "Server disconnected" in caplog.text
+
+
+def test_managed_worker_requires_its_advertised_model_and_recovers():
+    async def scenario():
+        registry = WorkerRegistry()
+        worker = await registry.create(WorkerCreate(
+            name="managed", base_url="http://worker", metadata={"model": "qwen", "backend": "sglang"},
+        ))
+        catalog = {"data": [{"id": "another-model"}]}
+
+        def server(request):
+            if request.url.path == "/v1/models":
+                return httpx.Response(200, json=catalog)
+            if request.url.path == "/metrics":
+                return httpx.Response(200, text="sglang:num_queue_reqs 1e100\nsglang:token_usage 0.4")
+            assert request.url.path == "/health"
+            return httpx.Response(200)
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(server)) as client:
+            monitor = WorkerHealthMonitor(registry, client, interval_seconds=5, timeout_seconds=1,
+                                          managed_worker=lambda wid: wid == worker.id)
+            await monitor.check_once()
+            with pytest.raises(NoAvailableWorkerError):
+                await registry.assign("qwen")
+            catalog["data"] = [{"id": "qwen"}]
+            await monitor.check_once()
+            lease = await registry.assign("qwen")
+            assert lease.id == worker.id
+            assert lease.telemetry.waiting is None
+            assert lease.telemetry.kv_cache_usage == 0.4
+            await registry.release(lease.id)
+            catalog["data"] = []
+            await monitor.check_once()
+            assert (await registry.get(worker.id)).health_status is HealthStatus.UNHEALTHY
+
+    asyncio.run(scenario())
+
+
+def test_stalled_health_endpoint_does_not_hold_up_later_polls():
+    async def scenario():
+        registry = WorkerRegistry()
+        slow = await registry.create(WorkerCreate(name="slow", base_url="http://slow"))
+        healthy = await registry.create(WorkerCreate(name="healthy", base_url="http://healthy"))
+        healthy_statuses = iter((200, 503))
+
+        async def server(request):
+            if request.url.host == "slow":
+                await asyncio.Event().wait()
+            return httpx.Response(next(healthy_statuses))
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(server)) as client:
+            monitor = WorkerHealthMonitor(registry, client, interval_seconds=.01, timeout_seconds=.02)
+            async with asyncio.timeout(3):
+                await monitor.check_once()
+                assert (await registry.get(slow.id)).health_status is HealthStatus.UNHEALTHY
+                assert (await registry.get(healthy.id)).health_status is HealthStatus.HEALTHY
+                await monitor.check_once()
+                assert (await registry.get(healthy.id)).health_status is HealthStatus.UNHEALTHY
+
+    asyncio.run(scenario())

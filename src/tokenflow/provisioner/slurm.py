@@ -132,8 +132,12 @@ class SlurmProvisioner:
                 continue
             resource = Resource(key=key, external_id=job_id, phase="pending")
             if state in {"COMPLETED", "FAILED", "TIMEOUT", "CANCELLED", "NODE_FAIL",
-                         "OUT_OF_MEMORY", "DEADLINE", "BOOT_FAIL", "PREEMPTED", "COMPLETING"}:
+                         "OUT_OF_MEMORY", "DEADLINE", "BOOT_FAIL", "PREEMPTED", "REVOKED"}:
                 resource = Resource(key=key, external_id=job_id, phase="terminal")
+            elif state in {"CONFIGURING", "COMPLETING", "STOPPED"}:
+                # Slurm still has an allocation. Hold its slot without routing
+                # while nodes boot, stop, or finish their epilog and release GPUs.
+                resource = Resource(key=key, external_id=job_id, phase="running")
             elif state == "RUNNING":
                 # The GPU is allocated and its startup clock has begun even when
                 # the engine has not published a usable address yet.
@@ -141,7 +145,7 @@ class SlurmProvisioner:
                 port_file = state_dir / name / f"port-{job_id}"
                 try:
                     port = int(port_file.read_text())
-                except FileNotFoundError:
+                except (FileNotFoundError, ValueError):
                     pass
                 else:
                     if 1024 <= port <= 65534 and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.-]*", host):

@@ -26,6 +26,8 @@ Use an always-on control host in a VPC with routes to the worker subnet and a tr
 
 ## Verify one allocation
 
+The gateway polls each managed worker's `/health` and checks that its OpenAI `/v1/models` list includes the pool's model alias. A reachable server serving a different checkpoint alias stays out of routing. If it later advertises the configured alias, the next successful probe makes it eligible. Manually registered endpoints continue to use `/health` for readiness.
+
 Start with one warm replica and a maximum of one. The operator should see a provider allocation ID, a running resource, a healthy worker, and a response to a streaming chat request using the configured alias. Check that both the engine's queue/cache metrics and the per-GPU utilization signal arrive. Utilization is sampled using `nvidia-smi` over the CUDA-visible GPU UUIDs. The exporter uses the Prometheus gauge name `DCGM_FI_DEV_GPU_UTIL` for this percentage. A failed sample returns HTTP 503 and the scheduling layer can continue using its available signals.
 
 For Slurm, inspect the service account's job log under `state_dir/tf-*/slurm-JOBID.out` and use `sacct` to distinguish queue time, allocation expiry, and process failures. For EC2, use your instance management channel to inspect `/var/log/cloud-init-output.log` and `docker logs tokenflow-worker`. Inspect the gateway's pool status before retrying a launch. Engine startup can take several minutes while CUDA compiles kernels.

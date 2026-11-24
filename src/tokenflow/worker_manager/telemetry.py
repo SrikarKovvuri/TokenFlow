@@ -39,8 +39,12 @@ def read_telemetry(*scrapes: str) -> WorkerTelemetry | None:
                 value /= 100
             if field in ("gpu_utilization", "kv_cache_usage") and value > 1:
                 continue
-            if field in ("running", "waiting") and not value.is_integer():
-                continue
+            if field in ("running", "waiting"):
+                # Engine queue lengths are nonnegative integer gauges. Ignore
+                # out-of-range exporter samples without losing the other gauges.
+                if not value.is_integer() or value >= 2**63:
+                    continue
+                value = int(value)
             gauges[field] = max(value, gauges.get(field, 0))
     if not gauges:
         return None

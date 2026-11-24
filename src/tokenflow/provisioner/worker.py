@@ -49,7 +49,10 @@ def allocated_gpus(count, gpu_type):
     name_pattern = rf"(?<![A-Za-z0-9]){re.escape(gpu_type)}(?![A-Za-z0-9])"
     if len(devices) != count or any(not re.search(name_pattern, name, re.I) for name, _ in devices):
         raise RuntimeError(f"Requested {count} {gpu_type} devices, CUDA reported {devices!r}")
-    return ["GPU-" + uuid.removeprefix("GPU-") for _, uuid in devices]
+    uuids = ["GPU-" + uuid.removeprefix("GPU-") for _, uuid in devices]
+    if len(set(uuids)) != count:
+        raise RuntimeError("CUDA returned duplicate device UUIDs")
+    return uuids
 
 
 def metrics_handler(uuids, token):
@@ -68,17 +71,19 @@ def metrics_handler(uuids, token):
                     ["nvidia-smi", "-i", ",".join(uuids), "--query-gpu=uuid,utilization.gpu",
                      "--format=csv,noheader,nounits"], text=True, timeout=3,
                 )
-                lines = []
+                utilization = {}
                 for row in samples.splitlines():
                     uuid, busy = (field.strip() for field in row.split(","))
-                    if uuid in uuids and busy.isdecimal():
-                        lines.append(f'DCGM_FI_DEV_GPU_UTIL{{UUID="{uuid}"}} {busy}\n')
-                if len(lines) != len(uuids):
+                    if uuid in utilization or not busy.isdecimal() or int(busy) > 100:
+                        raise ValueError("Invalid GPU sample")
+                    utilization[uuid] = int(busy)
+                if set(utilization) != set(uuids):
                     raise ValueError("Incomplete GPU sample")
             except (ValueError, OSError, subprocess.SubprocessError):
                 self.send_error(503)
                 return
-            body = "".join(lines).encode()
+            body = "".join(f'DCGM_FI_DEV_GPU_UTIL{{UUID="{uuid}"}} {busy}\n'
+                           for uuid, busy in utilization.items()).encode()
             self.send_response(200)
             self.send_header("Content-Type", "text/plain; version=0.0.4")
             self.send_header("Content-Length", str(len(body)))
@@ -139,14 +144,18 @@ def publish_when_ready(worker, port_file, port, token, model):
     while worker.poll() is None:
         try:
             with opener.open(request, timeout=2) as response:
-                models = json.load(response).get("data", [])
-            if any(item.get("id") == model for item in models) and worker.poll() is None:
+                listing = json.load(response)
+        except (OSError, URLError, ValueError):
+            listing = None
+        models = listing.get("data") if isinstance(listing, dict) else None
+        if isinstance(models, list) and any(isinstance(item, dict) and item.get("id") == model for item in models):
+            if worker.poll() is None:
+                # A filesystem failure here must reach the Slurm log. Retrying it
+                # as a health probe would hold the GPU idle until the deadline.
                 staging = port_file.with_suffix(".tmp")
                 staging.write_text(str(port))
                 staging.replace(port_file)
-                return
-        except (OSError, URLError, ValueError):
-            pass
+            return
         time.sleep(1)
 
 
