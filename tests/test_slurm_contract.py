@@ -23,11 +23,17 @@ KEY = "3" * 32
 def test_slurm_lifecycle_through_command_processes(tmp_path, monkeypatch):
     # Drive the actual slurm_command subprocess protocol with short-lived Python
     # executables. The fake queue also enforces named cancellation and ownership.
+    for name, value in {"SBATCH_ARRAY_INX": "0-7", "SQUEUE_PARTITION": "another-partition",
+                        "SCANCEL_INTERACTIVE": "1", "SLURM_CLUSTERS": "another-cluster",
+                        "SLURM_CONF": "/test/slurm.conf"}.items():
+        monkeypatch.setenv(name, value)
     cli = tmp_path / "scheduler.py"
     cli.write_text("""
 from pathlib import Path
-import json, sys
+import json, os, sys
 command, *args = sys.argv[1:]
+assert all(key not in os.environ for key in ('SBATCH_ARRAY_INX', 'SQUEUE_PARTITION', 'SCANCEL_INTERACTIVE', 'SLURM_CLUSTERS'))
+assert os.environ['SLURM_CONF'] == '/test/slurm.conf'
 folder = Path(__file__).parent
 record = folder / 'job.json'
 if command == 'sbatch':

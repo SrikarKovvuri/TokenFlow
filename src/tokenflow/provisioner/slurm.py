@@ -41,7 +41,14 @@ class SubmissionRejected(RuntimeError):
 
 
 def slurm_command(*args: str, script: str | None = None) -> str:
-    result = subprocess.run(args, input=script, text=True, capture_output=True, timeout=30)
+    # The CLI consumes these defaults before --export=NIL applies to the job.
+    # An inherited array, federation target or queue filter breaks pool accounting.
+    env = {
+        name: value for name, value in os.environ.items()
+        if not name.startswith(("SBATCH_", "SQUEUE_", "SCANCEL_"))
+        and name not in {"SLURM_CLUSTERS", "SLURM_HINT", "SLURM_EXIT_ERROR"}
+    }
+    result = subprocess.run(args, input=script, text=True, capture_output=True, timeout=30, env=env)
     if result.returncode != 0:
         detail = result.stderr.strip()
         # A failed process alone is insufficient: the RPC reply could have been
