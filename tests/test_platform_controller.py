@@ -1,0 +1,315 @@
+import asyncio
+from pathlib import Path
+from types import SimpleNamespace
+
+import httpx
+import pytest
+
+from tokenflow.platform import controller as module
+from tokenflow.platform.controller import Controller
+from tokenflow.provisioner.base import PoolSpec, Resource
+from tokenflow.scheduler.selection import NoAvailableWorkerError, WorkersAtCapacityError
+from tokenflow.worker_manager.models import HealthStatus
+from tokenflow.worker_manager.registry import WorkerRegistry
+
+
+class Inventory:
+    """Provider accepting launch before the caller receives its reply."""
+
+    def __init__(self):
+        self.items = {}
+        self.launches = []
+        self.terminated = []
+        self.lost_reply = False
+        self.offline = False
+
+    async def discover(self, pool):
+        if self.offline:
+            raise ConnectionError("inventory unavailable")
+        return list(self.items.get(pool.name, {}).values())
+
+    async def launch(self, pool, key):
+        self.launches.append((pool.name, key))
+        resource = Resource(key, f"job-{len(self.launches)}", "pending")
+        self.items.setdefault(pool.name, {})[key] = resource
+        if self.lost_reply:
+            raise TimeoutError("reply lost")
+        return resource
+
+    async def terminate(self, pool, resource):
+        self.terminated.append(resource.key)
+        self.items[pool.name][resource.key] = Resource(resource.key, resource.external_id, "terminal")
+
+    def boot(self, name, key):
+        pending = self.items[name][key]
+        self.items[name][key] = Resource(key, pending.external_id, "running", "http://gpu:18000")
+
+
+def spec(name="big", **changes):
+    fields = dict(
+        name=name, model="qwen", checkpoint="qwen-checkpoint", image="engine", gpu_type="A6000",
+        provider="slurm", min_replicas=1, max_replicas=3, capacity=2,
+    )
+    return PoolSpec(**(fields | changes))
+
+
+def create(path: Path, inventory: Inventory, *pools: PoolSpec):
+    return Controller(list(pools), {p.provider: inventory for p in pools}, WorkerRegistry(), path,
+                      interval_seconds=1, idle_seconds=10, startup_timeout_seconds=20)
+
+
+def test_adoption_after_lost_reply_and_restart_drains_before_terminating(tmp_path):
+    async def scenario():
+        path = tmp_path / "state.db"
+        inventory = Inventory()
+        inventory.lost_reply = True
+        first = create(path, inventory, spec())
+        await first.reconcile()
+        assert "reply lost" in first.status()[0]["last_error"]
+        _, key = inventory.launches[0]
+        first.close()
+
+        inventory.boot("big", key)
+        controller = create(path, inventory, spec())
+        await controller.reconcile()
+        [worker] = await controller.registry.list()
+        assert worker.metadata["model"] == "qwen"
+        assert worker.metadata["gpu_metrics_port"] == 18001
+        assert worker.health_status == HealthStatus.UNKNOWN
+        assert controller.slurm_key_for_url(httpx.URL("http://gpu:18001/metrics")) == key
+        assert controller.slurm_key_for_url(httpx.URL("https://gpu:18000/health")) is None
+        await controller.registry.set_health_status(worker.id, HealthStatus.HEALTHY,
+                                                    expected_base_url=str(worker.base_url))
+        await controller.registry.assign("qwen")
+        controller.set_limits("big", 0, 0)
+        await controller.reconcile()
+        assert not (await controller.registry.get(worker.id)).enabled
+        with pytest.raises(NoAvailableWorkerError):
+            await controller.registry.assign("qwen")
+        assert inventory.terminated == []
+        await controller.registry.release(worker.id)
+        await controller.reconcile()
+        assert inventory.terminated == [key]
+        await controller.reconcile()
+        assert not await controller.registry.list()
+        assert not controller.status()[0]["resources"]
+        assert controller.slurm_key_for_url(httpx.URL("http://gpu:18000/health")) is None
+        assert len(inventory.launches) == 1
+        controller.close()
+        restored = create(path, inventory, spec())
+        assert restored.status()[0]["max_replicas"] == 0
+        await restored.reconcile()
+        assert len(inventory.launches) == 1
+        restored.close()
+
+    asyncio.run(scenario())
+
+
+def test_zero_to_one_selects_one_hardware_pool_and_wrong_model_stays_at_zero(tmp_path):
+    async def scenario():
+        inventory = Inventory()
+        pools = [
+            spec("slow", min_replicas=0, service_time_seconds=2),
+            spec("fast", min_replicas=0, service_time_seconds=1),
+        ]
+        controller = create(tmp_path / "state.db", inventory, *pools)
+        with pytest.raises(NoAvailableWorkerError):
+            await controller.registry.assign("typo")
+        await controller.reconcile()
+        assert not inventory.launches
+        with pytest.raises(NoAvailableWorkerError):
+            await controller.registry.assign("qwen")
+        await controller.reconcile()
+        assert [name for name, _ in inventory.launches] == ["fast"]
+        inventory.offline = True
+        await controller.reconcile()
+        assert not inventory.terminated
+        assert len(inventory.launches) == 1
+        assert controller.status()[1]["last_error"] == "inventory unavailable"
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_queued_slurm_job_keeps_priority_but_failed_startup_is_replaced(tmp_path, monkeypatch):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(module, "time", SimpleNamespace(time=lambda: now[0], monotonic=lambda: now[0]))
+        inventory = Inventory()
+        controller = create(tmp_path / "state.db", inventory, spec())
+        await controller.reconcile()
+        _, key = inventory.launches[0]
+        now[0] += 3600
+        await controller.reconcile()
+        assert not inventory.terminated
+        inventory.boot("big", key)
+        await controller.reconcile()
+        now[0] += 21
+        await controller.reconcile()
+        assert inventory.terminated == [key]
+        assert "readiness deadline" in controller.status()[0]["last_error"]
+        assert len(inventory.launches) == 1
+        await controller.reconcile()
+        assert not controller.status()[0]["resources"]
+        now[0] += 301
+        await controller.reconcile()
+        assert len(inventory.launches) == 2
+        assert inventory.launches[1][1] != key
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_load_drives_scale_up_and_cooldown_prevents_immediate_scale_down(tmp_path, monkeypatch):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(module, "time", SimpleNamespace(time=lambda: now[0], monotonic=lambda: now[0]))
+        inventory = Inventory()
+        controller = create(tmp_path / "state.db", inventory, spec(min_replicas=0, capacity=1))
+        with pytest.raises(NoAvailableWorkerError):
+            await controller.registry.assign("qwen")
+        await controller.reconcile()
+        _, key = inventory.launches[0]
+        inventory.boot("big", key)
+        await controller.reconcile()
+        [worker] = await controller.registry.list()
+        await controller.registry.set_health_status(worker.id, HealthStatus.HEALTHY,
+                                                    expected_base_url=str(worker.base_url))
+        await controller.registry.assign("qwen")
+        with pytest.raises(WorkersAtCapacityError):
+            await controller.registry.assign("qwen")
+        await controller.reconcile()
+        assert len(inventory.launches) == 2
+        await controller.registry.release(worker.id)
+        monkeypatch.setattr(controller.registry, "demand_since", lambda model, seconds: 0)
+        now[0] += 3
+        await controller.reconcile()
+        assert not inventory.terminated
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_reconfiguration_preserves_ownership_of_existing_jobs(tmp_path):
+    async def scenario():
+        inventory = Inventory()
+        path = tmp_path / "state.db"
+        first = create(path, inventory, spec())
+        await first.reconcile()
+        with pytest.raises(ValueError):
+            first.set_limits("big", 0, 4)
+        first.close()
+        with pytest.raises(ValueError, match="Drain pool"):
+            create(path, inventory, spec(checkpoint="other"))
+        with pytest.raises(ValueError, match="Drain pool"):
+            create(path, inventory, spec("renamed"))
+        with pytest.raises(ValueError, match="Drain pool"):
+            create(path, inventory, spec(capacity=42))
+
+    asyncio.run(scenario())
+
+
+def test_temporary_inventory_loss_recovers_same_worker_and_confirmed_termination_removes_it(tmp_path, monkeypatch):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(module, "time", SimpleNamespace(time=lambda: now[0], monotonic=lambda: now[0]))
+        inventory = Inventory()
+        controller = create(tmp_path / "state.db", inventory, spec())
+        await controller.reconcile()
+        _, key = inventory.launches[0]
+        inventory.boot("big", key)
+        await controller.reconcile()
+        [worker] = await controller.registry.list()
+        url = httpx.URL("http://gpu:18000")
+
+        inventory.offline = True
+        await controller.reconcile()
+        assert controller.slurm_key_for_url(url) is None
+        assert not (await controller.registry.get(worker.id)).enabled
+
+        now[0] += 40
+        inventory.offline = False
+        running = inventory.items["big"].pop(key)
+        await controller.reconcile()
+        assert len(controller.status()[0]["resources"]) == 1
+        inventory.items["big"][key] = running
+        await controller.reconcile()
+        assert (await controller.registry.get(worker.id)).enabled
+        assert controller.slurm_key_for_url(url) == key
+        assert len(inventory.launches) == 1
+        inventory.items["big"][key] = Resource(key, running.external_id, "terminal")
+        await controller.reconcile()
+        assert not await controller.registry.list()
+        assert controller.slurm_key_for_url(url) is None
+        assert not controller.status()[0]["resources"]
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_stopped_cloud_instance_hits_readiness_deadline(tmp_path, monkeypatch):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(module, "time", SimpleNamespace(time=lambda: now[0], monotonic=lambda: now[0]))
+        inventory = Inventory()
+        controller = create(tmp_path / "state.db", inventory, spec(provider="cloud"))
+        await controller.reconcile()
+        await controller.reconcile()
+        now[0] += 21
+        await controller.reconcile()
+        assert inventory.terminated == [inventory.launches[0][1]]
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_reassigned_private_ip_keeps_old_lease_until_drain(tmp_path):
+    async def scenario():
+        inventory = Inventory()
+        controller = create(tmp_path / "state.db", inventory, spec(provider="cloud", max_replicas=1))
+        await controller.reconcile()
+        _, old = inventory.launches[0]
+        inventory.boot("big", old)
+        await controller.reconcile()
+        [worker] = await controller.registry.list()
+        await controller.registry.set_health_status(worker.id, HealthStatus.HEALTHY,
+                                                    expected_base_url=str(worker.base_url))
+        await controller.registry.assign("qwen")
+        resource = inventory.items["big"].pop(old)
+        inventory.items["big"]["replacement"] = Resource("replacement", "job-2", "running", resource.base_url)
+        await controller.reconcile()
+        assert not (await controller.registry.get(worker.id)).enabled
+        assert (await controller.registry.get(worker.id)).active_requests == 1
+        await controller.registry.release(worker.id)
+        await controller.reconcile()
+        [replacement] = await controller.registry.list()
+        assert replacement.metadata["resource_key"] == "replacement"
+        assert replacement.health_status == HealthStatus.UNKNOWN
+        assert controller.owns_worker(replacement.id)
+        assert not controller.owns_worker(worker.id)
+        assert inventory.terminated == []
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_reused_gateway_registry_recovers_its_managed_record(tmp_path):
+    async def scenario():
+        path = tmp_path / "state.db"
+        inventory = Inventory()
+        controller = create(path, inventory, spec())
+        await controller.reconcile()
+        _, key = inventory.launches[0]
+        inventory.boot("big", key)
+        await controller.reconcile()
+        [original] = await controller.registry.list()
+        controller.close()
+        restarted = Controller([spec()], {"slurm": inventory}, controller.registry, path)
+        await restarted.reconcile()
+        [reattached] = await restarted.registry.list()
+        assert reattached.id == original.id
+        assert restarted.owns_worker(reattached.id)
+        assert len(inventory.launches) == 1
+        restarted.close()
+
+    asyncio.run(scenario())

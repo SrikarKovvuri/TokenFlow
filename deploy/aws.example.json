@@ -1,0 +1,28 @@
+{
+  "namespace": "cloud-inference",
+  "state_path": "/var/lib/tokenflow/control.sqlite3",
+  "pools": [
+    {
+      "name": "qwen-l40s",
+      "provider": "cloud",
+      "backend": "vllm",
+      "model": "qwen-14b",
+      "checkpoint": "Qwen/Qwen2.5-14B-Instruct",
+      "image": "vllm/vllm-openai:v0.10.2",
+      "gpu_type": "L40S",
+      "gpu_count": 1,
+      "capacity": 16,
+      "min_replicas": 0,
+      "max_replicas": 1,
+      "options": {
+        "region": "us-east-1",
+        "instance_type": "g6e.2xlarge",
+        "ami_id": "ami-0123456789abcdef0",
+        "subnet_id": "subnet-0123456789abcdef0",
+        "security_group_ids": ["sg-0123456789abcdef0"],
+        "dtype": "bfloat16",
+        "max_model_len": 2048
+      }
+    }
+  ]
+}
