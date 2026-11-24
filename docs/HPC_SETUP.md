@@ -1,4 +1,6 @@
-# Restarting the HPC worker
+# Restarting the manually managed HPC benchmark worker
+
+This runbook records the original single-worker benchmark setup. For automatic Slurm allocation, worker launch and registration behind a stable gateway, use [the managed deployment guide](PLATFORM.md).
 
 Recovery status: see the verified recovery section below. The allocation and container version are recovered; the host model directory still needs to be located.
 
@@ -93,9 +95,7 @@ separate processes. Do not start a large experiment until this check passes.
 
 ## Pending recovery
 
-Replace this section with the verified allocation, environment/container, and
-launch commands after cluster access is restored. Keep mutable compute-node
-addresses as runtime inputs. No Slurm provisioning has been added to TokenFlow.
+Keep mutable compute-node addresses as runtime inputs when repeating this manual setup.
 
 ## Access reference
 
