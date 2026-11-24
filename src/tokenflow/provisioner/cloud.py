@@ -3,11 +3,12 @@
 import asyncio
 import hashlib
 from ipaddress import IPv4Address
+from pathlib import PurePosixPath
 import re
 import shlex
 from typing import Annotated, Literal
 
-from pydantic import Field, StringConstraints
+from pydantic import AfterValidator, Field, StringConstraints
 
 from tokenflow.provisioner.base import PoolSpec, Resource
 from tokenflow.provisioner.launch import EngineOptions, check_mount_path, worker_args, worker_script
@@ -20,12 +21,29 @@ class CloudOptions(EngineOptions):
     subnet_id: Annotated[str, StringConstraints(pattern=r"^subnet-[a-f0-9]+$")]
     security_group_ids: list[Annotated[str, StringConstraints(pattern=r"^sg-[a-f0-9]+$")]] = Field(min_length=1)
     image_pull_policy: Literal["missing", "never"] = "missing"
+    checkpoint_mount: Annotated[str, AfterValidator(check_mount_path)] | None = None
     iam_instance_profile: Annotated[str, StringConstraints(pattern=r"^[a-zA-Z0-9+=,.@_-]+$")] | None = None
 
 
 def bootstrap(pool: PoolSpec, opts: CloudOptions) -> str:
     script = "/var/lib/tokenflow/worker.py"
     checkpoint = pool.checkpoint
+    mount = ""
+    if opts.checkpoint_mount:
+        root = PurePosixPath(opts.checkpoint_mount)
+        target = PurePosixPath(checkpoint)
+        if ".." in target.parts or ".." in root.parts or not target.is_relative_to(root):
+            raise ValueError("checkpoint must be on the configured checkpoint_mount")
+        # A delayed network mount can leave an empty mountpoint on the root disk.
+        # Keep Docker behind the mount on reboots as well as this first launch.
+        mount = f"""checkpoint_mount={shlex.quote(opts.checkpoint_mount)}
+mount_unit=$(systemd-escape --path --suffix=mount "$checkpoint_mount")
+install -d -m 0755 /etc/systemd/system/docker.service.d
+printf '[Unit]\\nRequires=%s\\nAfter=%s\\n' "$mount_unit" "$mount_unit" > /etc/systemd/system/docker.service.d/tokenflow-checkpoint.conf
+systemctl daemon-reload
+systemctl start -- "$mount_unit"
+mountpoint --quiet -- "$checkpoint_mount"
+"""
     docker = ["docker", "run", "--detach", "--name", "tokenflow-worker", "--restart=unless-stopped",
               f"--pull={opts.image_pull_policy}",
               "--gpus", "all", "--shm-size=8g", "--log-opt", "max-size=25m", "--log-opt", "max-file=3",
@@ -39,12 +57,20 @@ def bootstrap(pool: PoolSpec, opts: CloudOptions) -> str:
     docker.extend(worker_args(pool, opts, pool.port, checkpoint))
     data = f"""#!/bin/bash
 set -euo pipefail
+on_exit() {{
+    status=$?
+    if (( status != 0 )); then
+        echo "TokenFlow worker bootstrap failed (exit $status). Powering off." >&2
+        systemctl --no-block poweroff || true
+    fi
+}}
+trap on_exit EXIT
 umask 022
 install -d -m 0755 /var/lib/tokenflow
 cat > {script} <<'TOKENFLOW_PY'
 {worker_script()}
 TOKENFLOW_PY
-systemctl enable --now docker
+{mount}systemctl enable --now docker
 {shlex.join(docker)}
 """
     if len(data.encode()) > 16 * 1024:
@@ -131,6 +157,7 @@ class CloudProvisioner:
         tags = self._tags(pool) | {"TokenFlowKey": key, "Name": f"tokenflow-{pool.name}"}
         params = {
             "MinCount": 1, "MaxCount": 1, "ImageId": opts.ami_id, "InstanceType": opts.instance_type,
+            "InstanceInitiatedShutdownBehavior": "terminate",
             "NetworkInterfaces": [{"DeviceIndex": 0, "SubnetId": opts.subnet_id,
                                    "Groups": opts.security_group_ids, "AssociatePublicIpAddress": False,
                                    "DeleteOnTermination": True}],

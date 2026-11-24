@@ -38,7 +38,7 @@ class Controller:
         self._down_since: dict[str, float] = {}
         self._desired: dict[str, int] = {}
         self._discovery_errors: dict[str, str] = {}
-        registry.track_demand(self._models)
+        self._track_scalable_models()
 
     def close(self) -> None:
         # Allocations outlive a gateway restart. On startup, discovery reattaches them.
@@ -57,6 +57,10 @@ class Controller:
         if not 0 <= minimum <= maximum <= pool.max_replicas:
             raise ValueError(f"Expected 0 <= minimum <= maximum <= {pool.max_replicas}")
         self.state.limits(pool_name, minimum, maximum)
+        self._track_scalable_models()
+
+    def _track_scalable_models(self) -> None:
+        self.registry.track_demand(pool.model for pool in self.pools.values() if self._limits(pool)[1] > 0)
 
     def _limits(self, pool: PoolSpec) -> tuple[int, int]:
         row = self.state.policy(pool.name)
@@ -297,6 +301,8 @@ class Controller:
 
     def _targets(self, pools: list[PoolSpec], workers: dict[UUID, Worker]) -> dict[str, int]:
         limits = {p.name: self._limits(p) for p in pools}
+        can_launch = {p.name: limits[p.name][1] > 0 and self.state.policy(p.name)["retry_at"] <= time.time()
+                      for p in pools}
         targets: dict[str, int] = {}
         # Snapshot ready-worker capacity using the same freshness and engine-load
         # rules as admission. Pending allocations count toward future capacity.
@@ -319,7 +325,8 @@ class Controller:
             serving = [w for w in workers.values() if w.metadata.get("model") == model]
             active = sum(w.active_requests for w in serving)
             manual_slots = sum(ready.get(w.id, 0) for w in serving if w.id not in managed_ids)
-            shortfall = max(active, self.registry.demand_since(model, window)) - manual_slots
+            cold = any(can_launch[p.name] for p in candidates) and self.registry.take_cold_arrival(model)
+            shortfall = max(active, self.registry.demand_since(model, window), int(cold)) - manual_slots
             for pool in candidates:
                 floor = targets[pool.name]
                 existing = supply[pool.name]
@@ -337,7 +344,7 @@ class Controller:
             for pool in candidates:
                 if shortfall <= 0:
                     break
-                if self.state.policy(pool.name)["retry_at"] > time.time():
+                if not can_launch[pool.name]:
                     continue
                 room = limits[pool.name][1] - targets[pool.name]
                 add = min(room, math.ceil(shortfall / pool.capacity))

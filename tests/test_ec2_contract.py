@@ -2,11 +2,15 @@
 
 import asyncio
 import hashlib
+import os
+from pathlib import Path
+import shutil
+import subprocess
 
 import pytest
 
 from tokenflow.provisioner.base import PoolSpec, Resource
-from tokenflow.provisioner.cloud import CloudProvisioner
+from tokenflow.provisioner.cloud import CloudOptions, CloudProvisioner, bootstrap
 
 
 boto3 = pytest.importorskip("boto3")
@@ -66,6 +70,7 @@ def test_run_instances_retry_reuses_ownership_and_idempotency_token(fleet):
     provider, pool, stub = fleet
     launch_args = {
         "MinCount": 1, "MaxCount": 1, "ImageId": "ami-123", "InstanceType": "g4dn.xlarge",
+        "InstanceInitiatedShutdownBehavior": "terminate",
         "NetworkInterfaces": [{
             "DeviceIndex": 0, "SubnetId": "subnet-123", "Groups": ["sg-abc"],
             "AssociatePublicIpAddress": False, "DeleteOnTermination": True,
@@ -115,3 +120,60 @@ def test_partial_inventory_error_does_not_terminate(fleet):
     resource = Resource(key=KEY, external_id=INSTANCE_ID, phase="running")
     with pytest.raises(ClientError, match="UnauthorizedOperation"):
         asyncio.run(provider.terminate(pool, resource))
+
+
+@pytest.mark.parametrize("checkpoint", ["Qwen/Qwen2.5-14B", "/models-old/qwen", "/models/../other"])
+def test_checkpoint_must_be_on_the_requested_mount(fleet, checkpoint):
+    provider, pool, _ = fleet
+    with pytest.raises(ValueError, match="checkpoint_mount"):
+        provider.validate_pool(pool.model_copy(update={
+            "checkpoint": checkpoint, "options": {**pool.options, "checkpoint_mount": "/models"},
+        }))
+
+
+@pytest.mark.parametrize("failure", ["", "mountpoint", "docker"])
+def test_worker_bootstrap_mount_and_failure_shutdown(fleet, tmp_path, failure):
+    _, pool, _ = fleet
+    if os.name == "nt":
+        bash = Path(os.environ.get("ProgramFiles", "C:/Program Files"), "Git/bin/bash.exe")
+        if not bash.is_file():
+            pytest.skip("Git Bash is required on Windows to execute the cloud-init script")
+    else:
+        bash = shutil.which("bash")
+        if not bash:
+            pytest.skip("Bash is required to execute the cloud-init script")
+    opts = CloudOptions.model_validate({**pool.options, "checkpoint_mount": "/models with spaces"})
+    pool = pool.model_copy(update={"checkpoint": "/models with spaces/qwen"})
+    data = bootstrap(pool, opts).replace("/var/lib/tokenflow", "worker-state").replace(
+        "/etc/systemd/system", "unit-config",
+    )
+    # All systemd, mount, Docker, and shutdown operations are shell-local fakes.
+    commands = """
+systemd-escape() { test "$3" = '/models with spaces' && echo models.mount; }
+systemctl() { echo "systemctl $*" >> calls; }
+mountpoint() {
+    test "$3" = '/models with spaces' || return 2
+    echo mountpoint >> calls
+    test "$FAILURE" != mountpoint
+}
+docker() {
+    echo docker >> calls
+    test "$FAILURE" != docker
+}
+"""
+    (tmp_path / "bootstrap.sh").write_text(commands + data, newline="\n")
+    result = subprocess.run(
+        [str(bash), "bootstrap.sh"], cwd=tmp_path,
+        env={**os.environ, "FAILURE": failure}, capture_output=True, text=True, timeout=15,
+    )
+    assert (tmp_path / "calls").is_file(), result.stderr
+    calls = (tmp_path / "calls").read_text().splitlines()
+    expected = ["systemctl daemon-reload", "systemctl start -- models.mount", "mountpoint"]
+    if failure != "mountpoint":
+        expected.extend(["systemctl enable --now docker", "docker"])
+    if failure:
+        expected.append("systemctl --no-block poweroff")
+    assert calls == expected
+    dropin = tmp_path / "unit-config/docker.service.d/tokenflow-checkpoint.conf"
+    assert dropin.read_text().splitlines() == ["[Unit]", "Requires=models.mount", "After=models.mount"]
+    assert result.returncode == int(bool(failure)), result.stderr

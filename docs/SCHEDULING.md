@@ -60,6 +60,16 @@ HTTP 503 with the same retry hint. Both responses arrive immediately. Configured
 model pools record recent peak demand, including admission failures, so an
 autoscaler can bring up capacity even when a model starts at zero workers.
 
+For a cold model, the gateway remembers one arrival for up to five minutes
+while waiting for an eligible pool's provider inventory or launch backoff.
+This gives the controller a chance to submit one allocation even if a slow
+poll outlasts its usual demand window. The gateway stores no prompt for
+replay. Once Slurm accepts the first job, it can keep its queue position for
+hours. The startup deadline begins when Slurm runs it. The first successful
+health check starts its idle grace period. Send the chat request again once
+the worker is healthy. A warm minimum of one avoids this scale-from-zero wait.
+Pausing every pool for a model clears its recorded demand.
+
 The autoscaler compares recent gateway demand with the capacity available to
 that model. Healthy manual workers count toward supply. Fresh engine requests
 above a worker's live gateway reservations occupy some of its slots, up to

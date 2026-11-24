@@ -4,8 +4,10 @@ from datetime import UTC, datetime
 from time import monotonic
 from uuid import UUID, uuid4
 
-from tokenflow.scheduler.selection import choose_worker
+from tokenflow.scheduler.selection import NoAvailableWorkerError, choose_worker
 from tokenflow.worker_manager.models import HealthStatus, Worker, WorkerCreate, WorkerTelemetry, WorkerUpdate
+
+DEMAND_HISTORY_SECONDS = 300
 
 
 class WorkerNotFoundError(LookupError):
@@ -31,20 +33,27 @@ class WorkerRegistry:
         self._inflight: dict[UUID, int] = {}
         self._telemetry_age_seconds = telemetry_age_seconds
         self._demand: dict[str, deque[tuple[int, int]]] = {}
+        self._cold_arrivals: dict[str, float] = {}
 
     def track_demand(self, models: Iterable[str]) -> None:
         """Track only configured models so arbitrary request names cannot grow state."""
         self._demand = {
-            model: self._demand.get(model, deque(maxlen=301)) for model in models
+            model: self._demand.get(model, deque(maxlen=DEMAND_HISTORY_SECONDS + 1)) for model in models
         }
+        self._cold_arrivals = {m: when for m, when in self._cold_arrivals.items() if m in self._demand}
 
     def demand_since(self, model: str, seconds: float) -> int:
         """Peak offered concurrency in a rolling window of up to five minutes."""
-        cutoff = int(monotonic() - min(300, seconds))
+        cutoff = int(monotonic() - min(DEMAND_HISTORY_SECONDS, seconds))
         return max(
             (peak for when, peak in self._demand.get(model, ()) if when >= cutoff),
             default=0,
         )
+
+    def take_cold_arrival(self, model: str) -> bool:
+        """Allow one cold-start decision when a slow inventory poll misses the rolling peak."""
+        when = self._cold_arrivals.pop(model, None)
+        return when is not None and monotonic() - when <= DEMAND_HISTORY_SECONDS
 
     def capacity_for_gateway(self, worker: Worker) -> int:
         """Slots available for both current and incoming gateway reservations."""
@@ -92,15 +101,14 @@ class WorkerRegistry:
         """Select and reserve a worker before any network wait."""
         if not exclude:
             self._record_arrival(model)
-        worker = choose_worker(
-            [
-                (candidate, self._inflight.get(candidate.id, 0))
-                for candidate in self._workers.values()
-                if not exclude or candidate.id not in exclude
-            ],
-            model,
-            telemetry_age_seconds=self._telemetry_age_seconds,
-        )
+        candidates = [(candidate, self._inflight.get(candidate.id, 0))
+                      for candidate in self._workers.values() if not exclude or candidate.id not in exclude]
+        try:
+            worker = choose_worker(candidates, model, telemetry_age_seconds=self._telemetry_age_seconds)
+        except NoAvailableWorkerError:
+            if not exclude and model in self._demand:
+                self._cold_arrivals[model] = monotonic()
+            raise
         self._inflight[worker.id] = self._inflight.get(worker.id, 0) + 1
         return self._with_load(worker)
 

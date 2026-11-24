@@ -10,6 +10,7 @@ from tokenflow.platform import controller as module
 from tokenflow.platform.controller import Controller
 from tokenflow.provisioner.base import PoolSpec, Resource
 from tokenflow.scheduler.selection import NoAvailableWorkerError, WorkersAtCapacityError
+from tokenflow.worker_manager import registry as registry_module
 from tokenflow.worker_manager.models import HealthStatus, WorkerCreate, WorkerTelemetry, WorkerUpdate
 from tokenflow.worker_manager.registry import WorkerRegistry
 
@@ -157,6 +158,85 @@ def test_queued_slurm_job_keeps_priority_but_failed_startup_is_replaced(tmp_path
         assert len(inventory.launches) == 2
         assert inventory.launches[1][1] != key
         controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_single_cold_arrival_through_slurm_queue_and_model_startup(tmp_path, monkeypatch):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(module, "time", SimpleNamespace(time=lambda: now[0]))
+        monkeypatch.setattr(registry_module, "monotonic", lambda: now[0])
+        provider = Inventory()
+        registry = WorkerRegistry()
+        controller = Controller([spec(min_replicas=0)], {"slurm": provider}, registry, tmp_path / "state.db")
+        try:
+            await controller.reconcile()
+            with pytest.raises(NoAvailableWorkerError):
+                await registry.assign("qwen")  # The only arrival before readiness.
+            provider.offline = True
+            now[0] += 10
+            await controller.reconcile()
+            provider.offline = False
+            now[0] += 35  # Beyond the normal 20s demand window.
+            await controller.reconcile()
+            assert len(provider.launches) == 1
+            _, key = provider.launches[0]
+            now[0] += 3600
+            await controller.reconcile()
+            now[0] += 3600
+            await controller.reconcile()
+            assert provider.terminated == []
+            # Slurm has assigned the node. The engine publishes its endpoint
+            # after the image and model load, then the monitor probes it.
+            resource = provider.items["big"][key]
+            provider.items["big"][key] = Resource(key, resource.external_id, "running")
+            await controller.reconcile()
+            now[0] += 900
+            provider.boot("big", key)
+            await controller.reconcile()
+            [worker] = await registry.list()
+            assert worker.health_status == HealthStatus.UNKNOWN
+            await registry.set_health_status(worker.id, HealthStatus.HEALTHY, expected_base_url=str(worker.base_url))
+            await controller.reconcile()
+            now[0] += 299
+            await controller.reconcile()
+            assert (await registry.assign("qwen")).id == worker.id
+            assert len(provider.launches) == 1
+            assert provider.terminated == []
+            await registry.release(worker.id)
+            await controller.reconcile()
+            now[0] += 30
+            await controller.reconcile()
+            now[0] += 301
+            await controller.reconcile()
+            assert provider.terminated == [key]
+        finally:
+            controller.close()
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("pause_before_recovery,delay", [(False, 360), (True, 45)])
+def test_expired_or_paused_cold_arrival_does_not_launch(tmp_path, monkeypatch, pause_before_recovery, delay):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(registry_module, "monotonic", lambda: now[0])
+        provider = Inventory()
+        controller = create(tmp_path / "state.db", provider, spec(min_replicas=0))
+        try:
+            with pytest.raises(NoAvailableWorkerError):
+                await controller.registry.assign("qwen")
+            if pause_before_recovery:
+                controller.set_limits("big", 0, 0)
+                with pytest.raises(NoAvailableWorkerError):
+                    await controller.registry.assign("qwen")
+                controller.set_limits("big", 0, 1)
+            now[0] += delay
+            await controller.reconcile()
+            assert provider.launches == []
+        finally:
+            controller.close()
 
     asyncio.run(scenario())
 
