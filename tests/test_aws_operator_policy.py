@@ -40,6 +40,9 @@ def test_bootstrap_is_read_only_and_quota_writes_are_opt_in():
     assert "servicequotas:RequestServiceQuotaIncrease" not in quota["Action"]
     assert set(quota["Action"]) == {"servicequotas:GetServiceQuota", "servicequotas:ListRequestedServiceQuotaChangeHistoryByQuota"}
     assert bootstrap["ReadCreditsAndPrices"]["Action"] == ["billing:GetCredits", "pricing:GetProducts"]
+    inventory = bootstrap["InspectRegionalGpuInfrastructure"]
+    assert "ec2:DescribeVpcs" in inventory["Action"]
+    assert inventory["Condition"] == {"StringEquals": {"aws:RequestedRegion": REGION}}
     for statement in bootstrap.values():
         actions = statement["Action"]
         for action in [actions] if isinstance(actions, str) else actions:

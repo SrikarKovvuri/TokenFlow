@@ -40,7 +40,7 @@ def bootstrap_policy(account, region, allow_quota_request=False):
         allow("InspectRegionalGpuInfrastructure", [
             "ec2:DescribeInstances", "ec2:DescribeInstanceStatus", "ec2:DescribeCapacityReservations",
             "ec2:DescribeImages", "ec2:DescribeInstanceTypes", "ec2:DescribeInstanceTypeOfferings",
-            "ec2:DescribeSubnets", "ec2:DescribeSecurityGroups", "ec2:DescribeVolumes",
+            "ec2:DescribeSubnets", "ec2:DescribeVpcs", "ec2:DescribeSecurityGroups", "ec2:DescribeVolumes",
             "ec2:DescribeNetworkInterfaces",
         ], "*", regional),
         allow("ReadRegionalMetrics", [

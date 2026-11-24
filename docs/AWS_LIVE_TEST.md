@@ -19,6 +19,10 @@ private source CIDR only. On a VPN, use `--source-cidr` with the CIDR that the
 worker actually sees. Check route tables, security groups and network ACLs.
 The command creates no networking or public endpoint.
 
+Choose a worker VPC with `InstanceTenancy` set to `default`. The test verifies
+this setting before using the shared-tenancy compute price. Custom VPCs with
+default tenancy qualify. [EC2 tenancy and pricing](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/dedicated-instance.html)
+
 For an AMI with Qwen2.5-0.5B-Instruct and the image already loaded, pass
 `--local-checkpoint /path/on/ami` and optionally `--image your-local-oci-tag`.
 The test uses a read-only checkpoint mount and Docker's never-pull policy.

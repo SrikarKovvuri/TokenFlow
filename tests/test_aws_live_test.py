@@ -106,15 +106,32 @@ def test_guard_verifies_role_can_terminate_before_gpu_launch():
 def test_private_vpn_ingress_allows_a_preloaded_worker_without_nat():
     ec2 = MagicMock()
     ec2.describe_subnets.return_value = {"Subnets": [{"VpcId": "vpc", "AvailabilityZone": "zone"}]}
+    ec2.describe_vpcs.return_value = {"Vpcs": [{"VpcId": "vpc", "InstanceTenancy": "default"}]}
     ec2.describe_instance_type_offerings.return_value = {"InstanceTypeOfferings": [{}]}
     rule = {"IpProtocol": "tcp", "FromPort": 8000, "ToPort": 8001, "IpRanges": [{"CidrIp": "10.0.7.9/32"}]}
     ec2.describe_security_groups.return_value = {"SecurityGroups": [{"VpcId": "vpc", "IpPermissions": [rule]}]}
     args = SimpleNamespace(subnet="subnet", worker_group="worker", source_group=None, source_cidr="10.0.7.9/32")
     live.check_network(ec2, args)
+    ec2.describe_vpcs.assert_called_once_with(VpcIds=["vpc"])
     ec2.describe_nat_gateways.assert_not_called()
     rule["IpRanges"].append({"CidrIp": "0.0.0.0/0"})
     with pytest.raises(ValueError, match="ingress"):
         live.check_network(ec2, args)
+
+
+@pytest.mark.parametrize("vpcs", [
+    {}, {"Vpcs": []}, {"Vpcs": [{"VpcId": "vpc"}]},
+    {"Vpcs": [{"VpcId": "vpc", "InstanceTenancy": ""}]},
+    {"Vpcs": [{"VpcId": "vpc", "InstanceTenancy": "dedicated"}]},
+    {"Vpcs": [{"VpcId": "other", "InstanceTenancy": "default"}]},
+])
+def test_unverified_or_dedicated_vpc_fails_shared_tenancy_check(vpcs):
+    ec2 = MagicMock()
+    ec2.describe_subnets.return_value = {"Subnets": [{"VpcId": "vpc"}]}
+    ec2.describe_vpcs.return_value = vpcs
+    with pytest.raises(ValueError, match="verified default tenancy"):
+        live.check_network(ec2, SimpleNamespace(subnet="subnet"))
+    ec2.describe_instance_type_offerings.assert_not_called()
 
 
 @pytest.fixture

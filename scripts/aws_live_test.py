@@ -97,6 +97,10 @@ def check_network(ec2, args):
     subnet = ec2.describe_subnets(SubnetIds=[args.subnet])["Subnets"][0]
     if subnet.get("AssignIpv6AddressOnCreation"):
         raise ValueError("Choose a subnet without automatic IPv6 addresses")
+    vpc_id = subnet["VpcId"]
+    vpcs = ec2.describe_vpcs(VpcIds=[vpc_id]).get("Vpcs", [])
+    if len(vpcs) != 1 or vpcs[0].get("VpcId") != vpc_id or vpcs[0].get("InstanceTenancy") != "default":
+        raise ValueError("The shared-tenancy price estimate requires a worker VPC with verified default tenancy")
     offers = ec2.describe_instance_type_offerings(LocationType="availability-zone", Filters=[
         {"Name": "instance-type", "Values": [INSTANCE_TYPE]},
         {"Name": "location", "Values": [subnet["AvailabilityZone"]]},
@@ -104,7 +108,7 @@ def check_network(ec2, args):
     if not offers["InstanceTypeOfferings"]:
         raise ValueError(f"{INSTANCE_TYPE} is not offered in {subnet['AvailabilityZone']}")
     worker = ec2.describe_security_groups(GroupIds=[args.worker_group])["SecurityGroups"][0]
-    if worker["VpcId"] != subnet["VpcId"]:
+    if worker["VpcId"] != vpc_id:
         raise ValueError("The worker security group must belong to the worker VPC")
     if args.source_cidr:
         network = IPv4Network(args.source_cidr)
