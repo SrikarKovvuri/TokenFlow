@@ -92,10 +92,14 @@ export APPTAINERENV_VLLM_CACHE_ROOT=/work/cache/vllm APPTAINERENV_TRITON_CACHE_D
 export APPTAINERENV_SGLANG_CACHE_DIR=/work/cache/sglang APPTAINERENV_SGLANG_JIT_CACHE_DIR=/work/cache/sglang/jit
 export APPTAINERENV_TORCHINDUCTOR_CACHE_DIR=/work/cache/inductor APPTAINERENV_CUDA_CACHE_PATH=/work/cache/cuda
 export APPTAINERENV_CUDA_VISIBLE_DEVICES="${{CUDA_VISIBLE_DEVICES:?Slurm must expose the allocated devices}}"
+port_file="/state/port-$SLURM_JOB_ID"
+if [[ "${{SLURM_RESTART_COUNT:-0}}" != 0 ]]; then
+    port_file+="-restart-$SLURM_RESTART_COUNT"
+fi
 apptainer exec --cleanenv --nv --pwd /work --bind "$work/runtime:/work" \\
   --bind {shlex.quote(str(state) + ":/state")} --bind {shlex.quote(pool.checkpoint + ":/checkpoint:ro")} \\
   {shlex.quote(pool.image)} python3 /work/worker.py {shlex.join(args)} \\
-  --key-file /state/key --port-file "/state/port-$SLURM_JOB_ID"
+  --key-file /state/key --port-file "$port_file"
 """
 
 
@@ -119,13 +123,16 @@ class SlurmProvisioner:
     def _discover(self, pool: PoolSpec) -> list[Resource]:
         state_dir = Path(SlurmOptions.model_validate(pool.options).state_dir)
         prefix = self._prefix(pool)
-        rows = slurm_command("squeue", "--local", "--me", "--noheader", "--states=all", "--format=%i|%j|%T|%B")
+        rows = slurm_command(
+            "squeue", "--local", "--me", "--noheader", "--states=all",
+            "--Format=JobID:0|,Name:0|,State:0|,BatchHost:0|,RestartCnt:0",
+        )
         resources = []
         for row in rows.splitlines():
             fields = row.strip().split("|")
-            if len(fields) != 4:
+            if len(fields) != 5:
                 continue
-            job_id, name, state, host = fields
+            job_id, name, state, host, restarts = fields
             if not name.startswith(prefix):
                 continue
             key = name[len(prefix):]
@@ -143,7 +150,12 @@ class SlurmProvisioner:
                 # The GPU is allocated and its startup clock has begun even when
                 # the engine has not published a usable address yet.
                 resource = Resource(key=key, external_id=job_id, phase="running")
-                port_file = state_dir / name / f"port-{job_id}"
+                # A site may requeue onto a different host under the same job ID.
+                # The original filename remains valid for first attempts on upgrade.
+                if not restarts.isdecimal():
+                    raise ValueError(f"Invalid Slurm restart count for job {job_id}: {restarts!r}")
+                suffix = "" if restarts == "0" else f"-restart-{restarts}"
+                port_file = state_dir / name / f"port-{job_id}{suffix}"
                 try:
                     port = int(port_file.read_text())
                 except (FileNotFoundError, ValueError):

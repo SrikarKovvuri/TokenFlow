@@ -61,7 +61,7 @@ def test_slurm_submission_adoption_and_scoped_termination(tmp_path, monkeypatch,
     if backend == "sglang":
         assert (state / name / "sglang.yaml").read_text() == f'api-key: "{token}"\n'
         assert "APPTAINERENV_SGLANG_JIT_CACHE_DIR=/work/cache/sglang/jit" in script
-    queue = f"123|{name}|RUNNING|ins081\n124|unrelated|RUNNING|ins081"
+    queue = f"123|{name}|RUNNING|ins081|0\n124|unrelated|RUNNING|ins081|0"
     assert asyncio.run(provider.discover(pool)) == [Resource(key=KEY, external_id="123", phase="running")]
     (state / name / "port-123").write_text("44100")
     live = asyncio.run(provider.launch(pool, KEY))

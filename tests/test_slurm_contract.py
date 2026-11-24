@@ -38,10 +38,10 @@ if command == 'sbatch':
     record.write_text(json.dumps({'name': name, 'state': 'PENDING'}))
     print('123;local-cluster')
 elif command == 'squeue':
-    assert '--me' in args and '--format=%i|%j|%T|%B' in args
+    assert '--me' in args and '--Format=JobID:0|,Name:0|,State:0|,BatchHost:0|,RestartCnt:0' in args
     job = json.loads(record.read_text())
-    print('123', job['name'], job['state'], 'test-node', sep='|')
-    print('124|someone-elses-job|RUNNING|test-node')
+    print('123', job['name'], job['state'], job.get('host', 'test-node'), job.get('restarts', 0), sep='|')
+    print('124|someone-elses-job|RUNNING|test-node|0')
 elif command == 'scancel':
     job = json.loads(record.read_text())
     assert args == ['--name', job['name'], '123']
@@ -80,6 +80,21 @@ else:
     port_file.write_text("41402")
     live = Resource(KEY, "123", "running", "http://test-node:41402")
     assert asyncio.run(provider.launch(pool, KEY)) == live
+    # A site-triggered requeue keeps the job ID and its directory. The new
+    # allocation can move to another node or return to the previous one.
+    job.update(state="REQUEUED")
+    record.write_text(json.dumps(job))
+    assert asyncio.run(provider.discover(pool)) == [pending]
+    job.update(state="RUNNING", restarts=1, host="second-node")
+    record.write_text(json.dumps(job))
+    assert asyncio.run(provider.discover(pool)) == [Resource(KEY, "123", "running")]
+    (port_file.parent / "port-123-restart-1").write_text("42002")
+    assert asyncio.run(provider.discover(pool)) == [
+        Resource(KEY, "123", "running", "http://second-node:42002"),
+    ]
+    job.update(restarts=2)
+    record.write_text(json.dumps(job))
+    assert asyncio.run(provider.discover(pool)) == [Resource(KEY, "123", "running")]
     asyncio.run(provider.terminate(pool, live))
     assert asyncio.run(provider.discover(pool)) == [Resource(KEY, "123", "running")]
     job["state"] = "CANCELLED"
@@ -109,14 +124,15 @@ apptainer() {
 }
 """, newline="\n")
     env = {**os.environ, "BASH_ENV": env_file.as_posix(), "CAPTURE": (tmp_path / "command.txt").as_posix(),
-           "SLURM_JOB_ID": "123", "CUDA_VISIBLE_DEVICES": "1,3", "TMPDIR": tmp_path.as_posix()}
+           "SLURM_JOB_ID": "123", "SLURM_RESTART_COUNT": "1", "CUDA_VISIBLE_DEVICES": "1,3",
+           "TMPDIR": tmp_path.as_posix()}
     subprocess.run([str(bash), "worker.sh"], cwd=tmp_path, env=env, check=True, timeout=15)
     args = (tmp_path / "command.txt").read_text().splitlines()
     assert args[:5] == ["exec", "--cleanenv", "--nv", "--pwd", "/work"]
     assert "/shared/checkpoints/Qwen Model:/checkpoint:ro" in args
     assert args[args.index("--gpus") + 1] == "2"
     assert args[args.index("--key-file") + 1] == "/state/key"
-    assert args[args.index("--port-file") + 1] == "/state/port-123"
+    assert args[args.index("--port-file") + 1] == "/state/port-123-restart-1"
     assert not list(tmp_path.glob("tokenflow-worker.*"))
 
 
