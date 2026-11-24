@@ -8,6 +8,17 @@ idempotent client token and prohibits the adoption controller from launching
 replacements. This checks serving and discovery. It does not benchmark
 throughput, measure streaming latency, or deploy the public gateway.
 
+## Exercise autoscaling locally
+
+Run the EC2 controller against an in-memory AWS service before using an account.
+
+```bash
+python -m pip install -e '.[aws,dev]' 'moto[ec2]>=5.1,<6'
+python -m pytest -q tests/test_ec2_autoscaling.py
+```
+
+The test starts with a zero-sized pool. Overlapping requests trigger two emulated instances with distinct private addresses. When the operator pauses the pool, the idle replica terminates first and the busy replica drains. A separately tagged instance survives. The engine and GPU report synthetic telemetry, and the test rejects outbound AWS requests.
+
 ## Existing infrastructure
 
 Use a control host with the project's AWS Python extra and an existing private
