@@ -37,6 +37,15 @@ In the SSO wizard, enter a session name such as `tokenflow`, the access portal s
 
 ## Verify the account, credits and GPU quota
 
+After SSO sign-in, install the `aws` extra and run this account check in a private terminal. It works before you have an AMI, a subnet or an allowed GPU allocation.
+
+```powershell
+$account = Read-Host "12-digit account ID that owns the grant"
+tokenflow aws-status --expected-account $account --profile default --region us-east-1
+```
+
+Check the principal ARN and credential source, each account-owned promotion's expiry and settled and estimated balance, and the regional applied G/VT and P vCPU limits. The G/VT request history includes pending requests. A pending request for four vCPUs can appear alongside an applied limit of zero. The command only reads STS, Billing and Service Quotas. GPU availability and the effect of a future billing change require separate confirmation. [Billing credit fields](https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_billing_GetCredits.html), [quota request history](https://docs.aws.amazon.com/servicequotas/2019-06-24/apireference/API_ListRequestedServiceQuotaChangeHistoryByQuota.html)
+
 Inspect the ARN from `sts get-caller-identity`. If it ends in `:root`, clear that CLI session with `& $Aws logout --profile default` and configure the non-root profile. Confirm the role belongs to the account that owns the award.
 
 In **AWS Billing → Credits**, open the award and check its status, expiration, eligible products and estimated amount remaining. The remaining estimate accounts for open bills and may lag recent usage. The Billing API can also return these fields for the exact account identified by STS. [Billing console credit details](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/useconsolidatedbilling-credits.html), [GetCredits](https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_billing_GetCredits.html)

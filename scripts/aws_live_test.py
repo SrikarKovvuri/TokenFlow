@@ -16,6 +16,7 @@ import httpx
 
 from tokenflow.config import Settings
 from tokenflow.main import create_app
+from tokenflow.provisioner.aws_account import G_VT_QUOTA, promotion_balance
 from tokenflow.provisioner.base import PoolSpec
 from tokenflow.provisioner.cloud import CloudProvisioner
 
@@ -65,40 +66,13 @@ def verify_quota(ec2, quotas):
     for start in range(0, len(types), 100):
         for shape in ec2.describe_instance_types(InstanceTypes=types[start:start+100])["InstanceTypes"]:
             cpu[shape["InstanceType"]] = shape["VCpuInfo"]["DefaultVCpus"]
-    quota = quotas.get_service_quota(ServiceCode="ec2", QuotaCode="L-DB2E81BA")["Quota"]
+    quota = quotas.get_service_quota(ServiceCode="ec2", QuotaCode=G_VT_QUOTA)["Quota"]
     if "On-Demand G and VT" not in quota["QuotaName"]:
         raise ValueError(f"Unexpected EC2 quota {quota['QuotaName']}")
     in_use = sum(count * cpu[kind] for kind, count in used.items())
     if quota["Value"] < in_use + cpu[INSTANCE_TYPE]:
         raise ValueError(f"G/VT quota {quota['Value']} vCPUs, {in_use} already committed")
     return {"quota_vcpus": quota["Value"], "committed_vcpus": in_use}
-
-
-def promotion_balance(billing, account, description=None):
-    now = datetime.now(UTC)
-    total = Decimal(0)
-    result = billing.get_credits(accountId=account, payerAccountFlag=False,
-                                 startDate=now - timedelta(days=364))
-    for credit in result["credits"]:
-        if (credit["accountId"] != account or credit.get("creditStatus") != "ENABLED"
-                or not credit["creditType"].casefold().startswith("promo")
-                or credit["startDate"] > now or credit.get("exhaustDate", now + timedelta(days=1)) <= now
-                or (credit.get("endDate") and credit["endDate"] < now + timedelta(hours=2))
-                or "Amazon Elastic Compute Cloud" not in credit.get("applicableProductNames", [])
-                or (description and credit.get("description") != description)):
-            continue
-        purchase_types = {p.lower().replace("-", "").replace("_", "").replace(" ", "")
-                          for p in credit.get("purchaseTypeApplications", [])}
-        if purchase_types and not purchase_types.intersection({"all", "ondemand", "ondemandinstances"}):
-            continue
-        # Estimated balance includes open bills. Count only USD available in
-        # both the settled and estimated figures when AWS supplies both.
-        balances = [credit["remainingAmount"]]
-        if credit.get("estimatedAmount") is not None:
-            balances.append(credit["estimatedAmount"])
-        if all(amount["currencyCode"] == "USD" for amount in balances):
-            total += max(Decimal(0), min(Decimal(x["currencyAmount"]) for x in balances))
-    return total
 
 
 def volume_size(image):

@@ -47,6 +47,8 @@ def bootstrap_policy(account, region, allow_quota_request=False):
             "cloudwatch:ListMetrics", "cloudwatch:GetMetricData", "cloudwatch:GetMetricStatistics",
         ], "*", regional),
         allow("RegionalGpuQuota", quota_actions, quota, regional),
+        allow("ReadRegionalPQuota", "servicequotas:GetServiceQuota",
+              f"arn:aws:servicequotas:{region}:{account}:ec2/L-417A185B", regional),
     ]}
 
 

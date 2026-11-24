@@ -65,6 +65,7 @@ def test_live_credit_excludes_another_account_and_expired_awards():
     }
     billing.get_credits.return_value = {"credits": [
         award, {**award, "endDate": now}, {**award, "accountId": "456"},
+        {**award, "exhaustDate": now + live.timedelta(minutes=30)},
         {**award, "applicableProductNames": []}, {**award, "creditStatus": "DISABLED"},
     ]}
     assert live.promotion_balance(billing, "123", "Compute award") == 67

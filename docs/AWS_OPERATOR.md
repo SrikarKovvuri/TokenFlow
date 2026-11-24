@@ -31,7 +31,7 @@ aws service-quotas get-service-quota --profile default --region us-east-1 --serv
 aws service-quotas list-requested-service-quota-change-history-by-quota --profile default --region us-east-1 --service-code ec2 --quota-code L-DB2E81BA --query 'RequestedQuotas[].{Requested:DesiredValue,Status:Status,Created:Created}'
 ```
 
-An empty history means the query returned no recorded requests for this quota. The applied value from `get-service-quota` determines available quota before subtracting usage. [Quota history by quota](https://docs.aws.amazon.com/cli/latest/reference/service-quotas/list-requested-service-quota-change-history-by-quota.html)
+An empty history means the query returned no recorded requests for this quota. The applied value from `get-service-quota` determines available quota before subtracting usage. The bootstrap policy can also read the regional On-Demand P quota. With the TokenFlow AWS extra installed, `tokenflow aws-status --expected-account $account` reports the identity, promotional balances, both GPU limits and G/VT request history together. [Quota history by quota](https://docs.aws.amazon.com/cli/latest/reference/service-quotas/list-requested-service-quota-change-history-by-quota.html)
 
 ## 3. Add one worker pool
 

@@ -45,6 +45,9 @@ def test_bootstrap_is_read_only_and_quota_writes_are_opt_in():
         for action in [actions] if isinstance(actions, str) else actions:
             assert action.split(":")[1].startswith(("Describe", "Get", "List"))
     opted_in = by_id(render("bootstrap", "--allow-quota-request"))
+    assert opted_in["ReadRegionalPQuota"] == bootstrap["ReadRegionalPQuota"]
+    assert bootstrap["ReadRegionalPQuota"]["Action"] == "servicequotas:GetServiceQuota"
+    assert bootstrap["ReadRegionalPQuota"]["Resource"] == f"arn:aws:servicequotas:{REGION}:{ACCOUNT}:ec2/L-417A185B"
     assert opted_in["RegionalGpuQuota"]["Resource"] == quota["Resource"]
     assert set(opted_in["RegionalGpuQuota"]["Action"]) - set(quota["Action"]) == {"servicequotas:RequestServiceQuotaIncrease"}
 
