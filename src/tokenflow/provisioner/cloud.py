@@ -5,7 +5,7 @@ import hashlib
 from ipaddress import IPv4Address
 import re
 import shlex
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import Field, StringConstraints
 
@@ -19,6 +19,7 @@ class CloudOptions(EngineOptions):
     ami_id: Annotated[str, StringConstraints(pattern=r"^ami-[a-f0-9]+$")]
     subnet_id: Annotated[str, StringConstraints(pattern=r"^subnet-[a-f0-9]+$")]
     security_group_ids: list[Annotated[str, StringConstraints(pattern=r"^sg-[a-f0-9]+$")]] = Field(min_length=1)
+    image_pull_policy: Literal["missing", "never"] = "missing"
     iam_instance_profile: Annotated[str, StringConstraints(pattern=r"^[a-zA-Z0-9+=,.@_-]+$")] | None = None
 
 
@@ -26,6 +27,7 @@ def bootstrap(pool: PoolSpec, opts: CloudOptions) -> str:
     script = "/var/lib/tokenflow/worker.py"
     checkpoint = pool.checkpoint
     docker = ["docker", "run", "--detach", "--name", "tokenflow-worker", "--restart=unless-stopped",
+              f"--pull={opts.image_pull_policy}",
               "--gpus", "all", "--shm-size=8g", "--log-opt", "max-size=25m", "--log-opt", "max-file=3",
               "--env", "CUDA_VISIBLE_DEVICES=" + ",".join(str(i) for i in range(pool.gpu_count)),
               "--publish", f"{pool.port}:{pool.port}", "--publish", f"{pool.port + 1}:{pool.port + 1}",
@@ -51,8 +53,9 @@ systemctl enable --now docker
 
 
 class CloudProvisioner:
-    def __init__(self, namespace: str):
+    def __init__(self, namespace: str, *, session=None):
         self.namespace = namespace
+        self._session = session
         self._clients = {}
 
     @staticmethod
@@ -71,7 +74,8 @@ class CloudProvisioner:
                 from botocore.config import Config
             except ImportError as exc:
                 raise RuntimeError("Install tokenflow[aws] to enable EC2 pools") from exc
-            self._clients[region] = boto3.client(
+            sdk = self._session if self._session is not None else boto3
+            self._clients[region] = sdk.client(
                 "ec2", region_name=region,
                 config=Config(connect_timeout=5, read_timeout=30, retries={"total_max_attempts": 3}),
             )

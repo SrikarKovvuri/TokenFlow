@@ -10,7 +10,7 @@ Keep a stable DNS name on the gateway. When Slurm reassigns a node or AWS replac
 
 ## Configure a deployment
 
-1. Install Python 3.11+ and the repository on the service host. Install the AWS extra for EC2 pools.
+1. Install Python 3.11+ and check out the repository on the service host. Create the configuration directory with `sudo install -d -m 0750 /etc/tokenflow`. The service account must have read access to `platform.json` and permission to traverse its parent directory.
 2. Copy the matching example from `deploy/` to `/etc/tokenflow/platform.json`. Give the deployment a unique namespace. Use a local, durable `state_path` and reuse it across restarts. One deployment owns one namespace and one database.
 3. Replace the example paths or AWS IDs. On Insomnia, use the absolute SIF and checkpoint paths on shared storage, and an owner-only shared project directory for `options.state_dir`. Set the allocation account, partition, QoS and GPU resource spelling to those available to the service account. The example uses the A6000. A separate pool can request H100 or L40S with its own capacity and checkpoint. For AWS, supply the GPU-ready AMI, private subnet, security groups and IAM permissions described in the provider guide. The example IDs are placeholders.
 4. Set `capacity` to the maximum number of concurrent requests per worker, and `service_time_seconds` to an initial service-time estimate for this model/hardware. Give interchangeable workers the same served model alias. Use distinct aliases for checkpoints with different semantics. Set `min_replicas` for warm capacity and `max_replicas` as a hard per-pool allocation ceiling. Each replica uses `gpu_count` GPUs.
@@ -18,19 +18,18 @@ Keep a stable DNS name on the gateway. When Slurm reassigns a node or AWS replac
 From the checkout on the **Linux control host**:
 
 ```bash
-python3 -m venv /opt/tokenflow/venv
-/opt/tokenflow/venv/bin/pip install '.[aws]'
+sudo python3 -m venv /opt/tokenflow/venv
+sudo /opt/tokenflow/venv/bin/pip install '.[aws]'
 /opt/tokenflow/venv/bin/tokenflow validate /etc/tokenflow/platform.json
 ```
 
-Validation reads the configuration offline. GPU availability, IAM permissions, cluster quotas, driver compatibility and model memory still require live verification. See [provider setup](PROVIDERS.md) and [AWS sign-in from Windows](AWS_SIGN_IN.md).
+Validation reads the configuration offline. GPU availability, IAM permissions, cluster quotas, driver compatibility and model memory still require live verification. See [provider setup](PROVIDERS.md), [AWS sign-in from Windows](AWS_SIGN_IN.md), and [the bounded single-GPU validation](AWS_LIVE_TEST.md).
 
 ## Start a persistent HTTPS endpoint
 
 On a new deployment create a private environment file. The systemd unit reads it on startup. Keep the worker secret stable across gateway restarts. Give each student an individual inference key in the JSON array. Reserve the administrative key for the operator.
 
 ```bash
-sudo install -d -m 0750 /etc/tokenflow
 sudo python3 - <<'PY'
 import json, os, secrets
 from pathlib import Path
@@ -42,7 +41,7 @@ with Path("/etc/tokenflow/keys.env").open("x") as f:
 PY
 ```
 
-Install `deploy/tokenflow.service` as `/etc/systemd/system/tokenflow.service`. Set its `User` and `Group` to the service account that can submit the jobs or assume the AWS role. The example expects an existing `tokenflow` Unix account. Systemd creates the durable state directory.
+Install `deploy/tokenflow.service` as `/etc/systemd/system/tokenflow.service`. Set its `User` and `Group` to the service account that can submit the jobs or assume the AWS role. The example expects an existing `tokenflow` Unix account. For this account, make `/etc/tokenflow` traversable with `sudo chgrp tokenflow /etc/tokenflow`, and make the catalog readable with `sudo chown root:tokenflow /etc/tokenflow/platform.json` and `sudo chmod 0640 /etc/tokenflow/platform.json`. Keep `keys.env` owned by root and mode 0600. Systemd reads the environment file and creates the durable state directory.
 
 ```bash
 sudo systemctl daemon-reload

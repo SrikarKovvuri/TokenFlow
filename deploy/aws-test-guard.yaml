@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Reusable, operator-owned deadline guard for TokenFlow GPU integration tests
+Resources:
+  CleanupRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: states.amazonaws.com}
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals: {'aws:SourceAccount': !Ref 'AWS::AccountId'}
+              ArnEquals:
+                'aws:SourceArn': !Sub 'arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}'
+      Policies:
+        - PolicyName: CleanupThisRun
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ec2:DescribeInstances
+                Resource: '*'
+              - Effect: Allow
+                Action: ec2:TerminateInstances
+                Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/*'
+                Condition:
+                  StringEquals:
+                    'ec2:ResourceTag/TokenFlowPool': live-test
+                  StringLike:
+                    'ec2:ResourceTag/TokenFlowNamespace': 'tf-test-*'
+  Guard:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Ref 'AWS::StackName'
+      StateMachineType: STANDARD
+      RoleArn: !GetAtt CleanupRole.Arn
+      Definition:
+        StartAt: CheckInventory
+        States:
+          CheckInventory:
+            Type: Task
+            Resource: arn:aws:states:::aws-sdk:ec2:describeInstances
+            Parameters:
+              Filters:
+                - {Name: 'tag:TokenFlowNamespace', Values.$: 'States.Array($$.Execution.Name)'}
+                - {Name: 'tag:TokenFlowPool', Values: [live-test]}
+                - {Name: instance-state-name, Values: [pending, running, stopping, stopped, shutting-down]}
+            ResultPath: null
+            Next: WaitForDeadline
+          WaitForDeadline:
+            Type: Wait
+            TimestampPath: $.deadline
+            Next: Scan
+          Scan:
+            Type: Task
+            Resource: arn:aws:states:::aws-sdk:ec2:describeInstances
+            Parameters:
+              Filters:
+                - {Name: 'tag:TokenFlowNamespace', Values.$: 'States.Array($$.Execution.Name)'}
+                - {Name: 'tag:TokenFlowPool', Values: [live-test]}
+                - {Name: instance-state-name, Values: [pending, running, stopping, stopped, shutting-down]}
+            ResultPath: $.inventory
+            Retry:
+              - {ErrorEquals: [States.ALL], IntervalSeconds: 10, MaxAttempts: 20, BackoffRate: 1.5, MaxDelaySeconds: 60}
+            Next: Inspect
+          Inspect:
+            Type: Choice
+            Choices:
+              - Variable: $.inventory.Reservations[0].Instances[0].InstanceId
+                IsPresent: true
+                Next: Terminate
+              - Variable: $$.State.EnteredTime
+                TimestampGreaterThanEqualsPath: $.verify_until
+                Next: Finished
+            Default: Verify
+          Terminate:
+            Type: Task
+            Resource: arn:aws:states:::aws-sdk:ec2:terminateInstances
+            Parameters:
+              InstanceIds.$: 'States.Array($.inventory.Reservations[0].Instances[0].InstanceId)'
+            Retry:
+              - {ErrorEquals: [States.ALL], IntervalSeconds: 10, MaxAttempts: 20, BackoffRate: 1.5, MaxDelaySeconds: 60}
+            ResultPath: null
+            Next: Verify
+          Verify:
+            Type: Wait
+            Seconds: 30
+            Next: Scan
+          Finished: {Type: Succeed}
+Outputs:
+  Machine: {Value: !Ref Guard}
