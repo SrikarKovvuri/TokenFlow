@@ -134,11 +134,13 @@ def test_no_available_worker_returns_service_unavailable() -> None:
     assert response.status_code == 503
 
 
-def test_worker_http_error_is_passed_through() -> None:
+@pytest.mark.parametrize("code", [400, 503])
+def test_worker_http_error_is_passed_through_without_gateway_admission_marker(code) -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
-            400,
+            code,
             json={"error": {"message": "Unknown model"}},
+            headers={"X-TokenFlow-Admission": "waiting-for-worker", "Retry-After": "10"},
         )
 
     app = make_app(handler, healthy_worker())
@@ -149,7 +151,8 @@ def test_worker_http_error_is_passed_through() -> None:
             json={"model": "test-model"},
         )
 
-    assert response.status_code == 400
+    assert response.status_code == code and "x-tokenflow-admission" not in response.headers
+    assert response.headers["retry-after"] == "10"
     assert response.json()["error"]["message"] == "Unknown model"
 
 

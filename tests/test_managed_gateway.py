@@ -108,8 +108,11 @@ def test_managed_cold_start_stream_restart_and_drain(tmp_path, reuse_app):
                 catalog = await client.get("/v1/models", headers=student)
                 assert [m["id"] for m in catalog.json()["data"]] == ["qwen-14b"]
                 if not restart:
+                    unknown = await client.post("/v1/chat/completions", headers=student, json={**payload, "model": "typo"})
+                    assert unknown.status_code == 503 and "x-tokenflow-admission" not in unknown.headers
                     cold = await client.post("/v1/chat/completions", headers=student, json=payload)
                     assert cold.status_code == 503
+                    assert cold.headers["x-tokenflow-admission"] == "waiting-for-worker"
                 else:
                     async with asyncio.timeout(5):
                         while not (await client.get("/v1/pools", headers=admin)).json()[0]["last_error"]:
@@ -143,6 +146,8 @@ def test_managed_cold_start_stream_restart_and_drain(tmp_path, reuse_app):
                     assert (await client.put(path, headers=student, json=limits)).status_code == 401
                     assert (await client.put(path, headers=admin, json=limits)).status_code == 200
                     await wait_workers(client, 0)
+                    paused = await client.post("/v1/chat/completions", headers=student, json=payload)
+                    assert paused.status_code == 503 and "x-tokenflow-admission" not in paused.headers
                     pools = await client.get("/v1/pools", headers=admin)
                     assert pools.json()[0]["resources"] == []
                     assert all(r.phase == "terminal" for r in provider.resources.values())
@@ -207,7 +212,9 @@ def test_concurrent_models_stay_in_their_pools_during_one_provider_outage(tmp_pa
             async with asyncio.TaskGroup() as requests:
                 pending = {kind: requests.create_task(chat(kind)) for kind in models}
                 await asyncio.gather(*(event.wait() for event in started.values()))
-                assert [(await chat(kind)).status_code for kind in models] == [429, 429]
+                for kind in models:
+                    full = await chat(kind)
+                    assert full.status_code == 429 and "x-tokenflow-admission" not in full.headers
                 providers[outage].offline = True
                 while True:
                     pools = await client.get("/v1/pools", headers={"Authorization": f"Bearer {ADMIN}"})

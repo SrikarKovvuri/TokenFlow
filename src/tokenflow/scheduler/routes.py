@@ -36,7 +36,11 @@ async def create_chat_completion(
             if connection_failure is not None:
                 raise connection_failure
             code = 429 if isinstance(exc, WorkersAtCapacityError) else 503
-            raise HTTPException(code, str(exc), headers={"Retry-After": "1"}) from exc
+            headers = {"Retry-After": "1"}
+            controller = request.app.state.controller
+            if code == 503 and controller is not None and controller.accepts_cold_demand(model):
+                headers["X-TokenFlow-Admission"] = "waiting-for-worker"
+            raise HTTPException(code, str(exc), headers=headers) from exc
 
         logger.info("Routed model %s to %s with %d active requests",
                     model, worker.id, worker.active_requests)
@@ -46,7 +50,7 @@ async def create_chat_completion(
                 payload=payload,
                 request_id=request.state.request_id,
                 client=request.app.state.worker_client,
-                release=partial(worker_manager.release, worker.id),
+                release=partial(worker_manager.release, worker.id, registered_at=worker.registered_at),
                 receive=request.receive,
             )
         except WorkerConnectionError as exc:

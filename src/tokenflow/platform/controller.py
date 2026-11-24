@@ -64,7 +64,12 @@ class Controller:
         self._track_scalable_models()
 
     def _track_scalable_models(self) -> None:
-        self.registry.track_demand(pool.model for pool in self.pools.values() if self._limits(pool)[1] > 0)
+        self._scalable_models = {pool.model for pool in self.pools.values() if self._limits(pool)[1] > 0}
+        self.registry.track_demand(self._scalable_models)
+
+    def accepts_cold_demand(self, model: str) -> bool:
+        """An enabled pool can supply or recover a worker for this alias."""
+        return model in self._scalable_models
 
     def _limits(self, pool: PoolSpec) -> tuple[int, int]:
         row = self.state.policy(pool.name)
