@@ -46,6 +46,7 @@ async def create_chat_completion(
                 request_id=request.state.request_id,
                 client=request.app.state.worker_client,
                 release=partial(worker_manager.release, worker.id),
+                receive=request.receive,
             )
         except WorkerConnectionError as exc:
             await worker_manager.set_health_status(

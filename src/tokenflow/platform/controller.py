@@ -72,7 +72,7 @@ class Controller:
             result.append({
                 "name": pool.name, "provider": pool.provider, "model": pool.model,
                 "min_replicas": minimum, "max_replicas": maximum,
-                "desired_replicas": self._desired.get(pool.name, minimum),
+                "desired_replicas": min(maximum, max(minimum, self._desired.get(pool.name, minimum))),
                 "last_error": self._discovery_errors.get(pool.name) or policy["error"],
                 "retry_at": policy["retry_at"] or None,
                 "resources": [
@@ -326,7 +326,10 @@ class Controller:
         now = time.time()
         allocations = self.state.allocations(pool.name)
         live = [item for item in allocations if not item.retiring]
-        _, maximum = self._limits(pool)
+        limits = self._limits(pool)
+        minimum, maximum = limits
+        requested = min(maximum, max(minimum, target))
+        target = requested
         if target < len(live) and len(live) <= maximum:
             since = self._down_since.setdefault(pool.name, now)
             if now - since < self.idle:
@@ -334,7 +337,7 @@ class Controller:
             elif maximum:
                 # A scale-from-zero request should have a chance to become ready
                 # before its short demand window is forgotten.
-                target = max(target, sum(not item.ever_ready for item in live))
+                target = max(target, sum(bool(item.external_id) and not item.ever_ready for item in live))
         else:
             self._down_since.pop(pool.name, None)
         target = min(maximum, target)
@@ -364,12 +367,18 @@ class Controller:
                         key=item.key, external_id=item.external_id, phase=item.phase, base_url=item.base_url,
                     ))
 
-        if self.state.policy(pool.name)["retry_at"] > now:
+        # Termination awaits a provider RPC. The operator may have paused or
+        # reduced the pool while that call was in flight.
+        if self._limits(pool) != limits or self.state.policy(pool.name)["retry_at"] > now:
             return
         unsubmitted = next((a for a in allocations if not a.external_id and not a.retiring), None)
         if unsubmitted:
-            await self._launch(pool, unsubmitted)
-        elif len(allocations) < target:
+            # Retaining an already accepted cold start during the idle cooldown
+            # must not initiate a paid retry after the original demand expires.
+            confirmed = sum(bool(a.external_id) and not a.retiring for a in allocations)
+            if confirmed < requested:
+                await self._launch(pool, unsubmitted)
+        elif len(allocations) < requested:
             # Only one new allocation per pool per poll. Terminating and unresolved
             # launches both occupy a slot until inventory confirms their outcome.
             item = Allocation(uuid4().hex, pool.name, now, now)

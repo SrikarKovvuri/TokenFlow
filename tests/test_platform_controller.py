@@ -313,3 +313,93 @@ def test_reused_gateway_registry_recovers_its_managed_record(tmp_path):
         restarted.close()
 
     asyncio.run(scenario())
+
+
+def test_paused_pool_stays_paused_after_checkpoint_change(tmp_path):
+    async def scenario():
+        path = tmp_path / "state.db"
+        inventory = Inventory()
+        controller = create(path, inventory, spec())
+        controller.set_limits("big", 0, 0)
+        controller.close()
+        changed = create(path, inventory, spec(checkpoint="updated-checkpoint"))
+        await changed.reconcile()
+        assert changed.status()[0]["max_replicas"] == 0
+        assert not inventory.launches
+        changed.close()
+
+    asyncio.run(scenario())
+
+
+def test_tighter_catalog_ceiling_clamps_saved_override_and_reconciles_existing_jobs(tmp_path):
+    async def scenario():
+        path = tmp_path / "state.db"
+        inventory = Inventory()
+        controller = create(path, inventory, spec())
+        controller.set_limits("big", 2, 3)
+        await controller.reconcile()
+        await controller.reconcile()
+        assert len(inventory.launches) == 2
+        controller.close()
+        tighter = create(path, inventory, spec(max_replicas=1))
+        await tighter.reconcile()
+        assert (tighter.status()[0]["min_replicas"], tighter.status()[0]["max_replicas"]) == (1, 1)
+        assert len(inventory.terminated) == 1
+        assert len(inventory.launches) == 2
+        tighter.close()
+
+    asyncio.run(scenario())
+
+
+def test_lost_submission_reply_is_not_retried_after_demand_expires(tmp_path, monkeypatch):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(module, "time", SimpleNamespace(time=lambda: now[0]))
+        inventory = Inventory()
+        # A transport failure before the request reaches the scheduler and a
+        # lost reply after acceptance look identical at the call site.
+        async def fail_before_acceptance(pool, key):
+            inventory.launches.append((pool.name, key))
+            raise TimeoutError("submit outcome unknown")
+
+        monkeypatch.setattr(inventory, "launch", fail_before_acceptance)
+        controller = create(tmp_path / "state.db", inventory, spec(min_replicas=0))
+        with pytest.raises(NoAvailableWorkerError):
+            await controller.registry.assign("qwen")
+        await controller.reconcile()
+        assert len(inventory.launches) == 1
+        monkeypatch.setattr(controller.registry, "demand_since", lambda model, seconds: 0)
+        now[0] += 6  # First launch backoff expired; still in scale-down cooldown.
+        await controller.reconcile()
+        now[0] += 60
+        await controller.reconcile()
+        assert len(inventory.launches) == 1
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_pause_while_terminating_prevents_launch_from_old_plan(tmp_path, monkeypatch):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(module, "time", SimpleNamespace(time=lambda: now[0]))
+        inventory = Inventory()
+        controller = create(tmp_path / "state.db", inventory, spec(min_replicas=2, max_replicas=2))
+        await controller.reconcile()  # One job submitted, second slot still empty.
+
+        async def slow_termination(pool, resource):
+            inventory.terminated.append(resource.key)  # Inventory still shows the job.
+            controller.set_limits(pool.name, 0, 0)  # Operator update during the RPC.
+
+        monkeypatch.setattr(inventory, "terminate", slow_termination)
+        controller.set_limits("big", 0, 0)
+        await controller.reconcile()
+        controller.set_limits("big", 2, 2)
+        now[0] += 31
+        await controller.reconcile()
+        assert len(inventory.terminated) == 2
+        assert len(inventory.launches) == 1
+        assert controller.status()[0]["desired_replicas"] == 0
+        controller.close()
+
+    asyncio.run(scenario())

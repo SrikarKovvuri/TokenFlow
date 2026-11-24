@@ -71,14 +71,25 @@ class State:
                     continue
                 if self.allocations(name):
                     raise ValueError(f"Drain pool {name!r} before removing it or changing its deployment")
-                self.db.execute("DELETE FROM pools WHERE name = ?", (name,))
+                if name not in identities:
+                    self.db.execute("DELETE FROM pools WHERE name = ?", (name,))
+                else:
+                    # A new checkpoint can clear its predecessor's errors, but a
+                    # paused pool stays paused until the operator resumes it.
+                    self.db.execute(
+                        "UPDATE pools SET identity = ?, failures = 0, retry_at = 0, error = NULL WHERE name = ?",
+                        (identities[name], name),
+                    )
             self.db.executemany(
                 "INSERT OR IGNORE INTO pools(name, identity) VALUES (?, ?)", identities.items()
             )
             for pool in pools:
-                row = self.policy(pool.name)
-                if row["maximum"] is not None and row["maximum"] > pool.max_replicas:
-                    raise ValueError(f"Lower the saved replica limits for {pool.name!r} before reducing its ceiling")
+                # A stricter catalog ceiling takes effect on restart, even if
+                # the old controller was unreachable when the file was edited.
+                self.db.execute(
+                    "UPDATE pools SET minimum = MIN(minimum, ?), maximum = ? WHERE name = ? AND maximum > ?",
+                    (pool.max_replicas, pool.max_replicas, pool.name, pool.max_replicas),
+                )
 
     def allocations(self, pool: str) -> list[Allocation]:
         return [Allocation(**dict(row)) for row in self.db.execute(
