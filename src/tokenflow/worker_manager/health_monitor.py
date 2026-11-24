@@ -6,6 +6,7 @@ import httpx
 
 from tokenflow.worker_manager.models import HealthStatus, Worker
 from tokenflow.worker_manager.registry import WorkerRegistry
+from tokenflow.worker_manager.telemetry import read_telemetry
 
 
 logger = logging.getLogger("uvicorn.error")
@@ -62,6 +63,36 @@ class WorkerHealthMonitor:
                 worker.id, perf_counter() - started, type(exc).__name__, str(exc),
             )
 
-        await self._registry.set_health_status(
+        current = await self._registry.set_health_status(
             worker.id, health_status, expected_base_url=str(worker.base_url)
         )
+        if current is None or health_status != HealthStatus.HEALTHY:
+            return
+        if current.metadata.get("backend") not in ("vllm", "sglang"):
+            return
+
+        engine_metrics = httpx.URL(f"{str(worker.base_url).rstrip('/')}/metrics")
+        urls = [engine_metrics]
+        gpu_port = current.metadata.get("gpu_metrics_port")
+        if type(gpu_port) is int and 1 <= gpu_port <= 65535:
+            urls.append(engine_metrics.copy_with(port=gpu_port, path="/metrics"))
+        scrapes = await asyncio.gather(*(self._scrape(url) for url in urls))
+        await self._registry.set_telemetry(
+            worker.id, read_telemetry(*scrapes), expected_base_url=str(worker.base_url)
+        )
+
+    async def _scrape(self, url: httpx.URL) -> str:
+        """A missing or excessive metrics response cannot take a healthy worker out."""
+        try:
+            async with asyncio.timeout(self._timeout_seconds):
+                async with self._client.stream("GET", url) as response:
+                    if response.status_code == 200:
+                        body = bytearray()
+                        async for chunk in response.aiter_bytes():
+                            if len(body) + len(chunk) > 4 * 1024 * 1024:
+                                return ""
+                            body.extend(chunk)
+                        return body.decode("utf-8", errors="replace")
+        except (httpx.HTTPError, TimeoutError):
+            pass
+        return ""

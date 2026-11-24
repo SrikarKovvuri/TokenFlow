@@ -1,10 +1,12 @@
 import logging
+from functools import partial
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
-from tokenflow.scheduler.proxy import forward_chat_completion
-from tokenflow.scheduler.selection import NoAvailableWorkerError
+from tokenflow.scheduler.proxy import WorkerConnectionError, forward_chat_completion
+from tokenflow.scheduler.selection import NoAvailableWorkerError, WorkersAtCapacityError
+from tokenflow.worker_manager.models import HealthStatus
 
 
 router = APIRouter(prefix="/v1", tags=["inference"])
@@ -24,27 +26,34 @@ async def create_chat_completion(
         )
 
     worker_manager = request.app.state.worker_registry
-    try:
-        worker = await worker_manager.assign(model)
-    except NoAvailableWorkerError as exc:
-        logger.info("No eligible worker for model %s", model)
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=str(exc),
-        ) from exc
+    excluded = set()
+    connection_failure = None
+    while True:
+        try:
+            worker = await worker_manager.assign(model, exclude=excluded)
+        except (NoAvailableWorkerError, WorkersAtCapacityError) as exc:
+            if connection_failure is not None:
+                raise connection_failure
+            code = 429 if isinstance(exc, WorkersAtCapacityError) else 503
+            raise HTTPException(code, str(exc), headers={"Retry-After": "1"}) from exc
 
-    logger.info(
-        "Routed model %s to %s (%s) at %s with %d active requests",
-        model,
-        worker.name,
-        worker.id,
-        worker.base_url,
-        worker.active_requests,
-    )
-    return await forward_chat_completion(
-        worker=worker,
-        payload=payload,
-        request_id=request.state.request_id,
-        client=request.app.state.worker_client,
-        release=lambda: worker_manager.release(worker.id),
-    )
+        logger.info("Routed model %s to %s with %d active requests",
+                    model, worker.id, worker.active_requests)
+        try:
+            return await forward_chat_completion(
+                worker=worker,
+                payload=payload,
+                request_id=request.state.request_id,
+                client=request.app.state.worker_client,
+                release=partial(worker_manager.release, worker.id),
+            )
+        except WorkerConnectionError as exc:
+            await worker_manager.set_health_status(
+                worker.id, HealthStatus.UNHEALTHY, expected_base_url=str(worker.base_url)
+            )
+            # One failover, only before a connection was established. A read
+            # timeout or interrupted SSE stream may already have generated tokens.
+            if excluded:
+                raise
+            excluded.add(worker.id)
+            connection_failure = exc
