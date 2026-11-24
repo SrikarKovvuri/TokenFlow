@@ -54,6 +54,14 @@ available. Routing ignores samples older than 30 seconds.
 
 ## Overload, failures and draining
 
+The gateway accepts up to 4 MiB (4,194,304 bytes) of JSON per chat request.
+Set `TOKENFLOW_MAX_INFERENCE_BODY_BYTES` to a positive integer to change the
+limit. It counts the entire encoded body, including inline images and message
+history. An oversized declared length is rejected immediately. For streamed
+uploads, the gateway counts incoming bytes and stops reading at the first
+chunk over the limit. Both return HTTP 413 with error code
+`request_body_too_large` before registering demand or reserving a worker.
+
 When every eligible worker is full the gateway returns HTTP 429 with
 `Retry-After: 1`. When the model has no eligible healthy workers it returns
 HTTP 503 with the same retry hint. Both responses arrive immediately. Configured

@@ -107,6 +107,7 @@ def create_app(
         lifespan=lifespan,
     )
     application.state.worker_registry = registry
+    application.state.max_inference_body_bytes = settings.max_inference_body_bytes
     application.state.platform_config = None
     application.state.controller = None
 

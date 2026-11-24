@@ -4,12 +4,13 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
+from tokenflow.scheduler.body_limit import InferenceRoute
 from tokenflow.scheduler.proxy import WorkerConnectionError, forward_chat_completion
 from tokenflow.scheduler.selection import NoAvailableWorkerError, WorkersAtCapacityError
 from tokenflow.worker_manager.models import HealthStatus
 
 
-router = APIRouter(prefix="/v1", tags=["inference"])
+router = APIRouter(prefix="/v1", tags=["inference"], route_class=InferenceRoute)
 logger = logging.getLogger("uvicorn.error")
 
 

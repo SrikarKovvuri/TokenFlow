@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     worker_health_timeout_seconds: float = Field(default=2.0, gt=0)
     worker_connect_timeout_seconds: float = Field(default=5.0, gt=0)
     worker_request_timeout_seconds: float = Field(default=120.0, gt=0)
+    max_inference_body_bytes: int = Field(default=4 * 1024 * 1024, gt=0)
     platform_config: Path | None = None
     admin_key: SecretStr | None = None
     api_keys: list[SecretStr] = Field(default_factory=list)
