@@ -30,8 +30,9 @@ def cloud_pool():
                              "subnet_id": "subnet-123", "security_group_ids": ["sg-123"]})
 
 
-def test_slurm_submission_adoption_and_scoped_termination(tmp_path, monkeypatch):
-    pool = hpc_pool()
+@pytest.mark.parametrize("backend", ["vllm", "sglang"])
+def test_slurm_submission_adoption_and_scoped_termination(tmp_path, monkeypatch, backend):
+    pool = hpc_pool().model_copy(update={"backend": backend})
     provider = SlurmProvisioner("deployment", "operator-secret")
     state = tmp_path / "private-state"
     # Slurm runs on POSIX. Map its configured shared path to a local fixture.
@@ -55,7 +56,11 @@ def test_slurm_submission_adoption_and_scoped_termination(tmp_path, monkeypatch)
     assert worker_token("operator-secret", KEY) not in script
     assert "apptainer exec --cleanenv --nv" in script
     name = next(arg.removeprefix("--job-name=") for arg in args if arg.startswith("--job-name="))
-    assert (state / name / "key").read_text() == worker_token("operator-secret", KEY)
+    token = worker_token("operator-secret", KEY)
+    assert (state / name / "key").read_text() == token
+    if backend == "sglang":
+        assert (state / name / "sglang.yaml").read_text() == f'api-key: "{token}"\n'
+        assert "APPTAINERENV_SGLANG_JIT_CACHE_DIR=/work/cache/sglang/jit" in script
     queue = f"123|{name}|RUNNING|ins081\n124|unrelated|RUNNING|ins081"
     assert asyncio.run(provider.discover(pool)) == [Resource(key=KEY, external_id="123", phase="running")]
     (state / name / "port-123").write_text("44100")
@@ -177,8 +182,9 @@ def test_cloud_bootstrap_and_engine_args():
                      dtype="bfloat16", max_model_len=2048, backend="sglang")
     command = worker.engine_command(args, 8000, Path("/state/key"))
     assert "--enable-metrics" in command
-    assert str(Path("/state/sglang.json")) in command
-    assert command[command.index("--tp") + 1] == "2"
+    assert str(Path("/state/sglang.yaml")) in command
+    assert command[command.index("--tp-size") + 1] == "2"
+    assert command[command.index("--log-level") + 1] == "warning"
     args.backend = "vllm"
     command = worker.engine_command(args, 8010, Path("/state/key"))
     assert command[command.index("--middleware") + 1] == "worker.GatewayAuth"

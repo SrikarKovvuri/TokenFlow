@@ -89,6 +89,7 @@ cat > "$work/runtime/worker.py" <<'TOKENFLOW_PY'
 TOKENFLOW_PY
 export APPTAINERENV_XDG_CACHE_HOME=/work/cache APPTAINERENV_HF_HOME=/work/cache/huggingface
 export APPTAINERENV_VLLM_CACHE_ROOT=/work/cache/vllm APPTAINERENV_TRITON_CACHE_DIR=/work/cache/triton
+export APPTAINERENV_SGLANG_CACHE_DIR=/work/cache/sglang APPTAINERENV_SGLANG_JIT_CACHE_DIR=/work/cache/sglang/jit
 export APPTAINERENV_TORCHINDUCTOR_CACHE_DIR=/work/cache/inductor APPTAINERENV_CUDA_CACHE_PATH=/work/cache/cuda
 export APPTAINERENV_CUDA_VISIBLE_DEVICES="${{CUDA_VISIBLE_DEVICES:?Slurm must expose the allocated devices}}"
 apptainer exec --cleanenv --nv --pwd /work --bind "$work/runtime:/work" \\
@@ -192,8 +193,8 @@ class SlurmProvisioner:
             token = worker_token(self.worker_secret, key)
             if not (state / "key").exists():
                 private_file(state / "key", token)
-            if pool.backend == "sglang" and not (state / "sglang.json").exists():
-                private_file(state / "sglang.json", json.dumps({"api-key": token}))
+            if pool.backend == "sglang" and not (state / "sglang.yaml").exists():
+                private_file(state / "sglang.yaml", f"api-key: {json.dumps(token)}\n")
             body = batch_script(pool, opts, state)
         except Exception:
             claim.unlink()  # No Slurm submission has been attempted.

@@ -123,10 +123,11 @@ def engine_command(args, port, key_file):
         length_flag = "--max-model-len"
     else:
         command = [sys.executable, "-m", "sglang.launch_server", "--model-path", args.checkpoint,
-                   "--tp", str(args.gpus), "--max-running-requests", str(args.capacity),
+                   "--tp-size", str(args.gpus), "--max-running-requests", str(args.capacity),
                    "--enable-metrics"]
         if key_file:
-            command.extend(["--config", str(key_file.with_name("sglang.json"))])
+            # SGLang's INFO startup log can include the resolved API key.
+            command.extend(["--config", str(key_file.with_name("sglang.yaml")), "--log-level", "warning"])
         length_flag = "--context-length"
     command.extend(["--served-model-name", args.model, "--host", "0.0.0.0",
                     "--port", str(port), "--dtype", args.dtype])
