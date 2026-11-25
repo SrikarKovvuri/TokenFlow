@@ -75,6 +75,10 @@ also consume quota. [EC2 instance quotas](https://docs.aws.amazon.com/AWSEC2/lat
 
 Run the following in the checkout after setting the three infrastructure IDs
 and the control group's ID. Without `--execute`, this command is read-only.
+When using the default IAM Identity Center profile, append `--profile default`
+to both the plan and execution commands. This selects the same SSO profile
+even if the shell has other AWS credentials. Check for `"credential_source": "sso"`
+in the plan. On an EC2 control host, omit `--profile` to use its attached role.
 
 ```bash
 python scripts/aws_live_test.py --ami "$AMI" --subnet "$SUBNET" \

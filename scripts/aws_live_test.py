@@ -160,6 +160,7 @@ def preflight(session, args):
     if balance < estimate:
         raise ValueError(f"Eligible EC2 promotional balance {balance:.2f} USD is below estimate {estimate:.2f} USD")
     return {**result, "account": identity["Account"], "principal_is_root": identity["Arn"].endswith(":root"),
+            "credential_source": session.get_credentials().method,
             "region": REGION, "instance": INSTANCE_TYPE,
             "hourly_usd": str(hourly), "ebs_gib": gib, "estimated_usd": f"{estimate:.2f}",
             "ebs_volumes": sum("Ebs" in m for m in image[0]["BlockDeviceMappings"]),
@@ -347,7 +348,7 @@ async def check_gateway(pool, namespace, out, provider):
 async def run(args):
     import boto3
 
-    session = boto3.Session(region_name=REGION)
+    session = boto3.Session(profile_name=args.profile, region_name=REGION)
     report = preflight(session, args)
     print(json.dumps(report, indent=2), flush=True)
     if not args.execute:
@@ -413,6 +414,7 @@ async def run(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--profile", help="AWS CLI profile for planning, provisioning and cleanup (e.g. default for SSO)")
     parser.add_argument("--namespace", help="fresh namespace preapproved in a live-test policy (default: random)")
     parser.add_argument("--expected-account", help="12-digit credit-owning account ID, required for --execute")
     parser.add_argument("--ami", required=True, help="GPU-ready Linux AMI with Docker and NVIDIA container runtime")

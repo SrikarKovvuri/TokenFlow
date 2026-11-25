@@ -24,8 +24,36 @@ def test_unpriced_or_ambiguous_compute_rate_blocks_launch():
         live.price(prices, "Hrs", {})
 
 
+@pytest.mark.parametrize(("profile", "source"), [("default", "sso"), (None, "env")])
+def test_plan_selects_the_requested_credential_provider(tmp_path, monkeypatch, profile, source):
+    pytest.importorskip("boto3")
+    from botocore.httpsession import URLLib3Session
+
+    config = tmp_path / "config"
+    config.write_text(
+        "[default]\nsso_session = test\nsso_account_id = 111111111111\nsso_role_name = TokenFlowOperator\n"
+        "[sso-session test]\nsso_start_url = https://example.invalid/start\nsso_region = us-east-1\n"
+    )
+    monkeypatch.setenv("AWS_CONFIG_FILE", str(config))
+    monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(tmp_path / "unused-credentials"))
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "offline")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "offline")
+    monkeypatch.delenv("AWS_PROFILE", raising=False)
+    monkeypatch.delenv("AWS_DEFAULT_PROFILE", raising=False)
+    monkeypatch.setattr(URLLib3Session, "send", lambda *_: pytest.fail("Unexpected AWS connection"))
+
+    def inspect_session(session, args):
+        assert session.region_name == "us-east-1"
+        assert session.get_credentials().method == source
+        return {}
+
+    monkeypatch.setattr(live, "preflight", inspect_session)
+    asyncio.run(live.run(SimpleNamespace(profile=profile, execute=False)))
+
+
 def test_estimate_rounds_up_and_no_overbudget_launch(monkeypatch):
     session = MagicMock()
+    session.get_credentials.return_value.method = "sso"
     session.client.return_value.describe_images.return_value = {"Images": [
         {"State": "available", "BlockDeviceMappings": [{"Ebs": {}}]},
     ]}
@@ -35,7 +63,8 @@ def test_estimate_rounds_up_and_no_overbudget_launch(monkeypatch):
     monkeypatch.setattr(live, "volume_size", lambda *_: 60)
     monkeypatch.setattr(live, "price", lambda _, unit, __: Decimal("0.526") if unit == "Hrs" else Decimal("0.08"))
     args = SimpleNamespace(execute=False, expected_account=None, credit_description=None, ami="ami-test")
-    assert live.preflight(session, args)["estimated_usd"] == "3.07"
+    report = live.preflight(session, args)
+    assert report["estimated_usd"] == "3.07" and report["credential_source"] == "sso"
     monkeypatch.setattr(live, "price", lambda *_: Decimal(20))
     with pytest.raises(ValueError, match="exceeds"):
         live.preflight(session, args)
@@ -195,7 +224,7 @@ def aws_run(monkeypatch, tmp_path):
     ec2.get_waiter.return_value.wait.side_effect = confirm_terminated
     ec2.describe_volumes.return_value = {"Volumes": []}
     ec2.describe_network_interfaces.return_value = {"NetworkInterfaces": []}
-    args = SimpleNamespace(ami="ami-abcdef", subnet="subnet-abc", worker_group="sg-abc",
+    args = SimpleNamespace(profile=None, ami="ami-abcdef", subnet="subnet-abc", worker_group="sg-abc",
         execute=True, confirm_private_route=True, local_checkpoint="/models/qwen", image=None,
         output=tmp_path, guard_stack="test-guard", namespace="tf-test-0123456789abcdef")
     return args, vm, ec2, sfn
