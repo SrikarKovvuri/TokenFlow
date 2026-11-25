@@ -75,6 +75,8 @@ When every eligible worker is full the gateway returns HTTP 429 with
 HTTP 503 with the same retry hint. Both responses arrive immediately. Configured
 model pools record recent peak demand, including admission failures, so an
 autoscaler can bring up capacity even when a model starts at zero workers.
+Each admitted request can open its own upstream connection. Long-lived streams
+on one worker leave other workers' connection capacity available.
 
 For a cold model, the gateway remembers one arrival for up to five minutes
 while waiting for an eligible pool's provider inventory or launch backoff.
