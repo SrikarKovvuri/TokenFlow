@@ -281,6 +281,33 @@ def verify_released(ec2, disks, interfaces, expected_disks):
     raise RuntimeError(f"EC2 terminated but attached storage/interfaces still visible: {disks}, {interfaces}")
 
 
+async def release_worker(ec2, provider, pool, vm, expected_disks, out):
+    try:
+        disks, interfaces = attachments(ec2, vm.external_id)
+    finally:
+        await provider.terminate(pool, vm)
+        ec2.get_waiter("instance_terminated").wait(
+            InstanceIds=[vm.external_id], WaiterConfig={"Delay": 5, "MaxAttempts": 60}
+        )
+    verify_released(ec2, disks, interfaces, expected_disks)
+    (out / "cleanup.json").write_text(json.dumps({
+        "instance_id": vm.external_id, "volume_ids": disks, "interface_ids": interfaces,
+        "release_verified_at": datetime.now(UTC).isoformat(),
+    }, indent=2))
+
+
+async def recover_launch(ec2, provider, pool, key, expected_disks, out):
+    # RunInstances can succeed before its HTTP reply is lost. Inventory can
+    # also lag. The independent deadline guard covers a longer visibility delay.
+    for delay in (0, 2, 5, 10):
+        if delay:
+            await asyncio.sleep(delay)
+        for vm in await provider.discover(pool):
+            if vm.key == key:
+                await release_worker(ec2, provider, pool, vm, expected_disks, out)
+                return
+
+
 async def check_gateway(pool, namespace, out, provider):
     catalog = {"namespace": namespace, "state_path": str(out / "control.sqlite3"),
                "interval_seconds": 3, "startup_timeout_seconds": 1500,
@@ -355,13 +382,22 @@ async def run(args):
     provider = CloudProvisioner(namespace, session=session)
     machine, role = verify_guard(cfn, sfn, session.client("iam"), args.guard_stack, namespace, report["account"])
     guard, deadline = arm_guard(sfn, machine, role, namespace)
-    report.update(namespace=namespace, guard=guard, deadline=deadline.isoformat())
+    key = secrets.token_hex(16)
+    report.update(namespace=namespace, launch_key=key, guard=guard, deadline=deadline.isoformat())
     (out / "run.json").write_text(json.dumps(report, indent=2))
     if datetime.now(UTC) >= deadline - timedelta(minutes=22):
         raise RuntimeError(f"Insufficient cleanup window; guard left armed: {guard}")
     # There is one caller and one launch key. Adoption exercises normal
     # discovery and HTTP routing without authorizing any replacement instance.
-    vm = await provider.launch(pool, secrets.token_hex(16))
+    try:
+        vm = await provider.launch(pool, key)
+    except (Exception, asyncio.CancelledError) as launch_error:
+        try:
+            await recover_launch(ec2, provider, pool, key, report["ebs_volumes"], out)
+        except Exception as cleanup_error:
+            launch_error.add_note(f"Could not confirm immediate cleanup: {cleanup_error}")
+        launch_error.add_note(f"Launch outcome was uncertain. Independent cleanup guard remains armed: {guard}")
+        raise
     try:
         report["instance_id"] = vm.external_id
         (out / "run.json").write_text(json.dumps(report, indent=2))
@@ -369,16 +405,7 @@ async def run(args):
         result = await check_gateway(pool, namespace, out, AdoptOnly(namespace, session=session))
         (out / "responses.json").write_text(json.dumps(result, indent=2))
     finally:
-        # The guard remains live after an ambiguous launch, disconnected client
-        # or failed teardown. Disarm only after EC2 confirms this ID terminated.
-        try:
-            disks, interfaces = attachments(ec2, vm.external_id)
-        finally:
-            await provider.terminate(pool, vm)
-            ec2.get_waiter("instance_terminated").wait(
-                InstanceIds=[vm.external_id], WaiterConfig={"Delay": 5, "MaxAttempts": 60}
-            )
-        verify_released(ec2, disks, interfaces, report["ebs_volumes"])
+        await release_worker(ec2, provider, pool, vm, report["ebs_volumes"], out)
         if sfn.describe_execution(executionArn=guard)["status"] == "RUNNING":
             sfn.stop_execution(executionArn=guard, cause="EC2 termination confirmed")
         print(f"Confirmed instance termination: {vm.external_id}", flush=True)

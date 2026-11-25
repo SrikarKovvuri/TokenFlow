@@ -140,12 +140,17 @@ does not pass a worker instance profile. The guard role can terminate only
 instances tagged for live tests.
 
 Look in `experiments/results/aws-live/tf-test-*/` for `run.json` (account,
-estimate, execution ARN and deadline), the local catalog and state database,
+estimate, launch key, execution ARN and deadline), the local catalog and state database,
 and `responses.json` (successful replies and sampled worker telemetry).
 The client confirms instance termination and disappearance of the observed
 volume and network interface IDs before disarming the independent guard.
-After a disconnect or ambiguous launch, check the Step Functions execution
-and EC2 resources by `TokenFlowNamespace`. A failed workflow or lingering
+A lost EC2 launch reply triggers a short inventory check for that launch key.
+If the instance appears, the client terminates it immediately and verifies the
+release. The independent guard stays armed after a lost reply to cover delayed
+visibility or interrupted recovery. A verified release writes `cleanup.json`
+with the instance, volume and interface IDs and a UTC timestamp.
+After a disconnect, check the Step Functions execution and EC2 resources by
+`TokenFlowNamespace`. A failed workflow or lingering
 resource requires operator intervention. The workflow execution eventually
 expires from AWS history. To uninstall the reusable guard when no test is
 active, delete its CloudFormation stack.

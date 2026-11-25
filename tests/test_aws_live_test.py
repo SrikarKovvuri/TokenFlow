@@ -296,6 +296,9 @@ def test_live_run_adopts_one_private_gpu_and_cleans_up_after_inference(aws_run, 
     receipt = json.loads((out / "run.json").read_text())
     assert receipt["guard"] == "execution"
     assert receipt["instance_id"] == "i-test"
+    cleaned = json.loads((out / "cleanup.json").read_text())
+    assert cleaned["instance_id"] == "i-test" and cleaned["volume_ids"] == ["vol-test"]
+    assert cleaned["interface_ids"] == ["eni-test"]
     if incomplete_stream:
         assert not (out / "responses.json").exists()
     else:
@@ -319,14 +322,46 @@ def test_live_run_leaves_guard_armed_when_release_cannot_be_verified(aws_run, mo
     sfn.stop_execution.assert_not_called()
 
 
-def test_live_run_lost_launch_reply_preserves_guard_and_never_reallocates(aws_run):
-    args, _, ec2, sfn = aws_run
-    ec2.run_instances.side_effect = TimeoutError("RunInstances lost its reply")
+@pytest.mark.parametrize("becomes_visible", [True, False])
+def test_lost_launch_reply_recovers_only_this_attempt_and_preserves_guard(aws_run, monkeypatch, becomes_visible):
+    args, vm, ec2, sfn = aws_run
+    accept_launch = ec2.run_instances.side_effect
+    polls = []
+
+    def lost_reply(**params):
+        accept_launch(**params)
+        raise TimeoutError("RunInstances lost its reply")
+
+    def inventory(**kwargs):
+        # Another key in the same namespace must never be terminated by this client.
+        other = {**vm, "InstanceId": "i-other", "Tags": [
+            {**tag, "Value": "f" * 32} if tag["Key"] == "TokenFlowKey" else tag for tag in vm["Tags"]
+        ]}
+        polls.append(kwargs["Filters"])
+        rows = [other, vm] if becomes_visible and len(polls) > 1 else [other]
+        return [{"Reservations": [{"Instances": rows}]}]
+
+    async def skip_delay(seconds):
+        pass
+
+    monkeypatch.setattr(live.asyncio, "sleep", skip_delay)
+    ec2.run_instances.side_effect = lost_reply
+    ec2.get_paginator.return_value.paginate.side_effect = inventory
     with pytest.raises(TimeoutError, match="lost its reply"):
         asyncio.run(live.run(args))
     sfn.get_execution_history.assert_called_once()
     ec2.run_instances.assert_called_once()
     sfn.stop_execution.assert_not_called()
+    out = args.output / args.namespace
+    receipt = json.loads((out / "run.json").read_text())
+    assert receipt["launch_key"] == next(tag["Value"] for tag in vm["Tags"] if tag["Key"] == "TokenFlowKey")
+    if becomes_visible:
+        ec2.terminate_instances.assert_called_once_with(InstanceIds=["i-test"])
+        ec2.get_waiter.return_value.wait.assert_called_once()
+        assert json.loads((out / "cleanup.json").read_text())["instance_id"] == "i-test"
+    else:
+        ec2.terminate_instances.assert_not_called()
+        assert not (out / "cleanup.json").exists()
 
 
 @pytest.mark.parametrize("missing", ["BlockDeviceMappings", "NetworkInterfaces"])
