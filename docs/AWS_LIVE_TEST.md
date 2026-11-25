@@ -19,6 +19,29 @@ python -m pytest -q tests/test_ec2_autoscaling.py
 
 The test starts with a zero-sized pool. Overlapping requests trigger two emulated instances with distinct private addresses. When the operator pauses the pool, the idle replica terminates first and the busy replica drains. A separately tagged instance survives. The engine and GPU report synthetic telemetry, and the test rejects outbound AWS requests.
 
+### Pair the emulated instance with a real GPU
+
+Operators with a local vLLM server can check the complete inference path using
+the same in-memory EC2 service. The server must already expose its model on
+loopback. TokenFlow's GPU sampler must be listening on the next port.
+Run these commands in PowerShell from the checkout after installing the test
+dependencies above.
+
+```powershell
+$env:TOKENFLOW_TEST_VLLM_PORT = Read-Host 'Local engine port'
+$env:TOKENFLOW_TEST_VLLM_MODEL = Read-Host 'Served model alias'
+$results = New-Item -ItemType Directory -Path 'experiments/results' -Force
+$env:TOKENFLOW_TEST_VLLM_EVIDENCE = Join-Path $results.FullName ('gpu-acceptance-' + [guid]::NewGuid() + '.json')
+python -m pytest -q tests/test_ec2_autoscaling.py::test_local_gpu_with_emulated_ec2
+```
+
+The controller launches one emulated instance in response to a cold request.
+The test maps its discovered address to the local worker. The OpenAI client
+then receives a JSON completion and an SSE stream through an isolated
+TokenFlow gateway. The evidence file records chunk arrival times, token usage
+when reported, worker gauges, and the emulated instance's final state. The
+operator owns the local engine and sampler and can stop them after the test.
+
 ## Existing infrastructure
 
 Use a control host with the project's AWS Python extra and an existing private
