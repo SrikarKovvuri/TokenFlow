@@ -1,6 +1,8 @@
 """Exercise the Slurm CLI boundary and packaged worker independently of a cluster."""
 
 import asyncio
+from contextlib import contextmanager
+import errno
 import io
 import json
 import os
@@ -18,6 +20,49 @@ from tokenflow.provisioner.base import PoolSpec, Resource
 
 
 KEY = "3" * 32
+
+
+@pytest.mark.parametrize(("backend", "filename"), [("vllm", "key"), ("sglang", "sglang.yaml")])
+def test_quota_failure_does_not_reuse_partial_worker_credentials(tmp_path, monkeypatch, backend, filename):
+    pool = PoolSpec(
+        name="team", model="qwen", provider="slurm", backend=backend, gpu_type="A6000",
+        checkpoint="/shared/checkpoint", image="/shared/engine.sif", max_replicas=1,
+        options={"account": "edu", "partition": "burst", "state_dir": "/project/state"},
+    )
+    provider = slurm.SlurmProvisioner("testing", "secret")
+    root = tmp_path / "state"
+    monkeypatch.setattr(slurm, "Path", lambda _: root)
+    monkeypatch.setattr(slurm, "private_directory", lambda path: path.mkdir(exist_ok=True))
+    submit = Mock(return_value="123")
+    monkeypatch.setattr(slurm, "slurm_command", submit)
+    state = root / (provider._prefix(pool) + KEY)
+    token = slurm.worker_token("secret", KEY)
+    expected = token if backend == "vllm" else f'api-key: "{token}"\n'
+    real_fdopen = os.fdopen
+
+    @contextmanager
+    def fail_during_write(*args, **kwargs):
+        with real_fdopen(*args, **kwargs) as stream:
+            def write(value):
+                if value != expected:
+                    return stream.write(value)
+                stream.write(value[:8])
+                raise OSError(errno.ENOSPC, "Disk quota exceeded")
+            yield SimpleNamespace(write=write)
+
+    with monkeypatch.context() as fault:
+        fault.setattr(slurm.os, "fdopen", fail_during_write)
+        with pytest.raises(OSError, match="quota"):
+            asyncio.run(provider.launch(pool, KEY))
+    submit.assert_not_called()
+    assert not (state / "submitting").exists()
+    assert not (state / filename).exists()
+    # A previous gateway version could have left a truncated file here.
+    (state / filename).write_text(expected[:8])
+    assert asyncio.run(provider.launch(pool, KEY)) == Resource(KEY, "123", "pending")
+    assert (state / filename).read_text() == expected
+    assert (state / "key").read_text() == token
+    submit.assert_called_once()
 
 
 def test_slurm_lifecycle_through_command_processes(tmp_path, monkeypatch):

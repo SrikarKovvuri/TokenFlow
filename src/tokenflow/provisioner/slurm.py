@@ -1,6 +1,7 @@
 """Run single-node Apptainer workers through Slurm's native client commands."""
 
 import asyncio
+from contextlib import suppress
 import hashlib
 import hmac
 import json
@@ -9,6 +10,7 @@ from pathlib import Path
 import re
 import shlex
 import subprocess
+import tempfile
 from typing import Annotated
 
 from pydantic import AfterValidator, Field, StringConstraints
@@ -73,9 +75,17 @@ def private_directory(path: Path) -> None:
         raise ValueError(f"Slurm state must be a private directory (0700) owned by this user: {path}")
 
 
-def private_file(path: Path, value: str) -> None:
-    with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as output:
-        output.write(value)
+def write_private_file(path: Path, value: str) -> None:
+    # mkstemp creates a 0600 file on the same filesystem. Only a complete,
+    # successfully closed credential or receipt becomes visible at its final path.
+    fd, staging = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}-")
+    try:
+        with os.fdopen(fd, "w") as output:
+            output.write(value)
+        os.replace(staging, path)
+    finally:
+        with suppress(FileNotFoundError):
+            os.unlink(staging)
 
 
 def batch_script(pool: PoolSpec, opts: SlurmOptions, state: Path) -> str:
@@ -189,7 +199,7 @@ class SlurmProvisioner:
         private_directory(state)
         claim = state / "submitting"
         try:
-            private_file(claim, "")
+            claim.touch(mode=0o600, exist_ok=False)
         except FileExistsError:
             # sbatch has no client token. A persisted intent plus a missing reply
             # is ambiguous: issuing another sbatch here could allocate twice.
@@ -198,7 +208,9 @@ class SlurmProvisioner:
                     return existing
             receipt = state / "job-id"
             if receipt.exists():
-                return Resource(key=key, external_id=receipt.read_text().strip(), phase="pending")
+                job_id = receipt.read_text().strip()
+                if job_id.isdecimal():
+                    return Resource(key=key, external_id=job_id, phase="pending")
             raise RuntimeError(f"Ambiguous Slurm submission. Inspect {state} and queue before retrying.")
 
         args = ["sbatch", "--parsable", "--no-requeue", "--export=NIL", f"--job-name={name}",
@@ -210,10 +222,9 @@ class SlurmProvisioner:
             args.append(f"--qos={opts.qos}")
         try:
             token = worker_token(self.worker_secret, key)
-            if not (state / "key").exists():
-                private_file(state / "key", token)
-            if pool.backend == "sglang" and not (state / "sglang.yaml").exists():
-                private_file(state / "sglang.yaml", f"api-key: {json.dumps(token)}\n")
+            write_private_file(state / "key", token)
+            if pool.backend == "sglang":
+                write_private_file(state / "sglang.yaml", f"api-key: {json.dumps(token)}\n")
             body = batch_script(pool, opts, state)
         except Exception:
             claim.unlink()  # No Slurm submission has been attempted.
@@ -226,7 +237,7 @@ class SlurmProvisioner:
         job_id = reply.split(";", 1)[0]
         if not job_id.isdecimal():
             raise RuntimeError(f"Unexpected sbatch response for {name}: {reply!r}")
-        private_file(state / "job-id", job_id)
+        write_private_file(state / "job-id", job_id)
         return Resource(key=key, external_id=job_id, phase="pending")
 
     async def launch(self, pool: PoolSpec, key: str) -> Resource:

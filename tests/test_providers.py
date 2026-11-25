@@ -91,6 +91,11 @@ def test_ambiguous_slurm_submission_never_submits_again(tmp_path, monkeypatch):
         asyncio.run(provider.launch(pool, KEY))
     with pytest.raises(RuntimeError, match="Ambiguous"):
         asyncio.run(provider.launch(pool, KEY))
+    # An older provider could leave an empty receipt if the filesystem filled
+    # after sbatch had already accepted this job.
+    (tmp_path / (provider._prefix(pool) + KEY) / "job-id").write_text("")
+    with pytest.raises(RuntimeError, match="Ambiguous"):
+        asyncio.run(provider.launch(pool, KEY))
     assert len(submitted) == 1
 
 
