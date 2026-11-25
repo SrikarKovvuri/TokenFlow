@@ -322,25 +322,36 @@ class Controller:
                  if w.enabled and w.health_status == HealthStatus.HEALTHY}
         managed_ids = set(self._workers.values())
         supply = {}
+        available_replicas = {}
         for pool in pools:
+            allocations = self.state.allocations(pool.name)
+            minimum, maximum = limits[pool.name]
+            intent_fits = len(allocations) <= maximum
             slots = [ready.get(self._workers.get(item.key), pool.capacity)
-                     for item in self.state.allocations(pool.name) if not item.retiring]
+                     for item in allocations if not item.retiring
+                     and (item.external_id or intent_fits)]
             # Retain existing workers serving direct traffic during ordinary
             # downscaling. An operator's hard ceiling still takes precedence.
             busy = sorted((count for count in slots if count < pool.capacity), reverse=True)
-            minimum, maximum = limits[pool.name]
             targets[pool.name] = min(maximum, max(minimum, len(busy)))
             supply[pool.name] = busy + [pool.capacity] * (len(slots) - len(busy))
+            # A draining allocation occupies a slot until the provider releases
+            # it. Only existing supply and genuinely free slots can cover demand.
+            free_slots = max(0, maximum - len(allocations)) if can_launch[pool.name] else 0
+            available_replicas[pool.name] = min(maximum, len(slots) + free_slots)
         window = min(300, max(1, self.interval * 2))
         for model in self._models:
             candidates = [p for p in pools if p.model == model]
             serving = [w for w in workers.values() if w.metadata.get("model") == model]
             active = sum(w.active_requests for w in serving)
             manual_slots = sum(ready.get(w.id, 0) for w in serving if w.id not in managed_ids)
-            cold = any(can_launch[p.name] for p in candidates) and self.registry.take_cold_arrival(model)
+            can_supply = manual_slots > 0 or any(
+                can_launch[p.name] and available_replicas[p.name] > 0 for p in candidates
+            )
+            cold = can_supply and self.registry.take_cold_arrival(model)
             shortfall = max(active, self.registry.demand_since(model, window), int(cold)) - manual_slots
             for pool in candidates:
-                floor = targets[pool.name]
+                floor = min(targets[pool.name], available_replicas[pool.name])
                 existing = supply[pool.name]
                 shortfall -= sum(existing[:floor]) + max(0, floor - len(existing)) * pool.capacity
 
@@ -358,7 +369,7 @@ class Controller:
                     break
                 if not can_launch[pool.name]:
                     continue
-                room = limits[pool.name][1] - targets[pool.name]
+                room = max(0, available_replicas[pool.name] - targets[pool.name])
                 add = min(room, math.ceil(shortfall / pool.capacity))
                 targets[pool.name] += add
                 shortfall -= add * pool.capacity
@@ -427,9 +438,9 @@ class Controller:
             # Retaining an already accepted cold start during the idle cooldown
             # must not initiate a paid retry after the original demand expires.
             confirmed = sum(bool(a.external_id) and not a.retiring for a in allocations)
-            if confirmed < requested:
+            if confirmed < requested and len(allocations) <= maximum:
                 await self._launch(pool, unsubmitted)
-        elif len(allocations) < requested:
+        elif len(live) < requested and len(allocations) < maximum:
             # Only one new allocation per pool per poll. Terminating and unresolved
             # launches both occupy a slot until inventory confirms their outcome.
             item = Allocation(uuid4().hex, pool.name, now, now)

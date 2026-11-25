@@ -104,6 +104,13 @@ stay there. Direct traffic alone can keep an existing managed worker running
 through idle scale-down. New replicas require a configured minimum or gateway
 demand. Explicit replica ceilings take precedence, including a pool pause.
 
+A draining worker still occupies a replica slot until the provider confirms
+its release. During that time the controller can use a free slot in the same
+pool or another pool serving the model. For example, a pool capped at one
+A6000 with its only worker terminating can send cold-start demand to an
+eligible L40S pool. If every slot is tied up in termination, the controller
+retains the cold-start signal for up to five minutes while a slot opens.
+
 On a failed connection attempt the gateway marks that endpoint unhealthy,
 releases the reservation and tries one different eligible worker. It preserves
 the request ID. A successful health probe brings a recovered worker back into
