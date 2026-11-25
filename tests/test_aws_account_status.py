@@ -52,7 +52,9 @@ def test_cli_reports_credits_and_zero_applied_quota_through_sdk(monkeypatch, cap
             quotas.add_response("get_service_quota", {"Quota": {"Value": 0}}, {"ServiceCode": "ec2", "QuotaCode": code})
         lookup = {"ServiceCode": "ec2", "QuotaCode": G_VT_QUOTA}
         history = "list_requested_service_quota_change_history_by_quota"
-        quotas.add_response(history, {"RequestedQuotas": [], "NextToken": "page2"}, lookup)
+        approved = {"Id": "prior", "Status": "APPROVED", "DesiredValue": 4, "CaseId": "example-case",
+                    "Created": now - timedelta(days=1), "LastUpdated": now}
+        quotas.add_response(history, {"RequestedQuotas": [approved], "NextToken": "page2"}, lookup)
         quotas.add_response(history, {"RequestedQuotas": [{"Id": "example", "Status": "PENDING", "DesiredValue": 4}]},
                             {**lookup, "NextToken": "page2"})
         assert main() == 0
@@ -65,7 +67,11 @@ def test_cli_reports_credits_and_zero_applied_quota_through_sdk(monkeypatch, cap
     assert result["account"] == ACCOUNT and result["principal_arn"] == arn
     assert result["on_demand_gpu_quotas"]["G/VT"]["applied_vcpus"] == 0
     assert result["on_demand_gpu_quotas"]["P"]["applied_vcpus"] == 0
-    assert result["g_vt_quota_requests"] == [{"id": "example", "status": "PENDING", "requested_vcpus": 4}]
+    assert result["g_vt_quota_requests"] == [
+        {"id": "prior", "status": "APPROVED", "requested_vcpus": 4, "case_id": "example-case",
+         "created": approved["Created"].isoformat(), "last_updated": now.isoformat()},
+        {"id": "example", "status": "PENDING", "requested_vcpus": 4},
+    ]
     award, = result["credits"]
     assert award["expires"] == grant["endDate"].isoformat()
     assert award["remaining"] == dollars("30") and award["estimated_remaining"] == dollars("24")

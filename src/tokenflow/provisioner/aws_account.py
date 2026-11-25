@@ -67,9 +67,16 @@ def account_status(session, expected_account):
         quota = quotas.get_service_quota(ServiceCode="ec2", QuotaCode=code)["Quota"]
         applied[family] = {"code": code, "applied_vcpus": quota["Value"]}
     history = quotas.get_paginator("list_requested_service_quota_change_history_by_quota")
-    requests = [{"id": item["Id"], "status": item["Status"], "requested_vcpus": item["DesiredValue"]}
-                for page in history.paginate(ServiceCode="ec2", QuotaCode=G_VT_QUOTA)
-                for item in page["RequestedQuotas"]]
+    requests = []
+    for page in history.paginate(ServiceCode="ec2", QuotaCode=G_VT_QUOTA):
+        for item in page["RequestedQuotas"]:
+            request = {"id": item["Id"], "status": item["Status"], "requested_vcpus": item["DesiredValue"]}
+            if item.get("CaseId"):
+                request["case_id"] = item["CaseId"]
+            for field, name in (("Created", "created"), ("LastUpdated", "last_updated")):
+                if item.get(field):
+                    request[name] = item[field].isoformat()
+            requests.append(request)
     return {
         "account": expected_account, "principal_arn": identity["Arn"],
         "credential_source": session.get_credentials().method, "region": session.region_name,
