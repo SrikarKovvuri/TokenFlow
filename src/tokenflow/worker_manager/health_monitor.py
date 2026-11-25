@@ -40,18 +40,18 @@ class WorkerHealthMonitor:
 
     async def check_once(self) -> None:
         workers = await self._registry.list()
-        enabled_workers = [worker for worker in workers if worker.enabled]
-        await asyncio.gather(*(self._poll(worker) for worker in enabled_workers))
+        await asyncio.gather(*(self._poll(worker, self._registry.endpoint_identity(worker.id))
+                               for worker in workers if worker.enabled))
 
-    async def _poll(self, worker: Worker) -> None:
+    async def _poll(self, worker: Worker, endpoint: object) -> None:
         try:
-            await self._check_worker(worker)
+            await self._check_worker(worker, endpoint)
         except Exception:
             # Keep polling the fleet if one endpoint supplies unexpected data.
             # Cancellation still propagates when the gateway shuts down.
             logger.exception("Unexpected health probe failure for worker %s", worker.id)
 
-    async def _check_worker(self, worker: Worker) -> None:
+    async def _check_worker(self, worker: Worker, endpoint: object) -> None:
         base = str(worker.base_url).rstrip("/")
         health_status = HealthStatus.UNHEALTHY
 
@@ -77,7 +77,7 @@ class WorkerHealthMonitor:
             )
 
         current = await self._registry.set_health_status(
-            worker.id, health_status, expected_base_url=str(worker.base_url)
+            worker.id, health_status, expected_base_url=str(worker.base_url), expected_endpoint=endpoint,
         )
         if current is None or health_status != HealthStatus.HEALTHY:
             return

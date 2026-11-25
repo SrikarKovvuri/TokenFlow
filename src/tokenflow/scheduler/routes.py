@@ -1,5 +1,4 @@
 import logging
-from functools import partial
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
@@ -44,18 +43,19 @@ async def create_chat_completion(
 
         logger.info("Routed model %s to %s with %d active requests",
                     model, worker.id, worker.active_requests)
+        endpoint = worker_manager.endpoint_identity(worker.id)
         try:
             return await forward_chat_completion(
                 worker=worker,
                 payload=payload,
                 request_id=request.state.request_id,
                 client=request.app.state.worker_client,
-                release=partial(worker_manager.release, worker.id, registered_at=worker.registered_at),
+                release=worker_manager.release_callback(worker.id),
                 receive=request.receive,
             )
         except WorkerConnectionError as exc:
             await worker_manager.set_health_status(
-                worker.id, HealthStatus.UNHEALTHY, expected_base_url=str(worker.base_url)
+                worker.id, HealthStatus.UNHEALTHY, expected_base_url=str(worker.base_url), expected_endpoint=endpoint,
             )
             # One failover, only before a connection was established. A read
             # timeout or interrupted SSE stream may already have generated tokens.

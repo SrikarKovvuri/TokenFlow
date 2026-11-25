@@ -1,7 +1,5 @@
 import asyncio
 from collections.abc import AsyncIterator, Callable
-from datetime import UTC, datetime
-from uuid import uuid4
 
 import httpx
 import anyio
@@ -12,7 +10,7 @@ from fastapi.testclient import TestClient
 from tokenflow.main import create_app
 from tokenflow.scheduler.proxy import forward_chat_completion
 from starlette.requests import ClientDisconnect
-from tokenflow.worker_manager.models import HealthStatus, Worker
+from tokenflow.worker_manager.models import HealthStatus, Worker, WorkerCreate
 from tokenflow.worker_manager.registry import WorkerRegistry
 
 
@@ -31,11 +29,11 @@ class TrackingStream(httpx.AsyncByteStream):
 
 def make_app(
     handler: Callable[[httpx.Request], object],
-    worker: Worker | None,
+    *, with_worker: bool = True,
 ) -> FastAPI:
     registry = WorkerRegistry()
-    if worker is not None:
-        registry._workers[worker.id] = worker
+    if with_worker:
+        asyncio.run(register_healthy_worker(registry))
     return create_app(
         registry=registry,
         worker_transport=httpx.MockTransport(handler),
@@ -43,18 +41,12 @@ def make_app(
     )
 
 
-def healthy_worker() -> Worker:
-    now = datetime.now(UTC)
-    return Worker(
-        id=uuid4(),
-        name="gpu-worker",
-        base_url="http://worker:8101",
-        enabled=True,
-        health_status=HealthStatus.HEALTHY,
-        metadata={"model": "test-model"},
-        registered_at=now,
-        updated_at=now,
-    )
+async def register_healthy_worker(registry: WorkerRegistry) -> Worker:
+    worker = await registry.create(WorkerCreate(
+        name="gpu-worker", base_url="http://worker:8101", metadata={"model": "test-model"},
+    ))
+    await registry.set_health_status(worker.id, HealthStatus.HEALTHY, expected_base_url=str(worker.base_url))
+    return await registry.get(worker.id)
 
 
 def test_non_streaming_request_is_forwarded() -> None:
@@ -67,7 +59,7 @@ def test_non_streaming_request_is_forwarded() -> None:
             json={"choices": [{"message": {"content": "hello"}}]},
         )
 
-    app = make_app(handler, healthy_worker())
+    app = make_app(handler)
 
     with TestClient(app) as client:
         response = client.post(
@@ -98,7 +90,7 @@ def test_streaming_request_is_relayed_and_closed() -> None:
             stream=stream,
         )
 
-    app = make_app(handler, healthy_worker())
+    app = make_app(handler)
 
     with TestClient(app) as client:
         response = client.post(
@@ -123,7 +115,7 @@ def test_no_available_worker_returns_service_unavailable() -> None:
     ) -> httpx.Response:
         raise AssertionError(f"Unexpected request to {request.url}")
 
-    app = make_app(unexpected_handler, None)
+    app = make_app(unexpected_handler, with_worker=False)
 
     with TestClient(app) as client:
         response = client.post(
@@ -143,7 +135,7 @@ def test_worker_http_error_is_passed_through_without_gateway_admission_marker(co
             headers={"X-TokenFlow-Admission": "waiting-for-worker", "Retry-After": "10"},
         )
 
-    app = make_app(handler, healthy_worker())
+    app = make_app(handler)
 
     with TestClient(app) as client:
         response = client.post(
@@ -160,7 +152,7 @@ def test_worker_connection_failure_returns_bad_gateway() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("worker is offline", request=request)
 
-    app = make_app(handler, healthy_worker())
+    app = make_app(handler)
 
     with TestClient(app) as client:
         response = client.post(
@@ -176,7 +168,7 @@ def test_worker_timeout_returns_gateway_timeout() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         raise httpx.ReadTimeout("worker timed out", request=request)
 
-    app = make_app(handler, healthy_worker())
+    app = make_app(handler)
 
     with TestClient(app) as client:
         response = client.post(
@@ -192,8 +184,7 @@ def test_stream_cleanup_releases_worker_on_failure(failure: str) -> None:
     """Drive the ASGI response: buffered TestClient calls miss send failures."""
     async def scenario() -> None:
         registry = WorkerRegistry()
-        worker = healthy_worker()
-        registry._workers[worker.id] = worker
+        worker = await register_healthy_worker(registry)
         releases = 0
 
         class Stream(httpx.AsyncByteStream):

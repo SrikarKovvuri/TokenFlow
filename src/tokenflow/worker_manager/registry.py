@@ -1,6 +1,6 @@
 from collections import deque
-from collections.abc import Iterable
-from dataclasses import dataclass
+from collections.abc import Awaitable, Callable, Iterable
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from time import monotonic
 from uuid import UUID, uuid4
@@ -18,6 +18,34 @@ class TelemetryProbe:
     gateway_overlap: int
 
 
+@dataclass
+class _Reservations:
+    """Request accounting for one registration, even if its public ID is reused."""
+
+    active: int = 0
+    prior_endpoint: int = 0
+    probe: TelemetryProbe | None = None
+    endpoint_identity: object = field(default_factory=object)
+
+    @property
+    def possible_overlap(self) -> int:
+        return self.active - self.prior_endpoint
+
+    async def release(self) -> None:
+        if self.active == 0:
+            return
+        self.active -= 1
+        self.prior_endpoint = min(self.prior_endpoint, self.active)
+        # A completion during the scrape could belong to an original lease.
+        if self.probe and self.probe.gateway_overlap:
+            self.probe.gateway_overlap -= 1
+
+    def reset_endpoint(self) -> None:
+        self.endpoint_identity = object()
+        self.probe = None
+        self.prior_endpoint = self.active
+
+
 class WorkerNotFoundError(LookupError):
     def __init__(self, worker_id: UUID) -> None:
         super().__init__(f"Worker '{worker_id}' was not found")
@@ -31,16 +59,13 @@ class DuplicateWorkerError(ValueError):
 class WorkerRegistry:
     """Process-local memory of registered inference workers.
 
-    ``_workers`` is the registration record. ``_inflight`` is the live count of
-    requests assigned to each worker and not yet finished. The count stays in
-    its own map so a health update cannot overwrite it.
+    Health and telemetry updates replace the worker record. Reservations live
+    for the lifetime of a registration and survive these record updates.
     """
 
     def __init__(self, *, telemetry_age_seconds: float = 30) -> None:
         self._workers: dict[UUID, Worker] = {}
-        self._inflight: dict[UUID, int] = {}
-        self._prior_endpoint: dict[UUID, int] = {}
-        self._probes: dict[UUID, TelemetryProbe] = {}
+        self._reservations: dict[UUID, _Reservations] = {}
         self._telemetry_age_seconds = telemetry_age_seconds
         self._demand: dict[str, deque[tuple[int, int]]] = {}
         self._cold_arrivals: dict[str, float] = {}
@@ -75,7 +100,7 @@ class WorkerRegistry:
         if history is None:
             return
         demand = 1 + sum(
-            self._inflight.get(worker.id, 0)
+            self._reservations[worker.id].active
             for worker in self._workers.values() if worker.metadata.get("model") == model
         )
         second = int(monotonic())
@@ -96,6 +121,7 @@ class WorkerRegistry:
             updated_at=now,
         )
         self._workers[worker.id] = worker
+        self._reservations[worker.id] = _Reservations()
         return worker
 
     async def list(self) -> list[Worker]:
@@ -108,7 +134,7 @@ class WorkerRegistry:
         """Select and reserve a worker before any network wait."""
         if not exclude:
             self._record_arrival(model)
-        candidates = [(candidate, self._inflight.get(candidate.id, 0))
+        candidates = [(candidate, self._reservations[candidate.id].active)
                       for candidate in self._workers.values() if not exclude or candidate.id not in exclude]
         try:
             worker = choose_worker(candidates, model, telemetry_age_seconds=self._telemetry_age_seconds)
@@ -116,27 +142,20 @@ class WorkerRegistry:
             if not exclude and model in self._demand:
                 self._cold_arrivals[model] = monotonic()
             raise
-        self._inflight[worker.id] = self._inflight.get(worker.id, 0) + 1
+        self._reservations[worker.id].active += 1
         return self._with_load(worker)
 
-    async def release(self, worker_id: UUID, *, registered_at: datetime | None = None) -> None:
-        """Drop one in-flight reservation, including after cancellation."""
-        worker = self._workers.get(worker_id)
-        if registered_at is not None and (worker is None or registered_at != worker.registered_at):
-            return  # A managed allocation can re-register with the same ID.
-        current = self._inflight.get(worker_id, 0)
-        # The engine does not identify individual gateway requests in its gauges.
-        # A release during a scrape might finish one of the original leases.
-        probe = self._probes.get(worker_id)
-        if current and probe and probe.gateway_overlap:
-            probe.gateway_overlap -= 1
-        if current <= 1:
-            self._inflight.pop(worker_id, None)
-            self._prior_endpoint.pop(worker_id, None)
-        else:
-            self._inflight[worker_id] = current - 1
-            if worker_id in self._prior_endpoint:
-                self._prior_endpoint[worker_id] = min(self._prior_endpoint[worker_id], current - 1)
+    def release_callback(self, worker_id: UUID) -> Callable[[], Awaitable[None]]:
+        """Capture this registration before forwarding a possibly long-lived stream."""
+        return self._reservations[worker_id].release
+
+    def endpoint_identity(self, worker_id: UUID) -> object:
+        """Capture the current endpoint generation before a network request."""
+        return self._reservations[worker_id].endpoint_identity
+
+    async def release(self, worker_id: UUID) -> None:
+        if reservations := self._reservations.get(worker_id):
+            await reservations.release()
 
     async def update(
         self,
@@ -160,7 +179,7 @@ class WorkerRegistry:
         ):
             updated_data["health_status"] = HealthStatus.UNKNOWN
             updated_data["telemetry"] = None
-            self._reset_endpoint(worker_id)
+            self._reservations[worker_id].reset_endpoint()
         if "metadata" in changes and changes["metadata"] != worker.metadata:
             updated_data["telemetry"] = None
         updated_data["updated_at"] = datetime.now(UTC)
@@ -174,6 +193,7 @@ class WorkerRegistry:
         health_status: HealthStatus,
         *,
         expected_base_url: str,
+        expected_endpoint: object | None = None,
     ) -> Worker | None:
         """Record one health check if that check is still about this worker.
 
@@ -183,6 +203,8 @@ class WorkerRegistry:
         worker = self._workers.get(worker_id)
         if worker is None or not worker.enabled or str(worker.base_url) != expected_base_url:
             return None
+        if expected_endpoint is not None and self.endpoint_identity(worker_id) is not expected_endpoint:
+            return None
         if worker.health_status is health_status:
             return worker
 
@@ -190,25 +212,17 @@ class WorkerRegistry:
         updated_data["health_status"] = health_status
         if health_status is not HealthStatus.HEALTHY:
             updated_data["telemetry"] = None
-            self._reset_endpoint(worker_id)
+            self._reservations[worker_id].reset_endpoint()
         updated_data["updated_at"] = datetime.now(UTC)
         updated_worker = Worker.model_validate(updated_data)
         self._workers[worker_id] = updated_worker
         return updated_worker
 
-    def _reset_endpoint(self, worker_id: UUID) -> None:
-        self._probes.pop(worker_id, None)
-        if self._inflight.get(worker_id):
-            self._prior_endpoint[worker_id] = self._inflight[worker_id]
-
-    def _possible_overlap(self, worker_id: UUID) -> int:
-        # Leases still draining from an earlier endpoint may never appear on
-        # this engine. Their count is an upper bound until completions arrive.
-        return self._inflight.get(worker_id, 0) - self._prior_endpoint.get(worker_id, 0)
-
     def begin_telemetry_probe(self, worker_id: UUID) -> TelemetryProbe:
-        probe = TelemetryProbe(self._get(worker_id), datetime.now(UTC), self._possible_overlap(worker_id))
-        self._probes[worker_id] = probe
+        worker = self._get(worker_id)
+        reservations = self._reservations[worker_id]
+        probe = TelemetryProbe(worker, datetime.now(UTC), reservations.possible_overlap)
+        reservations.probe = probe
         return probe
 
     async def set_telemetry(
@@ -216,14 +230,15 @@ class WorkerRegistry:
         probe: TelemetryProbe | None = None,
     ) -> None:
         worker = self._workers.get(worker_id)
-        if probe is not None and self._probes.get(worker_id) is not probe:
-            return  # A newer probe or registration has superseded this one.
         if (worker is None or not worker.enabled or str(worker.base_url) != expected_base_url
                 or worker.health_status != HealthStatus.HEALTHY or (probe and probe.worker is not worker)):
             return
-        self._probes.pop(worker_id, None)
+        reservations = self._reservations[worker_id]
+        if probe is not None and reservations.probe is not probe:
+            return  # A newer probe or registration has superseded this one.
+        reservations.probe = None
         if telemetry is not None:
-            overlap = probe.gateway_overlap if probe else self._possible_overlap(worker_id)
+            overlap = probe.gateway_overlap if probe else reservations.possible_overlap
             telemetry = telemetry.model_copy(update={
                 "gateway_overlap": min(telemetry.requests, overlap),
                 "observed_at": min(telemetry.observed_at, probe.started_at) if probe else telemetry.observed_at,
@@ -236,14 +251,12 @@ class WorkerRegistry:
 
     def discard(self, worker_id: UUID) -> None:
         self._workers.pop(worker_id, None)
-        self._inflight.pop(worker_id, None)
-        self._prior_endpoint.pop(worker_id, None)
-        self._probes.pop(worker_id, None)
+        self._reservations.pop(worker_id, None)
 
     def _with_load(self, worker: Worker) -> Worker:
         # Copy the live count onto the response without changing the stored record.
         return worker.model_copy(
-            update={"active_requests": self._inflight.get(worker.id, 0)}
+            update={"active_requests": self._reservations[worker.id].active}
         )
 
     def _get(self, worker_id: UUID) -> Worker:

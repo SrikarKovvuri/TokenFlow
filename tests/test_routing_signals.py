@@ -1,5 +1,6 @@
 import asyncio
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -163,16 +164,74 @@ def test_superseded_probes_and_old_endpoint_reservations_do_not_mask_new_load():
         assert (await registry.assign("qwen")).id == old.id
         with pytest.raises(WorkersAtCapacityError):
             await registry.assign("qwen")
-        # An old stream closing after the same managed worker ID was restored
-        # cannot release a slot on its replacement registration.
-        await registry.delete(old.id)
-        replacement = await registry.create(WorkerCreate(name="restored", base_url=old_url,
-            metadata={"model": "qwen", "capacity": 1}), worker_id=old.id)
-        await registry.set_health_status(old.id, HealthStatus.HEALTHY, expected_base_url=old_url)
-        await registry.assign("qwen")
-        await registry.release(old.id, registered_at=old.registered_at)
-        assert (await registry.get(replacement.id)).active_requests == 1
     asyncio.run(scenario())
+
+
+def test_old_stream_cannot_release_a_replacement_registered_in_the_same_clock_tick(monkeypatch):
+    now = datetime.now(UTC)
+    monkeypatch.setattr("tokenflow.worker_manager.registry.datetime", SimpleNamespace(now=lambda tz: now))
+
+    async def scenario():
+        registry = WorkerRegistry()
+        old = await add_worker(registry, "first", capacity=1)
+        await registry.assign("qwen")
+        release_old_stream = registry.release_callback(old.id)
+        await registry.delete(old.id)
+        replacement = await registry.create(
+            WorkerCreate(name="restored", base_url=old.base_url, metadata={"model": "qwen", "capacity": 1}),
+            worker_id=old.id,
+        )
+        assert replacement.registered_at == old.registered_at
+        await registry.set_health_status(replacement.id, HealthStatus.HEALTHY, expected_base_url=str(old.base_url))
+        await registry.assign("qwen")
+        release_new_stream = registry.release_callback(replacement.id)
+        await release_old_stream()
+        assert (await registry.get(replacement.id)).active_requests == 1
+        await release_new_stream()
+        assert (await registry.get(replacement.id)).active_requests == 0
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("source", ["health-poll", "inference-connection"])
+@pytest.mark.parametrize("replacement", ["same-id", "url-changed-back"])
+def test_health_write_ignores_a_replacement_at_the_same_address(source, replacement):
+    async def scenario():
+        registry = WorkerRegistry()
+        old = await add_worker(registry, "first", capacity=1)
+        url = str(old.base_url)
+
+        async def upstream(request):
+            if replacement == "same-id":
+                await registry.delete(old.id)
+                await registry.create(WorkerCreate(name="new", base_url=url,
+                                      metadata={"model": "qwen", "capacity": 1}), worker_id=old.id)
+            else:
+                await registry.update(old.id, WorkerUpdate(base_url="http://other"))
+                await registry.update(old.id, WorkerUpdate(base_url=url))
+            if source == "health-poll":
+                assert request.url.path == "/health"
+                return httpx.Response(200)
+            assert request.url.path == "/v1/chat/completions"
+            await registry.set_health_status(old.id, HealthStatus.HEALTHY, expected_base_url=url)
+            raise httpx.ConnectError("old worker gone", request=request)
+
+        transport = httpx.MockTransport(upstream)
+        if source == "health-poll":
+            async with httpx.AsyncClient(transport=transport) as client:
+                await WorkerHealthMonitor(registry, client, interval_seconds=1, timeout_seconds=1).check_once()
+            assert (await registry.get(old.id)).health_status is HealthStatus.UNKNOWN
+        else:
+            app = create_app(registry=registry, worker_transport=transport, enable_health_monitor=False)
+            async with (app.router.lifespan_context(app),
+                        httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://gateway") as client):
+                result = await client.post("/v1/chat/completions", json={"model": "qwen"})
+            assert result.status_code == 502
+            current = await registry.get(old.id)
+            assert current.health_status is HealthStatus.HEALTHY and current.active_requests == 0
+
+    asyncio.run(scenario())
+
 
 @pytest.mark.parametrize("first, second, chosen", [
     ({"waiting": 4}, {"running": 1}, "second"),
