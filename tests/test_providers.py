@@ -186,12 +186,14 @@ def test_cloud_bootstrap_and_engine_args():
     args = Namespace(model="qwen", checkpoint="/checkpoint", gpus=2, capacity=4,
                      dtype="bfloat16", max_model_len=2048, backend="sglang")
     command = worker.engine_command(args, 8000, Path("/state/key"))
+    assert command[command.index("--host") + 1] == "0.0.0.0"
     assert "--enable-metrics" in command
     assert str(Path("/state/sglang.yaml")) in command
     assert command[command.index("--tp-size") + 1] == "2"
     assert command[command.index("--log-level") + 1] == "warning"
     args.backend = "vllm"
-    command = worker.engine_command(args, 8010, Path("/state/key"))
+    command = worker.engine_command(args, 8010, Path("/state/key"), "127.0.0.1")
+    assert command[command.index("--host") + 1] == "127.0.0.1"
     assert command[command.index("--middleware") + 1] == "worker.GatewayAuth"
     assert command[command.index("--max-model-len") + 1] == "2048"
 
@@ -201,3 +203,25 @@ def test_wrong_gpu_class_fails_before_launch(monkeypatch):
     assert worker.allocated_gpus(1, "l40s") == [f"GPU-{KEY}"]
     with pytest.raises(RuntimeError, match="Requested 1 L4"):
         worker.allocated_gpus(1, "L4")
+
+
+def test_loopback_sampler_binds_adjacent_to_ephemeral_engine():
+    port, server = worker.claim_ports(0, worker.metrics_handler([], None), "127.0.0.1")
+    with server:
+        assert server.server_address == ("127.0.0.1", port + 1)
+        assert port > 0
+
+
+def test_empty_worker_key_rejected_before_using_a_gpu(monkeypatch, tmp_path, capsys):
+    key = tmp_path / "key"
+    key.write_text(" \n")
+    monkeypatch.setattr(worker.sys, "argv", [
+        "worker.py", "--backend", "vllm", "--model", "test", "--checkpoint", "local",
+        "--gpus", "1", "--gpu-type", "A6000", "--capacity", "2", "--dtype", "float16",
+        "--port", "0", "--key-file", str(key), "--loopback-only",
+    ])
+    monkeypatch.setattr(worker, "allocated_gpus", lambda *_: pytest.fail("GPU probe ran"))
+    with pytest.raises(SystemExit) as error:
+        worker.main()
+    assert error.value.code == 2
+    assert "--key-file must contain a nonempty bearer key" in capsys.readouterr().err

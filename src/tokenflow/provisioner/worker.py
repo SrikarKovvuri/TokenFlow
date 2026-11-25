@@ -96,24 +96,24 @@ def metrics_handler(uuids, token):
     return GPUMetrics
 
 
-def claim_ports(requested, handler):
+def claim_ports(requested, handler, host="0.0.0.0"):
     # Cloud has one worker per instance. On shared Slurm nodes ask the OS for a
     # free port, reserving the adjacent telemetry listener before publishing it.
     for _ in range(32):
         with socket.socket() as engine:
-            engine.bind(("", requested))
+            engine.bind((host, requested))
             port = engine.getsockname()[1]
             if port == 65535:
                 continue
             try:
-                return port, ThreadingHTTPServer(("", port + 1), handler)
+                return port, ThreadingHTTPServer((host, port + 1), handler)
             except OSError:
                 if requested:
                     raise
     raise RuntimeError("Could not allocate adjacent engine and metrics ports")
 
 
-def engine_command(args, port, key_file):
+def engine_command(args, port, key_file, host="0.0.0.0"):
     if args.backend == "vllm":
         command = [sys.executable, "-m", "vllm.entrypoints.openai.api_server",
                    "--model", args.checkpoint, "--tensor-parallel-size", str(args.gpus),
@@ -129,7 +129,7 @@ def engine_command(args, port, key_file):
             # SGLang's INFO startup log can include the resolved API key.
             command.extend(["--config", str(key_file.with_name("sglang.yaml")), "--log-level", "warning"])
         length_flag = "--context-length"
-    command.extend(["--served-model-name", args.model, "--host", "0.0.0.0",
+    command.extend(["--served-model-name", args.model, "--host", host,
                     "--port", str(port), "--dtype", args.dtype])
     if args.max_model_len:
         command.extend([length_flag, str(args.max_model_len)])
@@ -169,20 +169,27 @@ def main():
     parser.add_argument("--gpu-type", required=True)
     parser.add_argument("--capacity", type=int, required=True)
     parser.add_argument("--port", type=int, required=True)
+    parser.add_argument("--loopback-only", action="store_true",
+                        help="Bind the inference and GPU metrics listeners to 127.0.0.1.")
     parser.add_argument("--dtype", required=True)
     parser.add_argument("--max-model-len", type=int)
     parser.add_argument("--key-file", type=Path)
     parser.add_argument("--port-file", type=Path)
     args = parser.parse_args()
     token = args.key_file.read_text().strip() if args.key_file else None
+    if args.key_file and not token:
+        parser.error("--key-file must contain a nonempty bearer key")
+    if args.port_file and not args.key_file:
+        parser.error("--port-file requires --key-file for the readiness check")
+    host = "127.0.0.1" if args.loopback_only else "0.0.0.0"
     uuids = allocated_gpus(args.gpus, args.gpu_type)
-    port, server = claim_ports(args.port, metrics_handler(uuids, token))
+    port, server = claim_ports(args.port, metrics_handler(uuids, token), host)
     Thread(target=server.serve_forever, daemon=True).start()
     env = os.environ.copy()
     if token and args.backend == "vllm":
         env["VLLM_API_KEY"] = token
         env["PYTHONPATH"] = os.pathsep.join([str(Path(__file__).parent), env.get("PYTHONPATH", "")])
-    worker = subprocess.Popen(engine_command(args, port, args.key_file), env=env)
+    worker = subprocess.Popen(engine_command(args, port, args.key_file, host), env=env)
     signal.signal(signal.SIGTERM, lambda *_: worker.terminate())
     try:
         if args.port_file:
