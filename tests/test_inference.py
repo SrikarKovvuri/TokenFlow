@@ -7,6 +7,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from tokenflow.config import Settings
 from tokenflow.main import create_app
 from tokenflow.scheduler.proxy import forward_chat_completion
 from starlette.requests import ClientDisconnect
@@ -126,6 +127,48 @@ def test_no_available_worker_returns_service_unavailable() -> None:
     assert response.status_code == 503
 
 
+@pytest.mark.parametrize("body", [b'{"model":"private-prompt-sentinel",', b'["private-prompt-sentinel"]'])
+def test_public_request_validation_does_not_echo_the_body(client: TestClient, body: bytes) -> None:
+    response = client.post("/v1/chat/completions", content=body, headers={"Content-Type": "application/json"})
+    assert response.status_code == 422
+    assert b"private-prompt-sentinel" not in response.content
+    assert set(response.json()) == {"error"}
+    error = response.json()["error"]
+    assert error["type"] == "invalid_request_error" and error["message"]
+    assert error["code"] == "invalid_request" and error["param"] is None
+
+
+def test_operator_endpoints_keep_their_existing_error_format() -> None:
+    key = "operator-test-key-123"
+    app = create_app(Settings(_env_file=None, api_keys=["student-test-key-123"], admin_key=key),
+                     enable_health_monitor=False)
+    with TestClient(app) as client:
+        denied = client.get("/v1/workers")
+        headers = {"Authorization": f"Bearer {key}"}
+        disabled = client.get("/v1/pools", headers=headers)
+        invalid = client.post("/v1/workers", headers=headers, json={})
+    assert denied.status_code == 401 and denied.headers["WWW-Authenticate"] == "Bearer"
+    assert denied.json() == {"detail": "A valid bearer key is required"}
+    assert disabled.status_code == 404 and disabled.json() == {"detail": "Managed pools are disabled"}
+    assert invalid.status_code == 422 and set(invalid.json()) == {"detail"}
+    assert isinstance(invalid.json()["detail"], list)
+
+
+@pytest.mark.parametrize("stream", [False, True])
+def test_plaintext_worker_error_is_relayed_byte_for_byte(stream: bool) -> None:
+    body = b"Worker temporarily unavailable\r\n\xa3\r\n"
+    headers = {"Content-Type": "text/plain; charset=iso-8859-1", "Cache-Control": "no-store",
+               "Retry-After": "7", "X-TokenFlow-Admission": "waiting-for-worker"}
+    app = make_app(lambda _: httpx.Response(503, content=body, headers=headers))
+    with TestClient(app) as client:
+        response = client.post("/v1/chat/completions", json={"model": "test-model", "stream": stream})
+    assert response.status_code == 503 and response.content == body
+    for header in ("Content-Type", "Cache-Control", "Retry-After"):
+        assert response.headers[header] == headers[header]
+    assert "X-TokenFlow-Admission" not in response.headers
+    assert asyncio.run(app.state.worker_registry.list())[0].active_requests == 0
+
+
 @pytest.mark.parametrize("code", [400, 503])
 def test_worker_http_error_is_passed_through_without_gateway_admission_marker(code) -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -161,6 +204,7 @@ def test_worker_connection_failure_returns_bad_gateway() -> None:
         )
 
     assert response.status_code == 502
+    assert response.json()["error"]["code"] == "upstream_error"
     assert asyncio.run(app.state.worker_registry.list())[0].active_requests == 0
 
 
@@ -177,6 +221,7 @@ def test_worker_timeout_returns_gateway_timeout() -> None:
         )
 
     assert response.status_code == 504
+    assert response.json()["error"]["code"] == "upstream_timeout"
 
 
 @pytest.mark.parametrize("failure", ["headers", "body", "upstream", "close", "cancel"])

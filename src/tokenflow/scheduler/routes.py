@@ -1,10 +1,9 @@
 import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request, Response, status
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, Request, Response
 
-from tokenflow.scheduler.body_limit import InferenceRoute
+from tokenflow.scheduler.http import InferenceRoute, error_response
 from tokenflow.scheduler.proxy import WorkerConnectionError, forward_chat_completion
 from tokenflow.scheduler.selection import NoAvailableWorkerError, WorkersAtCapacityError
 from tokenflow.worker_manager.models import HealthStatus
@@ -21,19 +20,13 @@ async def create_chat_completion(
 ) -> Response:
     model = payload.get("model")
     if not isinstance(model, str) or model == "":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A model is required",
-        )
+        return error_response(400, "A model is required", code="invalid_value", param="model", include_detail=True)
 
     choices = payload.get("n")
     if choices is None:
         choices = 1
     if type(choices) is not int or choices < 1:
-        return JSONResponse(status_code=400, content={"error": {
-            "message": "n must be a positive integer.", "type": "invalid_request_error",
-            "param": "n", "code": "invalid_value",
-        }})
+        return error_response(400, "n must be a positive integer.", code="invalid_value", param="n")
 
     worker_manager = request.app.state.worker_registry
     excluded = set()
@@ -44,12 +37,15 @@ async def create_chat_completion(
         except (NoAvailableWorkerError, WorkersAtCapacityError) as exc:
             if connection_failure is not None:
                 raise connection_failure
-            code = 429 if isinstance(exc, WorkersAtCapacityError) else 503
+            if isinstance(exc, WorkersAtCapacityError):
+                code, message = 429, "All available workers for the requested model are at capacity"
+            else:
+                code, message = 503, "No enabled, healthy worker is serving the requested model"
             headers = {"Retry-After": "1"}
             controller = request.app.state.controller
             if code == 503 and controller is not None and controller.accepts_cold_demand(model):
                 headers["X-TokenFlow-Admission"] = "waiting-for-worker"
-            raise HTTPException(code, str(exc), headers=headers) from exc
+            raise HTTPException(code, message, headers=headers) from exc
 
         logger.info("Routed model %s to %s with %d active requests",
                     model, worker.id, worker.active_requests)

@@ -71,6 +71,15 @@ available. Routing ignores samples older than 30 seconds.
 
 ## Overload, failures and draining
 
+On the public inference endpoints, a gateway error includes
+`error.message`, `error.type`, `error.code`, and `error.param`. The OpenAI
+Python SDK exposes these as `exc.body["message"]`, `exc.type`, `exc.code`,
+and `exc.param` on an `APIStatusError`. For example, a full worker pool returns
+HTTP 429 with `workers_at_capacity`. A model with no available worker returns
+HTTP 503 with `worker_unavailable`. Use the cold-start header described below
+to decide whether to wait for provisioning. Errors returned by an inference
+engine retain that engine's response body.
+
 The gateway accepts up to 4 MiB (4,194,304 bytes) of JSON per chat request.
 Set `TOKENFLOW_MAX_INFERENCE_BODY_BYTES` to a positive integer to change the
 limit. It counts the entire encoded body, including inline images and message

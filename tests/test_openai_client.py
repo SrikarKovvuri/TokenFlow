@@ -17,6 +17,7 @@ from fastapi.responses import StreamingResponse
 
 from tokenflow.config import Settings
 from tokenflow.main import create_app
+from tokenflow.worker_manager.models import HealthStatus, WorkerCreate
 
 openai = pytest.importorskip("openai", reason="Install tokenflow[dev] for the SDK compatibility test")
 
@@ -176,3 +177,42 @@ def test_openai_models_chat_and_incremental_stream(through_proxy):
 
     with TemporaryDirectory(prefix="tokenflow-sdk-") as scratch:
         asyncio.run(scenario(Path(scratch)))
+
+
+@pytest.mark.parametrize(("model", "exception", "code", "error_type", "param"), [
+    (None, openai.AuthenticationError, "invalid_api_key", "authentication_error", None),
+    ("", openai.BadRequestError, "invalid_value", "invalid_request_error", "model"),
+    ("busy", openai.RateLimitError, "workers_at_capacity", "rate_limit_error", None),
+    ("offline", openai.InternalServerError, "worker_unavailable", "server_error", None),
+])
+def test_sdk_exposes_gateway_errors(model, exception, code, error_type, param):
+    async def scenario():
+        student_key = "local-inference-test-only"
+        app = create_app(Settings(_env_file=None, platform_config=None, worker_secret=None,
+                                  admin_key="local-operator-test-only", api_keys=[student_key]),
+                         enable_health_monitor=False)
+        if model == "busy":
+            registry = app.state.worker_registry
+            worker = await registry.create(WorkerCreate(name=model, base_url="http://worker.invalid",
+                                                        metadata={"model": model, "capacity": 1}))
+            await registry.set_health_status(worker.id, HealthStatus.HEALTHY, expected_base_url=str(worker.base_url))
+            await registry.assign(model)
+        async with app.router.lifespan_context(app), openai.AsyncOpenAI(
+            base_url="http://test/v1", api_key=student_key if model is not None else "invalid-key",
+            max_retries=0, default_headers={"X-Request-ID": "sdk-error-test"},
+            http_client=httpx.AsyncClient(transport=httpx.ASGITransport(app=app)),
+        ) as sdk:
+            with pytest.raises(exception) as caught:
+                if model is None:
+                    await sdk.models.list()
+                else:
+                    await sdk.chat.completions.create(model=model, messages=[])
+            err = caught.value
+            assert (err.code, err.type, err.param) == (code, error_type, param)
+            assert err.body["message"] and err.request_id == "sdk-error-test"
+            if model in ("busy", "offline"):
+                assert err.response.headers["Retry-After"] == "1"
+            if model is None:
+                assert err.response.headers["WWW-Authenticate"] == "Bearer"
+
+    asyncio.run(scenario())
