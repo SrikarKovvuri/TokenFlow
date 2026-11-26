@@ -11,7 +11,7 @@ from typing import Annotated, Literal
 from pydantic import AfterValidator, Field, StringConstraints
 
 from tokenflow.provisioner.base import PoolSpec, Resource
-from tokenflow.provisioner.launch import EngineOptions, check_mount_path, worker_args, worker_script
+from tokenflow.provisioner.launch import EngineOptions, check_mount_path, local_checkpoint_paths, worker_args, worker_script
 
 
 class CloudOptions(EngineOptions):
@@ -28,10 +28,13 @@ class CloudOptions(EngineOptions):
 def bootstrap(pool: PoolSpec, opts: CloudOptions) -> str:
     script = "/var/lib/tokenflow/worker.py"
     checkpoint = pool.checkpoint
+    source = None
+    if checkpoint.startswith("/"):
+        source, checkpoint = local_checkpoint_paths(checkpoint)
     mount = ""
     if opts.checkpoint_mount:
         root = PurePosixPath(opts.checkpoint_mount)
-        target = PurePosixPath(checkpoint)
+        target = PurePosixPath(source or "")
         if ".." in target.parts or ".." in root.parts or not target.is_relative_to(root):
             raise ValueError("checkpoint must be on the configured checkpoint_mount")
         # A delayed network mount can leave an empty mountpoint on the root disk.
@@ -50,9 +53,8 @@ mountpoint --quiet -- "$checkpoint_mount"
               "--env", "CUDA_VISIBLE_DEVICES=" + ",".join(str(i) for i in range(pool.gpu_count)),
               "--publish", f"{pool.port}:{pool.port}", "--publish", f"{pool.port + 1}:{pool.port + 1}",
               "--mount", f"type=bind,src={script},dst=/worker.py,readonly"]
-    if checkpoint.startswith("/"):
-        docker.extend(["--mount", f"type=bind,src={checkpoint},dst=/checkpoint,readonly"])
-        checkpoint = "/checkpoint"
+    if source:
+        docker.extend(["--mount", f"type=bind,src={source},dst=/checkpoint,readonly"])
     docker.extend(["--entrypoint", "python3", pool.image, "/worker.py"])
     docker.extend(worker_args(pool, opts, pool.port, checkpoint))
     data = f"""#!/bin/bash

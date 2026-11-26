@@ -2,6 +2,15 @@
 
 An operator configures a pool for each combination of checkpoint, backend, and hardware. A replica is one Slurm job or one EC2 instance. It runs one engine, optionally sharded across several GPUs with tensor parallelism. The gateway and its ingress have their own lifecycle. Students keep using the same base URL when an allocation ends.
 
+For a staged checkpoint, use either a self-contained model directory or the
+full path to a Hugging Face cache revision such as
+`/models/models--Qwen--Qwen2.5-14B-Instruct/snapshots/<40-character-commit>`.
+For that cache layout, both providers mount the model's repository read-only
+at `/checkpoint` and pass `/checkpoint/snapshots/<commit>` to the engine.
+This keeps the selected revision pinned and lets its weight symlinks reach
+the repository's `blobs` directory. When using an EC2 `checkpoint_mount`,
+the mounted filesystem must include that model repository.
+
 ## Insomnia with Slurm and Apptainer
 
 For a same-host worker test, pass `--loopback-only` to `worker.py` so both

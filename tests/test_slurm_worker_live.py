@@ -45,6 +45,7 @@ apptainer() {
             /work/*) arg="${binds[/work]}/${arg#/work/}" ;;
             /state/*) arg="${binds[/state]}/${arg#/state/}" ;;
             /checkpoint) arg="${binds[/checkpoint]}" ;;
+            /checkpoint/*) arg="${binds[/checkpoint]}/${arg#/checkpoint/}" ;;
         esac
         args+=("$arg")
     done

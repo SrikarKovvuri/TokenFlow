@@ -2,6 +2,7 @@ import asyncio
 from argparse import Namespace
 import json
 from pathlib import Path
+import shlex
 from unittest.mock import MagicMock
 
 import pytest
@@ -28,6 +29,55 @@ def cloud_pool():
                     backend="sglang", gpu_type="L40S", image="example/sglang:stable", max_replicas=2,
                     options={"region": "us-west-2", "ami_id": "ami-123", "instance_type": "g6e.xlarge",
                              "subnet_id": "subnet-123", "security_group_ids": ["sg-123"]})
+
+
+REVISION = "abcdef12" * 5
+
+
+@pytest.mark.parametrize(("directory", "revision", "cached"), [
+    ("models--org--chat-1.5B", REVISION, True),
+    ("models--gpt2", REVISION, True),
+    ("ordinary", REVISION, False),
+    ("models--", REVISION, False),
+    ("datasets--org--data", REVISION, False),
+    ("models--org--model", "main", False),
+    ("models--org--model", REVISION + "/subdirectory", False),
+])
+def test_local_checkpoint_mount_in_both_provider_commands(directory, revision, cached):
+    repo = f"/shared model cache/{directory}"
+    path = f"{repo}/snapshots/{revision}"
+    source = repo if cached else path
+    checkpoint = f"/checkpoint/snapshots/{revision}" if cached else "/checkpoint"
+    hpc = hpc_pool().model_copy(update={"checkpoint": path})
+    cloud = cloud_pool().model_copy(update={"checkpoint": path})
+
+    batch = batch_script(hpc, SlurmOptions.model_validate(hpc.options), Path("/state"))
+    native = shlex.split(batch[batch.rindex("\napptainer exec "):].replace("\\\n", " "))
+    docker = shlex.split(bootstrap(cloud, CloudOptions.model_validate(cloud.options)).splitlines()[-1])
+    assert f"{source}:/checkpoint:ro" in native
+    assert f"type=bind,src={source},dst=/checkpoint,readonly" in docker
+    for args in (native, docker):
+        assert args[args.index("--checkpoint") + 1] == checkpoint
+
+
+def test_cloud_hub_model_id_and_snapshot_mount_boundaries():
+    pool = cloud_pool().model_copy(update={"checkpoint": "org/model"})
+    opts = CloudOptions.model_validate(pool.options)
+    docker = shlex.split(bootstrap(pool, opts).splitlines()[-1])
+    assert docker[docker.index("--checkpoint") + 1] == "org/model"
+    assert not any("dst=/checkpoint" in arg for arg in docker)
+
+    repo = "/data/models--org--model"
+    path = f"{repo}/snapshots/{REVISION}"
+    for root in (repo, "/data"):
+        CloudProvisioner.validate_pool(pool.model_copy(update={
+            "checkpoint": path, "options": {**pool.options, "checkpoint_mount": root},
+        }))
+    for root in (path, f"{repo}/snapshots"):
+        with pytest.raises(ValueError, match="checkpoint_mount"):
+            CloudProvisioner.validate_pool(pool.model_copy(update={
+                "checkpoint": path, "options": {**pool.options, "checkpoint_mount": root},
+            }))
 
 
 @pytest.mark.parametrize("backend", ["vllm", "sglang"])

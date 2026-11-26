@@ -16,7 +16,7 @@ from typing import Annotated
 from pydantic import AfterValidator, Field, StringConstraints
 
 from tokenflow.provisioner.base import PoolSpec, Resource
-from tokenflow.provisioner.launch import EngineOptions, check_mount_path, worker_args, worker_script
+from tokenflow.provisioner.launch import EngineOptions, check_mount_path, local_checkpoint_paths, worker_args, worker_script
 
 
 SlurmName = Annotated[str, StringConstraints(pattern=r"^[a-zA-Z0-9_.-]+$")]
@@ -89,7 +89,8 @@ def write_private_file(path: Path, value: str) -> None:
 
 
 def batch_script(pool: PoolSpec, opts: SlurmOptions, state: Path) -> str:
-    args = worker_args(pool, opts, 0, "/checkpoint")
+    source, checkpoint = local_checkpoint_paths(pool.checkpoint)
+    args = worker_args(pool, opts, 0, checkpoint)
     module = f"module load {shlex.quote(opts.apptainer_module)}" if opts.apptainer_module else ""
     # Pass only this job's derived credential on the private shared mount. Slurm
     # can expose submitted scripts to administrators, so scripts contain no keys.
@@ -114,7 +115,7 @@ if [[ "${{SLURM_RESTART_COUNT:-0}}" != 0 ]]; then
     port_file+="-restart-$SLURM_RESTART_COUNT"
 fi
 apptainer exec --cleanenv --nv --pwd /work --bind "$work/runtime:/work" \\
-  --bind {shlex.quote(str(state) + ":/state")} --bind {shlex.quote(pool.checkpoint + ":/checkpoint:ro")} \\
+  --bind {shlex.quote(str(state) + ":/state")} --bind {shlex.quote(source + ":/checkpoint:ro")} \\
   {shlex.quote(pool.image)} python3 /work/worker.py {shlex.join(args)} \\
   --key-file /state/key --port-file "$port_file"
 """

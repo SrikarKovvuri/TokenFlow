@@ -1,6 +1,7 @@
 """Shared container entry point and validated operator-supplied engine settings."""
 
 from pathlib import Path, PurePosixPath
+import re
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -18,6 +19,20 @@ def check_mount_path(value: str) -> str:
     if not PurePosixPath(value).is_absolute() or any(c in value for c in ",:\x00\r\n"):
         raise ValueError("Mount paths must be absolute Linux paths without commas, colons or newlines")
     return value
+
+
+def local_checkpoint_paths(checkpoint: str) -> tuple[str, str]:
+    """Return the read-only host bind source and worker-visible checkpoint."""
+    path = PurePosixPath(checkpoint)
+    if ".." not in path.parts and path.parent.name == "snapshots" and re.fullmatch(r"[0-9a-fA-F]{40}", path.name):
+        repository = path.parent.parent
+        kind, *parts = repository.name.split("--")
+        if kind == "models" and len(parts) in (1, 2) and all(
+            re.fullmatch(r"[\w](?:[\w.-]*[\w])?", part, re.ASCII) and ".." not in part for part in parts
+        ):
+            # Snapshot files link to ../../blobs inside this model repository.
+            return str(repository), f"/checkpoint/snapshots/{path.name}"
+    return checkpoint, "/checkpoint"
 
 
 def worker_script() -> str:
