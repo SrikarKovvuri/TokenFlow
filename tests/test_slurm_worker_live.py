@@ -157,6 +157,21 @@ async def check_worker_auth(direct, engine, port, student, secret, key, report):
 
 async def check_completions(sdk, workload, report):
     model = workload["model"]
+    # The warm worker has two free sequence slots. Exercise both before
+    # starting the separate single-choice JSON and streaming requests.
+    parallel = {**workload, "n": 2, "temperature": 0.7, "seed": 431}
+    sent = now()
+    reply = await sdk.chat.completions.create(**parallel)
+    assert reply.model == model and sorted(c.index for c in reply.choices) == [0, 1]
+    assert all(c.finish_reason in {"length", "stop"} and c.message.content and c.message.content.strip()
+               for c in reply.choices)
+    report["parallel_reply"] = {
+        "sent_at_utc": sent, "received_at_utc": now(), "id": reply.id,
+        "n": parallel["n"], "temperature": parallel["temperature"], "seed": parallel["seed"],
+        "choices": [{"index": c.index, "content": c.message.content, "finish_reason": c.finish_reason}
+                    for c in reply.choices],
+    }
+
     report["json_sent_at_utc"] = now()
     reply = await sdk.chat.completions.create(**workload)
     choice = reply.choices[0]
