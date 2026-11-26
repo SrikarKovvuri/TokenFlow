@@ -125,6 +125,14 @@ With loopback port 8000 free, run
 shipped site, uses a temporary local CA, and lets the mock worker send its
 second chunk only after the OpenAI client receives the first.
 
+To check process recovery on Linux, activate the gateway environment with
+`.[dev]` installed and run `TOKENFLOW_TEST_SYSTEMD=1 python -m pytest -q tests/test_systemd_service.py`.
+The test needs a running user systemd manager. It starts a temporary loopback
+service, pauses an empty pool, kills the gateway process, and verifies that
+systemd restarts it with the pause and access controls intact. The Slurm
+inventory is simulated. Set `TOKENFLOW_TEST_SYSTEMD_EVIDENCE` to a new JSON
+file in an existing directory to keep the restart timing and observed state.
+
 ## Operate and verify
 
 Use a private Bash terminal with `BASE_URL` set to the gateway origin. Enter
