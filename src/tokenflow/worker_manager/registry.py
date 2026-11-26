@@ -2,10 +2,11 @@ from collections import deque
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from functools import partial
 from time import monotonic
 from uuid import UUID, uuid4
 
-from tokenflow.scheduler.selection import NoAvailableWorkerError, choose_worker
+from tokenflow.scheduler.selection import NoAvailableWorkerError, WorkersAtCapacityError, choose_worker
 from tokenflow.worker_manager.models import HealthStatus, Worker, WorkerCreate, WorkerTelemetry, WorkerUpdate
 
 DEMAND_HISTORY_SECONDS = 300
@@ -23,27 +24,29 @@ class _Reservations:
     """Request accounting for one registration, even if its public ID is reused."""
 
     active: int = 0
-    prior_endpoint: int = 0
+    sequences: int = 0
+    prior_endpoint_sequences: int = 0
     probe: TelemetryProbe | None = None
     endpoint_identity: object = field(default_factory=object)
 
     @property
     def possible_overlap(self) -> int:
-        return self.active - self.prior_endpoint
+        return self.sequences - self.prior_endpoint_sequences
 
-    async def release(self) -> None:
+    async def release(self, choices: int) -> None:
         if self.active == 0:
             return
         self.active -= 1
-        self.prior_endpoint = min(self.prior_endpoint, self.active)
+        self.sequences -= choices
+        self.prior_endpoint_sequences = min(self.prior_endpoint_sequences, self.sequences)
         # A completion during the scrape could belong to an original lease.
         if self.probe and self.probe.gateway_overlap:
-            self.probe.gateway_overlap -= 1
+            self.probe.gateway_overlap = max(0, self.probe.gateway_overlap - choices)
 
     def reset_endpoint(self) -> None:
         self.endpoint_identity = object()
         self.probe = None
-        self.prior_endpoint = self.active
+        self.prior_endpoint_sequences = self.sequences
 
 
 class WorkerNotFoundError(LookupError):
@@ -78,7 +81,7 @@ class WorkerRegistry:
         self._cold_arrivals = {m: when for m, when in self._cold_arrivals.items() if m in self._demand}
 
     def demand_since(self, model: str, seconds: float) -> int:
-        """Peak offered concurrency in a rolling window of up to five minutes."""
+        """Peak demand for independently usable sequence slots, over at most five minutes."""
         cutoff = int(monotonic() - min(DEMAND_HISTORY_SECONDS, seconds))
         return max(
             (peak for when, peak in self._demand.get(model, ()) if when >= cutoff),
@@ -95,14 +98,26 @@ class WorkerRegistry:
         sample = worker.fresh_telemetry(datetime.now(UTC), self._telemetry_age_seconds)
         return worker.gateway_capacity(sample)
 
-    def _record_arrival(self, model: str) -> None:
+    def active_slots(self, worker: Worker) -> int:
+        """Choices occupy at most one whole replica, even when the engine queues some."""
+        return min(self._reservations[worker.id].sequences, worker.capacity)
+
+    def _record_arrival(self, model: str, *, at_capacity: bool = False) -> None:
         history = self._demand.get(model)
         if history is None:
             return
-        demand = 1 + sum(
-            self._reservations[worker.id].active
-            for worker in self._workers.values() if worker.metadata.get("model") == model
-        )
+        # Each new request can use exactly one replica. Historical demand must
+        # not turn a lone wide request into several launches after a failure.
+        demand = 1
+        for worker in self._workers.values():
+            if worker.metadata.get("model") != model:
+                continue
+            slots = self.active_slots(worker)
+            if at_capacity and worker.enabled and worker.health_status == HealthStatus.HEALTHY:
+                # Partial free slots on different replicas cannot serve one
+                # indivisible request. An additional replica can.
+                slots = max(slots, self.capacity_for_gateway(worker))
+            demand += slots
         second = int(monotonic())
         if history and history[-1][0] == second:
             demand = max(demand, history.pop()[1])
@@ -130,32 +145,39 @@ class WorkerRegistry:
     async def get(self, worker_id: UUID) -> Worker:
         return self._with_load(self._get(worker_id))
 
-    async def assign(self, model: str, *, exclude: set[UUID] | None = None) -> Worker:
+    async def assign(self, model: str, *, choices: int = 1, exclude: set[UUID] | None = None) -> Worker:
         """Select and reserve a worker before any network wait."""
-        if not exclude:
-            self._record_arrival(model)
-        candidates = [(candidate, self._reservations[candidate.id].active)
+        candidates = [(candidate, self._reservations[candidate.id].sequences)
                       for candidate in self._workers.values() if not exclude or candidate.id not in exclude]
         try:
-            worker = choose_worker(candidates, model, telemetry_age_seconds=self._telemetry_age_seconds)
+            worker = choose_worker(candidates, model, choices=choices, telemetry_age_seconds=self._telemetry_age_seconds)
         except NoAvailableWorkerError:
             if not exclude and model in self._demand:
+                self._record_arrival(model)
                 self._cold_arrivals[model] = monotonic()
             raise
-        self._reservations[worker.id].active += 1
+        except WorkersAtCapacityError:
+            if not exclude:
+                self._record_arrival(model, at_capacity=True)
+            raise
+        if not exclude:
+            self._record_arrival(model)
+        reservations = self._reservations[worker.id]
+        reservations.active += 1
+        reservations.sequences += choices
         return self._with_load(worker)
 
-    def release_callback(self, worker_id: UUID) -> Callable[[], Awaitable[None]]:
+    def release_callback(self, worker_id: UUID, *, choices: int = 1) -> Callable[[], Awaitable[None]]:
         """Capture this registration before forwarding a possibly long-lived stream."""
-        return self._reservations[worker_id].release
+        return partial(self._reservations[worker_id].release, choices)
 
     def endpoint_identity(self, worker_id: UUID) -> object:
         """Capture the current endpoint generation before a network request."""
         return self._reservations[worker_id].endpoint_identity
 
-    async def release(self, worker_id: UUID) -> None:
+    async def release(self, worker_id: UUID, *, choices: int = 1) -> None:
         if reservations := self._reservations.get(worker_id):
-            await reservations.release()
+            await reservations.release(choices)
 
     async def update(
         self,

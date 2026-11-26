@@ -495,6 +495,83 @@ def test_worker_draining_an_active_request_reserves_its_physical_slot(tmp_path):
     asyncio.run(scenario())
 
 
+@pytest.mark.parametrize("keep", [0, 1])
+def test_draining_streams_do_not_launch_another_gpu_until_new_work_arrives(tmp_path, monkeypatch, keep):
+    async def scenario():
+        now = [1_000.]
+        monkeypatch.setattr(registry_module, "monotonic", lambda: now[0])
+        hpc, cloud = Inventory(), Inventory()
+        registry = WorkerRegistry()
+        count = keep + 1
+        controller = Controller(
+            [spec("hpc", capacity=1, min_replicas=count, max_replicas=count),
+             spec("aws", provider="cloud", capacity=1, min_replicas=0, max_replicas=2)],
+            {"slurm": hpc, "cloud": cloud}, registry, tmp_path / "state.db",
+        )
+        try:
+            for _ in range(count):
+                await controller.reconcile()
+            for index, (_, key) in enumerate(hpc.launches):
+                old = hpc.items["hpc"][key]
+                hpc.items["hpc"][key] = Resource(key, old.external_id, "running", f"http://gpu{index}:18000")
+            await controller.reconcile()
+            for worker in await registry.list():
+                await registry.set_health_status(worker.id, HealthStatus.HEALTHY,
+                                                 expected_base_url=str(worker.base_url))
+            streams = [await registry.assign("qwen") for _ in range(count)]
+            now[0] += 400
+            assert registry.demand_since("qwen", 300) == 0
+            controller.set_limits("hpc", keep, keep)
+            await controller.reconcile()
+            await controller.reconcile()
+            assert not cloud.launches and not hpc.terminated
+            workers = await registry.list()
+            assert sum(w.enabled for w in workers) == keep
+            assert all(w.active_requests == 1 for w in workers)
+
+            with pytest.raises(WorkersAtCapacityError if keep else NoAvailableWorkerError):
+                await registry.assign("qwen")
+            await controller.reconcile()
+            await controller.reconcile()
+            assert len(cloud.launches) == 1 and not hpc.terminated
+            for worker in streams:
+                await registry.release(worker.id)
+            await controller.reconcile()
+            assert len(hpc.terminated) == 1
+        finally:
+            controller.close()
+    asyncio.run(scenario())
+
+
+def test_wide_request_uses_one_replica_and_an_independent_arrival_can_scale_out(tmp_path):
+    async def scenario():
+        inventory = Inventory()
+        controller = create(tmp_path / "state.db", inventory, spec(min_replicas=0, max_replicas=3, capacity=2))
+        registry = controller.registry
+        try:
+            with pytest.raises(NoAvailableWorkerError):
+                await registry.assign("qwen", choices=100)
+            await controller.reconcile()
+            [(name, key)] = inventory.launches
+            inventory.boot(name, key)
+            await controller.reconcile()
+            [worker] = await registry.list()
+            await registry.set_health_status(worker.id, HealthStatus.HEALTHY, expected_base_url=str(worker.base_url))
+            wide = await registry.assign("qwen", choices=100)
+            assert wide.active_requests == 1 and registry.active_slots(wide) == 2
+            await controller.reconcile()
+            assert len(inventory.launches) == 1
+            with pytest.raises(WorkersAtCapacityError):
+                await registry.assign("qwen")
+            await controller.reconcile()
+            await controller.reconcile()
+            assert len(inventory.launches) == 2
+            await registry.release(wide.id, choices=100)
+        finally:
+            controller.close()
+    asyncio.run(scenario())
+
+
 def test_cold_arrival_can_wait_for_the_only_terminating_slot(tmp_path, monkeypatch):
     async def scenario():
         now = [1_000.0]

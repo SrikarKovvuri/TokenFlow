@@ -311,6 +311,23 @@ class Controller:
         await self._unregister(item.key)
         self.state.remove(item.key)
 
+    def _surplus(self, pool: PoolSpec, live: list[Allocation], keep: int, workers: dict[UUID, Worker]) -> list[Allocation]:
+        """Choose the same drain candidates for the supply estimate and the resize."""
+        if keep >= len(live):
+            return []
+        if keep == 0:
+            return live
+
+        def drain_order(item: Allocation) -> tuple:
+            worker = workers.get(self._workers.get(item.key))
+            slots = pool.capacity
+            if worker and worker.enabled and worker.health_status == HealthStatus.HEALTHY:
+                slots = self.registry.capacity_for_gateway(worker)
+            return (slots < pool.capacity, slots, self.registry.active_slots(worker) if worker else 0,
+                    item.ever_ready, -item.created)
+
+        return sorted(live, key=drain_order)[:len(live) - keep]
+
     def _targets(self, pools: list[PoolSpec], workers: dict[UUID, Worker]) -> dict[str, int]:
         limits = {p.name: self._limits(p) for p in pools}
         can_launch = {p.name: limits[p.name][1] > 0 and self.state.policy(p.name)["retry_at"] <= time.time()
@@ -321,12 +338,17 @@ class Controller:
         ready = {w.id: self.registry.capacity_for_gateway(w) for w in workers.values()
                  if w.enabled and w.health_status == HealthStatus.HEALTHY}
         managed_ids = set(self._workers.values())
+        supplying_ids = set(ready) - managed_ids
         supply = {}
         available_replicas = {}
         for pool in pools:
             allocations = self.state.allocations(pool.name)
             minimum, maximum = limits[pool.name]
             intent_fits = len(allocations) <= maximum
+            live = [item for item in allocations if not item.retiring]
+            surplus = {item.key for item in self._surplus(pool, live, maximum, workers)}
+            supplying_ids.update(self._workers[item.key] for item in live
+                                 if item.key not in surplus and item.key in self._workers)
             slots = [ready.get(self._workers.get(item.key), pool.capacity)
                      for item in allocations if not item.retiring
                      and (item.external_id or intent_fits)]
@@ -343,13 +365,17 @@ class Controller:
         for model in self._models:
             candidates = [p for p in pools if p.model == model]
             serving = [w for w in workers.values() if w.metadata.get("model") == model]
-            active = sum(w.active_requests for w in serving)
+            active = sum(self.registry.active_slots(w) for w in serving)
+            # A request already executing on a draining or unavailable worker
+            # stays there. Only new work can use capacity in a different pool.
+            placed_elsewhere = sum(self.registry.active_slots(w) for w in serving if w.id not in supplying_ids)
             manual_slots = sum(ready.get(w.id, 0) for w in serving if w.id not in managed_ids)
             can_supply = manual_slots > 0 or any(
                 can_launch[p.name] and available_replicas[p.name] > 0 for p in candidates
             )
             cold = can_supply and self.registry.take_cold_arrival(model)
-            shortfall = max(active, self.registry.demand_since(model, window), int(cold)) - manual_slots
+            offered = max(active, self.registry.demand_since(model, window))
+            shortfall = max(offered - placed_elsewhere, int(cold)) - manual_slots
             for pool in candidates:
                 floor = min(targets[pool.name], available_replicas[pool.name])
                 existing = supply[pool.name]
@@ -395,20 +421,9 @@ class Controller:
             self._down_since.pop(pool.name, None)
         target = min(maximum, target)
         self._desired[pool.name] = target
-        if target < len(live):
-            def drain_order(item: Allocation) -> tuple:
-                worker = workers.get(self._workers.get(item.key))
-                slots = pool.capacity
-                if worker and worker.enabled and worker.health_status == HealthStatus.HEALTHY:
-                    slots = self.registry.capacity_for_gateway(worker)
-                # Keep directly used workers first. If the operator's ceiling
-                # forces a choice among them, retain the usable slots we counted.
-                return (slots < pool.capacity, slots, worker.active_requests if worker else 0,
-                        item.ever_ready, -item.created)
-
-            for item in sorted(live, key=drain_order)[:len(live) - target]:
-                item.retiring = True
-                self.state.save(item)
+        for item in self._surplus(pool, live, target, workers):
+            item.retiring = True
+            self.state.save(item)
 
         for item in allocations:
             if item.retiring:

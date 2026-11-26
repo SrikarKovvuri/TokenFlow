@@ -15,7 +15,7 @@ class WorkersAtCapacityError(Exception):
 
 
 def choose_worker(
-    workers: list[tuple[Worker, int]], model: str, *, telemetry_age_seconds: float = 30
+    workers: list[tuple[Worker, int]], model: str, *, choices: int = 1, telemetry_age_seconds: float = 30
 ) -> Worker:
     """Estimate delay from outstanding work, parallel capacity and service time.
 
@@ -26,7 +26,7 @@ def choose_worker(
     now = datetime.now(UTC)
     candidates = []
     has_healthy = False
-    for worker, active in workers:
+    for worker, reserved_sequences in workers:
         if (not worker.enabled or worker.health_status != HealthStatus.HEALTHY
                 or worker.metadata.get("model") != model):
             continue
@@ -34,9 +34,12 @@ def choose_worker(
         telemetry = worker.fresh_telemetry(now, telemetry_age_seconds)
         capacity = worker.capacity
         gateway_capacity = worker.gateway_capacity(telemetry)
-        if active >= gateway_capacity:
+        # One HTTP request stays on one replica. A request wider than an
+        # entire worker may use that worker exclusively and run in waves.
+        needed = min(choices, capacity)
+        if reserved_sequences + needed > gateway_capacity:
             continue
-        outstanding = active + (capacity - gateway_capacity)
+        outstanding = reserved_sequences + (capacity - gateway_capacity)
         kv = gpu = 0.5
         if telemetry:
             if telemetry.kv_cache_usage is not None:
@@ -45,7 +48,7 @@ def choose_worker(
                 gpu = telemetry.gpu_utilization
         service_time = worker.metadata.get("service_time_seconds", 1.0)
         estimated_wait = service_time * (outstanding / capacity)
-        candidates.append(((service_time + estimated_wait, kv, gpu), worker))
+        candidates.append(((service_time + estimated_wait, -needed, kv, gpu), worker))
     if candidates:
         return min(candidates, key=lambda candidate: candidate[0])[1]
     if has_healthy:

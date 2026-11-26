@@ -2,13 +2,20 @@
 
 Each chat request names a model. TokenFlow considers enabled, healthy workers
 whose `metadata.model` equals that alias. One gateway process owns the live
-reservation count. It reserves a slot before contacting the worker and holds
-it until the response closes, including through the final bytes of a stream.
+reservation count. It reserves the requested output sequences before contacting
+the worker and holds the reservation through the final bytes of a stream.
 
 ## Capacity and estimated delay
 
-`metadata.capacity` sets the maximum outstanding requests for a worker. It
-defaults to 32. `metadata.service_time_seconds` is an operator's estimate of
+`metadata.capacity` sets the number of concurrent sequence slots on a worker.
+It defaults to 32. An OpenAI request with `n=2` asks the engine to produce
+two choices. Both use the same worker. If a worker has two slots and that
+request is streaming, its public `active_requests` is one and both slots are
+reserved. Another request can go to a different worker. A request wider than
+the worker can still run. It takes the whole worker when all its slots are
+available, and the engine can generate its choices in waves.
+
+`metadata.service_time_seconds` is an operator's estimate of
 the time a typical request takes on that worker. It defaults to one second.
 Use comparable requests to calibrate this value across A6000, H100 and L40S
 workers. GPU names alone do not determine serving speed.
@@ -17,7 +24,7 @@ For each candidate the gateway computes
 
 ```text
 external       = max(0, engine running + engine waiting − sampled gateway overlap)
-outstanding    = current gateway reservations + external
+outstanding    = sequence choices reserved by the gateway + external
 estimated wait = service time × outstanding / capacity
 routing score  = service time + estimated wait
 ```
@@ -28,11 +35,13 @@ additional slots. The engine reports counts without request IDs,
 so this is an estimate. After an endpoint changes, draining requests are
 excluded from the overlap estimate. The estimated external load stays fixed
 until the next sample or expiry. New gateway leases use the remaining slots,
-and releasing a lease returns its slot. A worker at capacity
-receives no new reservations. Among the remaining workers the lowest score
+and closing a request releases all its choices. Each request must fit on a
+single eligible worker, even if free slots also exist on another one.
+Among the eligible workers the lowest score
 wins. This estimates relative delay under similar workloads. Long prompts,
 output lengths and continuous batching affect actual completion time. The
-gateway breaks ties using the lowest sampled KV occupancy, then the lowest
+gateway breaks ties by how many of the requested choices fit at once, then
+by the lowest sampled KV occupancy, then the lowest
 physical GPU utilization, then registration order. An unavailable gauge has a
 neutral tie-break value of 0.5. Equal calibration and absent metrics give the
 existing least-active behavior.
@@ -75,6 +84,9 @@ When every eligible worker is full the gateway returns HTTP 429 with
 HTTP 503 with the same retry hint. Both responses arrive immediately. Configured
 model pools record recent peak demand, including admission failures, so an
 autoscaler can bring up capacity even when a model starts at zero workers.
+One cold request for many choices can start one replica. If two replicas
+each have one free slot, a new two-choice request needs another replica or
+must retry after slots free up on the same worker.
 Each admitted request can open its own upstream connection. Long-lived streams
 on one worker leave other workers' connection capacity available.
 
@@ -105,7 +117,9 @@ through idle scale-down. New replicas require a configured minimum or gateway
 demand. Explicit replica ceilings take precedence, including a pool pause.
 
 A draining worker still occupies a replica slot until the provider confirms
-its release. During that time the controller can use a free slot in the same
+its release. An in-flight stream stays on that worker and finishes there.
+The controller funds fallback capacity when an independent request needs it.
+During that time the controller can use a free slot in the same
 pool or another pool serving the model. For example, a pool capped at one
 A6000 with its only worker terminating can send cold-start demand to an
 eligible L40S pool. If every slot is tied up in termination, the controller
