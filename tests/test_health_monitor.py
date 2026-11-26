@@ -37,6 +37,35 @@ def test_health_result_is_ignored_when_url_changes(status_code: int) -> None:
     asyncio.run(scenario())
 
 
+def test_reapplying_worker_address_keeps_it_routable_during_metrics_scrape() -> None:
+    async def scenario() -> None:
+        registry = WorkerRegistry()
+        worker = await registry.create(WorkerCreate(
+            name="worker", base_url="http://worker",
+            metadata={"model": "qwen", "backend": "vllm"},
+        ))
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            if request.url.path == "/health":
+                return httpx.Response(200)
+            assert request.url.path == "/metrics"
+            # A declarative client reapplies the same normalized URL while the
+            # monitor is waiting on this worker's scrape.
+            await registry.update(worker.id, WorkerUpdate(base_url="http://WORKER:80/"))
+            assigned = await registry.assign("qwen")
+            await registry.release(assigned.id)
+            return httpx.Response(200, text="vllm:num_requests_running 2\n")
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            await WorkerHealthMonitor(registry, client, interval_seconds=5, timeout_seconds=1).check_once()
+
+        current = await registry.get(worker.id)
+        assert current.health_status is HealthStatus.HEALTHY
+        assert current.telemetry.running == 2
+
+    asyncio.run(scenario())
+
+
 def test_health_check_marks_responsive_worker_healthy() -> None:
     async def scenario() -> None:
         async def handler(request: httpx.Request) -> httpx.Response:

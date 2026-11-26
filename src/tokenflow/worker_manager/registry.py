@@ -165,6 +165,11 @@ class WorkerRegistry:
         worker = self._get(worker_id)
         changes = worker_data.model_dump(exclude_unset=True)
 
+        if changes.get("base_url") == worker.base_url:
+            del changes["base_url"]
+            if not changes:
+                return self._with_load(worker)
+
         if "base_url" in changes:
             self._ensure_url_available(
                 str(changes["base_url"]),
