@@ -4,6 +4,10 @@ An operator configures a pool for each combination of checkpoint, backend, and h
 
 ## Insomnia with Slurm and Apptainer
 
+For a same-host worker test, pass `--loopback-only` to `worker.py` so both
+the engine and its adjacent GPU metrics listener bind to `127.0.0.1`.
+Managed pool deployments use the default bind address for private network access.
+
 Use a service account authorized for the requested account, partition, QoS and GPU type. Place the gateway on an approved service host with working Slurm clients and network routes to the compute nodes. Long-running services belong on a site-approved host. A workstation would need an equivalent private route and authenticated Slurm client. Students do not need SSH access to use an already deployed gateway. [Slurm submission](https://slurm.schedmd.com/sbatch.html)
 
 1. Stage the checkpoint directory and a versioned SIF containing the chosen engine on shared, compute-readable storage. The image needs Python, PyTorch with CUDA device properties including UUID, and access to `nvidia-smi` through Apptainer. In the Insomnia example, substitute the actual paths to the existing Qwen checkpoint and vLLM image under `vllm-runtime`. Slurm mounts the checkpoint read-only at `/checkpoint`. [Apptainer bind mounts](https://apptainer.org/docs/user/latest/bind_paths_and_mounts.html)
@@ -45,3 +49,26 @@ The gateway polls each managed worker's `/health` and checks that its OpenAI `/v
 Start with one warm replica and a maximum of one. The operator should see a provider allocation ID, a running resource, a healthy worker, and a response to a streaming chat request using the configured alias. Check that both the engine's queue/cache metrics and the per-GPU utilization signal arrive. Utilization is sampled using `nvidia-smi` over the CUDA-visible GPU UUIDs. The exporter uses the Prometheus gauge name `DCGM_FI_DEV_GPU_UTIL` for this percentage. A failed sample returns HTTP 503 and the scheduling layer can continue using its available signals.
 
 For Slurm, inspect the service account's job log under `state_dir/tf-*/slurm-JOBID.out` and use `sacct` to distinguish queue time, allocation expiry, and process failures. For EC2, use your instance management channel to inspect `/var/log/cloud-init-output.log` and `docker logs tokenflow-worker`. Inspect the gateway's pool status before retrying a launch. Engine startup can take several minutes while CUDA compiles kernels.
+
+## Local cold-start verification
+
+On Linux or WSL2, use a gateway environment with `.[dev]` installed, a local
+Python environment with CUDA-enabled vLLM, and a cached chat checkpoint that
+fits the GPU in FP16. Make `nvidia-smi` available on PATH. On WSL2 it is
+usually in `/usr/lib/wsl/lib`. From the repo root, substitute the engine
+interpreter, checkpoint directory and a GPU label matching `nvidia-smi`.
+
+```bash
+TOKENFLOW_TEST_SLURM_ENGINE_PYTHON=/path/to/vllm-env/bin/python \
+TOKENFLOW_TEST_SLURM_CHECKPOINT=/path/to/cached/chat-checkpoint \
+TOKENFLOW_TEST_SLURM_GPU=4060 \
+python -m pytest -q tests/test_slurm_worker_live.py
+```
+
+A cold chat request triggers the real Slurm provisioner and generated batch
+script. The test emulates the Slurm client responses and translates Apptainer
+bind paths so the local interpreter can run the shipped worker. It checks
+the job's credentials, port receipt, JSON and SSE inference, and GPU and
+engine telemetry. It drains and stops the process group and removes the
+private job directory, credentials and caches. To retain measurements, set
+`TOKENFLOW_TEST_SLURM_EVIDENCE` to a new JSON file in an existing directory.
