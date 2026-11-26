@@ -36,6 +36,24 @@ Each worker is disposable. A first-boot script error, including a failed mount, 
 
 ## Verify one allocation
 
+If a Slurm worker exits during its device probe, check the actual engine image
+from the allocated compute node. Set `sif` to the same SIF path used by the pool.
+This uses the job's GPU mask and extraction directory and does not load a checkpoint.
+
+```bash
+APPTAINER_TMPDIR="${TMPDIR:?expected node-local job storage}" \
+APPTAINERENV_CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:?expected Slurm GPU mask}" \
+apptainer exec --cleanenv --nv "$sif" sh -ec '
+  nvidia-smi -L
+  python3 -c "import torch; print([torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())])"
+'
+```
+
+The PyTorch list should contain the GPU count and types requested by the pool.
+An NVML loader error points to NVIDIA library visibility inside the SIF. A
+missing `torch` import points to the image's Python environment. Both checks
+can fail even when `nvidia-smi` works directly on the host.
+
 For SGLang, select `backend: sglang` and stage an engine image compatible with the host driver and GPU. The CUDA 12.9 multi-architecture image for the reference release is `lmsysorg/sglang:v0.5.19-cu129@sha256:59e11312666e1c5c155210ea335589b91daa0d70848521b390b93b1b1e8fb0ef`. EC2 accepts the OCI reference directly. Slurm requires the compute-readable path to the converted SIF. The release configuration checks run on CPU. Verify model generation and streaming on the target GPU before opening the pool to students. [SGLang release](https://github.com/sgl-project/sglang/releases/tag/v0.5.19), [publisher's image tag](https://hub.docker.com/r/lmsysorg/sglang/tags?name=v0.5.19-cu129)
 
 To repeat the offline SGLang compatibility check, download the CPython 3.12 Linux x86-64 wheel with the command below. Set `TOKENFLOW_SGLANG_TEST_WHEEL` to its path and run `python -m pytest tests/test_sglang_release.py` in the gateway test environment with PyYAML installed. The test verifies the wheel's hash and exercises its config loader and bearer authorization decisions. [Published wheel](https://pypi.org/project/sglang/0.5.19/#files)
