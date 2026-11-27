@@ -8,6 +8,23 @@ docs/PLATFORM.md and docs/PROVIDERS.md for the operator APIs. A permanent servic
 host requires site approval. The procedure here uses temporary CPU compute jobs
 for the controllers and separate GPU compute jobs for the engines.
 
+Student access and pilot readiness
+----------------------------------
+
+An operator defines a pool with a checkpoint, backend, GPU type, TP width,
+capacity and maximum replica count. Students select its alias when sending
+an inference request. The controller allocates and discovers a worker within
+those bounds. Students can use examples/student_chat.py with OPENAI_BASE_URL
+and OPENAI_API_KEY and wait for a cold pool. An inference key grants access
+to inference routes. Pool limits and worker management require an admin key.
+
+For a course pilot, establish who owns the Slurm allocation, who may use each
+model, where the HTTPS service runs, how keys are issued and revoked, and who
+responds to queue, storage and startup failures. The operator's Slurm account
+owns the batch jobs. The local end-to-end test and the Insomnia proof below
+do not exercise campus identity, per-student GPU accounting, or a permanent
+multi-user service. A single gateway process owns each deployment's registry.
+
 1. Connect once from Windows
 ----------------------------
 

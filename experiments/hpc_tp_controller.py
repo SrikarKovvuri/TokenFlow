@@ -94,7 +94,7 @@ def main(args):
     pool=dict(name=pool_name, provider="slurm", backend="vllm", model="qwen-14b",
               image=str(args.runtime/"containers/vllm.sif"),checkpoint=str(args.runtime/"models/qwen2.5-14b-instruct"),
               gpu_count=args.tp,gpu_type="A6000",capacity=args.cap,min_replicas=0,max_replicas=1,
-              options=dict(account="edu",partition="burst",qos="burst",memory="96G",cpus=8,
+              options=dict(account="edu",partition="burst",qos="burst",memory="48G" if args.tp<=2 else "96G",cpus=8,
                            time_limit="01:20:00",state_dir=str(root/"workers"),apptainer_module="apptainer/1.4.5",
                            dtype="bfloat16",max_model_len=2048))
     write("config.json",dict(namespace=namespace,state_path=str(root/"state.sqlite"),interval_seconds=4,

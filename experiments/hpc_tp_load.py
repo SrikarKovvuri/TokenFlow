@@ -95,20 +95,25 @@ async def cell(client, url, model, trial, concurrency):
                 handle.flush()
                 rows.append(row)
                 if "error" in row:
-                    raise RuntimeError(row["error"])
+                    await asyncio.sleep(.25)
         async with asyncio.TaskGroup() as group:
             for _ in range(concurrency):
                 group.create_task(consume())
     elapsed = time.monotonic()-start
+    good = [r for r in rows if "error" not in r]
     result = dict(trial=trial, concurrency=concurrency, start_epoch=epoch, end_epoch=time.time(),
-                  requests=len(rows), output_tokens=sum(r["usage"]["completion_tokens"] for r in rows),
-                  elapsed_seconds=elapsed, requests_per_second=len(rows)/elapsed,
-                  output_tokens_per_second=256*len(rows)/elapsed,
-                  p95_latency_s=percentile([r["seconds"] for r in rows], .95),
-                  p50_ttft_s=percentile([r["content_seconds"][0] for r in rows], .5),
-                  p50_tpot_s=percentile([(r["content_seconds"][-1]-r["content_seconds"][0])/255 for r in rows], .5))
+                  requests=len(rows), successes=len(good), failures=len(rows)-len(good),
+                  output_tokens=sum(r["usage"]["completion_tokens"] for r in good),
+                  elapsed_seconds=elapsed, requests_per_second=len(good)/elapsed,
+                  output_tokens_per_second=256*len(good)/elapsed)
+    if good:
+        result.update(p95_latency_s=percentile([r["seconds"] for r in good], .95),
+                      p50_ttft_s=percentile([r["content_seconds"][0] for r in good], .5),
+                      p50_tpot_s=percentile([(r["content_seconds"][-1]-r["content_seconds"][0])/255 for r in good], .5))
     (folder / "summary.json").write_text(json.dumps(result, indent=2))
     print(json.dumps(result), flush=True)
+    if not good:
+        raise RuntimeError("No successful requests in cell; inspect requests.jsonl")
 
 
 async def benchmark(url, engine, model, student, token, cap):
