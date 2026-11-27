@@ -315,3 +315,31 @@ repeated/stale gauge values. Aggregates use sample means/maxima, not time-weight
 means. Inspect raw UTC samples, counts, and refresh cadence before attributing a
 bottleneck; throughput alone is insufficient evidence of GPU saturation or KV
 cache pressure. Gauge-only scrapes do not establish causation.
+
+## Retrieve a two-GPU Slurm sweep
+
+Jobs submitted with `TOKENFLOW_EXPORT_DIR` save a `sweep-JOBID.tar.gz` archive
+when the exit handler runs, including on many failures. For the Insomnia runs
+exported to `tp-results` in your project directory, connect the Columbia VPN
+and run the following from the TokenFlow checkout in **local PowerShell**.
+Substitute your job ID and Columbia UNI.
+
+```powershell
+$job = '14004332'
+$uni = 'YOUR_UNI'
+$archive = "experiments/results/sweep-$job.tar.gz"
+New-Item -ItemType Directory -Force experiments/results | Out-Null
+scp "${uni}@insomnia.rcs.columbia.edu:/insomnia001/depts/edu/users/$uni/tp-results/sweep-$job.tar.gz" $archive
+if ($LASTEXITCODE -eq 0) { python experiments/inspect_tp_sweep.py $archive }
+```
+
+The inspector reads the archive locally. It reports the smoke requests, the
+completed trials at each concurrency, and whether each allocated GPU logged
+samples. The default full sweep has 36 cells across three trials, TP sizes 1
+and 2, and concurrency levels 1, 2, 4, 8, 16, and 32. A smoke pass on its own
+only establishes that the model served a request with that TP setting.
+
+If the archive is missing, run `sacct -X -j JOBID --format=JobID,State,Elapsed,ExitCode`
+in your **Insomnia login shell** and inspect `slurm-JOBID.out` in the same
+`tp-results` directory. The archive may still be publishing or the job may
+have ended before it could publish.
