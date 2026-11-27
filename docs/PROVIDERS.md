@@ -99,3 +99,23 @@ the job's credentials, port receipt, JSON and SSE inference, and GPU and
 engine telemetry. It drains and stops the process group and removes the
 private job directory, credentials and caches. To retain measurements, set
 `TOKENFLOW_TEST_SLURM_EVIDENCE` to a new JSON file in an existing directory.
+
+To test an already running SGLang worker, start it and its GPU exporter on
+adjacent loopback ports. Configure the worker credential with
+`worker_token(master, "a" * 32)` using a temporary private master file dedicated
+to this test. In the gateway test environment, run the following with the
+worker's port, advertised model name, and path to that master file.
+
+```bash
+TOKENFLOW_TEST_SGLANG_PORT=24690 \
+TOKENFLOW_TEST_SGLANG_MODEL=tinyllama \
+TOKENFLOW_TEST_SGLANG_MASTER_FILE=/path/to/private/test-master \
+python -m pytest -q tests/test_sglang_live.py
+```
+
+The test starts a real TokenFlow gateway on loopback and supplies an inventory
+record for the existing worker. It checks worker and gateway authentication,
+OpenAI SDK JSON and streaming responses, token counts, and engine and GPU
+telemetry. To save timestamped samples, set `TOKENFLOW_TEST_SGLANG_EVIDENCE`
+to a new JSON file in an existing directory under `experiments/results/`.
+The caller owns the worker and its cleanup.

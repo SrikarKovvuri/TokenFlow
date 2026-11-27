@@ -155,7 +155,7 @@ async def check_worker_auth(direct, engine, port, student, secret, key, report):
     assert denied.status_code == 401
 
 
-async def check_completions(sdk, workload, report):
+async def check_completions(sdk, workload, report, *, on_first_content=None):
     model = workload["model"]
     # The warm worker has two free sequence slots. Exercise both before
     # starting the separate single-choice JSON and streaming requests.
@@ -185,6 +185,9 @@ async def check_completions(sdk, workload, report):
             report["stream_chunks"].append({"received_at_utc": now(), "id": chunk.id,
                 "choices": [{"content": c.delta.content, "finish_reason": c.finish_reason} for c in chunk.choices],
                 "usage": chunk.usage.model_dump() if chunk.usage else None})
+            if on_first_content and any(c.delta.content for c in chunk.choices):
+                await on_first_content()
+                on_first_content = None
     choices = [c for row in report["stream_chunks"] for c in row["choices"]]
     assert any(c["finish_reason"] for c in choices) and any(c["content"] for c in choices)
 
