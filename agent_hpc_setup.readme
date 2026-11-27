@@ -185,6 +185,7 @@ monitoring. Reconnect and restart the watcher after a network interruption.
 
     bash scripts/hpc-watch-tp.sh "$login" "$sock" "$campaign" "$dest"
     python experiments/summarize_hpc_tp.py "$dest"
+    python experiments/audit_hpc_tp.py "$dest"
 
 The summary CSV has one row per measured cell and allocated GPU. Request
 throughput is repeated across the device rows for that cell. Idle seconds are
@@ -204,3 +205,37 @@ records. Preserve raw output across retries. Close the temporary SSH connection
 after the last status check and transfer.
 
     ssh -S "$sock" -O exit "$login"
+
+November 27, 2026 campaign handoff
+---------------------------------
+
+The campaign directory is insomnia-live-20261127t062025-sweep under the
+operator's edu project directory. The local copy uses the same basename under
+D:\TokenFlow-experiments. The private one-GPU pilot evidence is in the local
+TokenFlow checkout under experiments/results/insomnia-live-20261127t062025/lifecycle.jsonl.
+All campaign times used for analysis are UTC. Slurm displays cluster local time.
+
+Width        cap 64 controller     cap 16 controller
+TP=1         14123705              14123706
+TP=2         14123717              14123718
+TP=4         14123709              14123710
+TP=8         14123711              14123712
+
+Controllers 14123707 and 14123708 exited before provisioning on a CPU node
+without python3.12. Their replacements run on ins043. For the first wave,
+the controller originally submitted 150-minute, 96-GiB, 12-CPU GPU requests.
+The pending jobs were adjusted to 80 minutes and eight requested CPUs. TP=1
+and TP=2 were further adjusted to 48 GiB and a 60-minute minimum for backfill.
+Insomnia can allocate more CPUs when requested memory exceeds the per-CPU
+limit. Use the actual Slurm resource record when reporting the experiment.
+The local watcher records latest-slurm.txt every five minutes; submissions.txt
+is the durable list of attempts. Read current status from those files or Slurm.
+
+The cap-64 TP=2 run completed 21 timed cells and 1,276 successful streams.
+The verifier matched its raw output tokens and telemetry and found the drain
+receipt for GPU job 14123723. TP=1 controller 14123705 stopped on an HTTP
+429 in the first trial after two completed cells. Controller 14123972 is a
+fresh cap-64 TP=1 attempt. The revised runner preserves individual admission
+failures and continues a cell while other requests succeed. Compare failure
+rates when interpreting throughput. A verified cell can include accurately
+accounted failed requests.
