@@ -11,10 +11,11 @@ WorkerName = Annotated[
     str,
     StringConstraints(strip_whitespace=True, min_length=1, max_length=100),
 ]
+DEFAULT_CAPACITY = 32
 
 
 def _validate_scheduling_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
-    capacity = metadata.get("capacity", 32)
+    capacity = metadata.get("capacity", DEFAULT_CAPACITY)
     if type(capacity) is not int or capacity < 1:
         raise ValueError("metadata.capacity must be a positive integer")
     seconds = metadata.get("service_time_seconds", 1.0)
@@ -38,10 +39,15 @@ class WorkerTelemetry(BaseModel):
     observed_at: datetime
     running: int | None = Field(default=None, ge=0)
     waiting: int | None = Field(default=None, ge=0)
+    gateway_overlap: int = Field(default=0, ge=0)
     kv_cache_usage: float | None = Field(default=None, ge=0, le=1)
     gpu_utilization: float | None = Field(default=None, ge=0, le=1)
 
     model_config = ConfigDict(frozen=True)
+
+    @property
+    def requests(self) -> int:
+        return (self.running or 0) + (self.waiting or 0)
 
 
 class WorkerCreate(BaseModel):
@@ -87,3 +93,17 @@ class Worker(WorkerCreate):
     updated_at: datetime
 
     model_config = ConfigDict(extra="forbid", frozen=True)
+
+    @property
+    def capacity(self) -> int:
+        return self.metadata.get("capacity", DEFAULT_CAPACITY)
+
+    def gateway_capacity(self, sample: WorkerTelemetry | None) -> int:
+        """Total slots for gateway leases after allowing for sampled external load."""
+        external = max(0, sample.requests - sample.gateway_overlap) if sample else 0
+        return max(0, self.capacity - external)
+
+    def fresh_telemetry(self, now: datetime, max_age_seconds: float) -> WorkerTelemetry | None:
+        if self.telemetry and (now - self.telemetry.observed_at).total_seconds() <= max_age_seconds:
+            return self.telemetry
+        return None

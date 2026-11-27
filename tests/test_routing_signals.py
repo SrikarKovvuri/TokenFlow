@@ -1,5 +1,7 @@
 import asyncio
+import json
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -84,6 +86,154 @@ def test_heterogeneous_service_estimate_and_drain():
     asyncio.run(scenario())
 
 
+def test_engine_load_leaves_one_slot_for_a_burst_until_the_next_sample():
+    async def scenario():
+        registry = WorkerRegistry()
+        fast = await add_worker(registry, "h100", capacity=4, service_time_seconds=1)
+        slow = await add_worker(registry, "a6000", capacity=4, service_time_seconds=3)
+        url = str(fast.base_url)
+        sample = WorkerTelemetry(observed_at=datetime.now(UTC), running=2, waiting=1)
+        await registry.set_telemetry(fast.id, sample, expected_base_url=url)
+        assert registry.capacity_for_gateway(await registry.get(fast.id)) == 1
+        first, second = await asyncio.gather(registry.assign("qwen"), registry.assign("qwen"))
+        assert (first.id, second.id) == (fast.id, slow.id)
+        assert registry.capacity_for_gateway(first) == 1
+        # The refresh observes this gateway's lease among four engine requests.
+        await registry.set_telemetry(fast.id, sample.model_copy(update={"running": 3}), expected_base_url=url)
+        await registry.release(first.id)
+        assert registry.capacity_for_gateway(await registry.get(fast.id)) == 1
+        assert (await registry.assign("qwen")).id == fast.id
+        assert (await registry.assign("qwen")).id == slow.id
+        stale = sample.model_copy(update={"observed_at": datetime.now(UTC) - timedelta(minutes=1)})
+        await registry.set_telemetry(fast.id, stale, expected_base_url=url)
+        assert registry.capacity_for_gateway(await registry.get(fast.id)) == 4
+        assert (await registry.assign("qwen")).id == fast.id
+    asyncio.run(scenario())
+
+
+def test_assign_and_release_during_network_probe_cannot_hide_external_work():
+    async def scenario():
+        registry = WorkerRegistry()
+        worker = await add_worker(registry, "l40s", backend="sglang", capacity=4)
+        await registry.assign("qwen")
+        reading, finish = asyncio.Event(), asyncio.Event()
+
+        async def server(request):
+            if request.url.path == "/metrics":
+                reading.set()
+                await finish.wait()
+                return httpx.Response(200, text="sglang:num_running_reqs 3")
+            return httpx.Response(200)
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(server)) as client, asyncio.timeout(2):
+            monitor = WorkerHealthMonitor(registry, client, interval_seconds=1, timeout_seconds=1)
+            polling = asyncio.create_task(monitor.check_once())
+            await reading.wait()
+            await registry.release(worker.id)
+            await registry.assign("qwen")
+            finish.set()
+            await polling
+        current = await registry.get(worker.id)
+        assert current.telemetry.gateway_overlap == 0 and current.active_requests == 1
+        assert registry.capacity_for_gateway(current) == 1
+        with pytest.raises(WorkersAtCapacityError):
+            await registry.assign("qwen")
+    asyncio.run(scenario())
+
+
+def test_superseded_probes_and_old_endpoint_reservations_do_not_mask_new_load():
+    async def scenario():
+        registry = WorkerRegistry()
+        old = await add_worker(registry, "first", capacity=4)
+        await registry.assign("qwen")
+        stale = registry.begin_telemetry_probe(old.id)
+        old_url = str(old.base_url)
+        await registry.update(old.id, WorkerUpdate(base_url="http://other"))
+        await registry.update(old.id, WorkerUpdate(base_url=old_url))
+        await registry.set_health_status(old.id, HealthStatus.HEALTHY, expected_base_url=old_url)
+        busy = WorkerTelemetry(observed_at=datetime.now(UTC), running=3)
+        await registry.set_telemetry(old.id, busy, expected_base_url=old_url, probe=stale)
+        assert (await registry.get(old.id)).telemetry is None
+        earlier = registry.begin_telemetry_probe(old.id)
+        newer = registry.begin_telemetry_probe(old.id)
+        await registry.set_telemetry(old.id, busy, expected_base_url=old_url, probe=newer)
+        await registry.set_telemetry(old.id, None, expected_base_url=old_url, probe=earlier)
+        current = await registry.get(old.id)
+        assert current.telemetry.gateway_overlap == 0
+        assert registry.capacity_for_gateway(current) == 1
+        await registry.release(old.id)
+        assert (await registry.assign("qwen")).id == old.id
+        with pytest.raises(WorkersAtCapacityError):
+            await registry.assign("qwen")
+    asyncio.run(scenario())
+
+
+def test_old_stream_cannot_release_a_replacement_registered_in_the_same_clock_tick(monkeypatch):
+    now = datetime.now(UTC)
+    monkeypatch.setattr("tokenflow.worker_manager.registry.datetime", SimpleNamespace(now=lambda tz: now))
+
+    async def scenario():
+        registry = WorkerRegistry()
+        old = await add_worker(registry, "first", capacity=1)
+        await registry.assign("qwen")
+        release_old_stream = registry.release_callback(old.id)
+        await registry.delete(old.id)
+        replacement = await registry.create(
+            WorkerCreate(name="restored", base_url=old.base_url, metadata={"model": "qwen", "capacity": 1}),
+            worker_id=old.id,
+        )
+        assert replacement.registered_at == old.registered_at
+        await registry.set_health_status(replacement.id, HealthStatus.HEALTHY, expected_base_url=str(old.base_url))
+        await registry.assign("qwen")
+        release_new_stream = registry.release_callback(replacement.id)
+        await release_old_stream()
+        assert (await registry.get(replacement.id)).active_requests == 1
+        await release_new_stream()
+        assert (await registry.get(replacement.id)).active_requests == 0
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("source", ["health-poll", "inference-connection"])
+@pytest.mark.parametrize("replacement", ["same-id", "url-changed-back"])
+def test_health_write_ignores_a_replacement_at_the_same_address(source, replacement):
+    async def scenario():
+        registry = WorkerRegistry()
+        old = await add_worker(registry, "first", capacity=1)
+        url = str(old.base_url)
+
+        async def upstream(request):
+            if replacement == "same-id":
+                await registry.delete(old.id)
+                await registry.create(WorkerCreate(name="new", base_url=url,
+                                      metadata={"model": "qwen", "capacity": 1}), worker_id=old.id)
+            else:
+                await registry.update(old.id, WorkerUpdate(base_url="http://other"))
+                await registry.update(old.id, WorkerUpdate(base_url=url))
+            if source == "health-poll":
+                assert request.url.path == "/health"
+                return httpx.Response(200)
+            assert request.url.path == "/v1/chat/completions"
+            await registry.set_health_status(old.id, HealthStatus.HEALTHY, expected_base_url=url)
+            raise httpx.ConnectError("old worker gone", request=request)
+
+        transport = httpx.MockTransport(upstream)
+        if source == "health-poll":
+            async with httpx.AsyncClient(transport=transport) as client:
+                await WorkerHealthMonitor(registry, client, interval_seconds=1, timeout_seconds=1).check_once()
+            assert (await registry.get(old.id)).health_status is HealthStatus.UNKNOWN
+        else:
+            app = create_app(registry=registry, worker_transport=transport, enable_health_monitor=False)
+            async with (app.router.lifespan_context(app),
+                        httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://gateway") as client):
+                result = await client.post("/v1/chat/completions", json={"model": "qwen"})
+            assert result.status_code == 502
+            current = await registry.get(old.id)
+            assert current.health_status is HealthStatus.HEALTHY and current.active_requests == 0
+
+    asyncio.run(scenario())
+
+
 @pytest.mark.parametrize("first, second, chosen", [
     ({"waiting": 4}, {"running": 1}, "second"),
     ({"kv_cache_usage": 0.2}, {"kv_cache_usage": 0.9}, "first"),
@@ -151,3 +301,89 @@ def test_failover_only_on_connection_setup(failure, code, expected_hosts):
         assert client.post("/v1/chat/completions", json={"model": "qwen"}).status_code == code
     assert hosts == expected_hosts
     assert all(w.active_requests == 0 for w in asyncio.run(registry.list()))
+
+
+@pytest.mark.parametrize("choices", [2, 5])
+def test_multi_choice_stream_reserves_one_replica_and_releases_on_failover_and_close(choices):
+    async def scenario():
+        registry = WorkerRegistry()
+        registry.track_demand(["qwen"])
+        for name, seconds in [("primary", 1), ("backup", 2), ("other", 3)]:
+            await add_worker(registry, name, capacity=2, service_time_seconds=seconds)
+        primary, backup, other = await registry.list()
+        streaming, finish = asyncio.Event(), asyncio.Event()
+        calls = []
+
+        class Stream(httpx.AsyncByteStream):
+            async def __aiter__(self):
+                streaming.set()
+                await finish.wait()
+                yield b"data: [DONE]\n\n"
+
+        def handler(request):
+            payload = json.loads(request.content)
+            calls.append((request.url.host, payload["n"]))
+            if request.url.host == "primary":
+                raise httpx.ConnectError("connection refused", request=request)
+            if payload.get("stream"):
+                return httpx.Response(200, stream=Stream(), headers={"content-type": "text/event-stream"})
+            return httpx.Response(200, json={"worker": request.url.host})
+
+        app = create_app(registry=registry, enable_health_monitor=False, worker_transport=httpx.MockTransport(handler))
+        async with (app.router.lifespan_context(app), asyncio.timeout(5),
+                    httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://gateway") as client):
+            path = "/v1/chat/completions"
+            pending = asyncio.create_task(client.post(path, json={"model": "qwen", "n": choices, "stream": True}))
+            try:
+                await streaming.wait()
+                assert calls == [("primary", choices), ("backup", choices)]
+                assert registry.active_slots(primary) == 0
+                assert (await registry.get(backup.id)).active_requests == 1
+                assert registry.active_slots(backup) == 2
+                assert registry.demand_since("qwen", 30) == 1
+                # Admission must work between scrapes, before the engine has reported either choice.
+                next_response = await client.post(path, json={"model": "qwen", "n": 1})
+                assert next_response.json() == {"worker": "other"}
+                assert registry.active_slots(other) == 0
+                # Queued child sequences of this same HTTP request are gateway work.
+                probe = registry.begin_telemetry_probe(backup.id)
+                sample = WorkerTelemetry(observed_at=datetime.now(UTC), running=2, waiting=choices - 2)
+                await registry.set_telemetry(backup.id, sample, expected_base_url=str(backup.base_url), probe=probe)
+                assert (await registry.get(backup.id)).telemetry.gateway_overlap == choices
+            finally:
+                finish.set()
+                result = await pending
+            assert result.status_code == 200 and result.content == b"data: [DONE]\n\n"
+            assert (await registry.get(backup.id)).active_requests == 0
+            assert registry.active_slots(backup) == 0
+            assert (await client.post(path, json={"model": "qwen", "n": 2})).json() == {"worker": "backup"}
+
+    asyncio.run(scenario())
+
+
+def test_multi_choice_admission_accounts_for_fragmentation():
+    async def scenario():
+        registry = WorkerRegistry()
+        registry.track_demand(["qwen"])
+        for name in ("a", "b"):
+            await add_worker(registry, name, capacity=3)
+        a = await registry.assign("qwen", choices=2)
+        b = await registry.assign("qwen", choices=2)
+        assert a.id != b.id
+        with pytest.raises(WorkersAtCapacityError):
+            await registry.assign("qwen", choices=2)
+        assert registry.demand_since("qwen", 30) == 7
+        await registry.release(a.id, choices=2)
+        assert (await registry.assign("qwen", choices=2)).id == a.id
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("n", [0, -1, True, "2", 1.5])
+def test_invalid_choice_count_does_not_generate_demand(n):
+    registry = WorkerRegistry()
+    registry.track_demand(["qwen"])
+    with TestClient(create_app(registry=registry, enable_health_monitor=False)) as client:
+        response = client.post("/v1/chat/completions", json={"model": "qwen", "n": n})
+    assert response.status_code == 400 and response.json()["error"]["param"] == "n"
+    assert registry.demand_since("qwen", 30) == 0

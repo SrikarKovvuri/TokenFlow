@@ -4,7 +4,16 @@ TokenFlow gives inference clients one OpenAI-compatible endpoint for models runn
 
 ## Use an existing deployment
 
-Ask the operator for the **base URL ending in `/v1`**, an inference key, and the model alias. Set `OPENAI_BASE_URL` and `OPENAI_API_KEY` in the client environment. With the OpenAI Python client installed:
+Ask the operator for the **base URL ending in `/v1`**, an inference key, and the model alias. Set `OPENAI_BASE_URL` and `OPENAI_API_KEY` in the client environment. From this checkout, run the student example with the alias your operator gave you.
+
+```shell
+python -m pip install openai
+python examples/student_chat.py qwen-14b "What is tensor parallelism?"
+```
+
+The example lists the deployment's models, checks your alias, and streams the answer. When the pool starts cold, it retries admission for up to 15 minutes. For longer Slurm queues, add `--wait-seconds 3600`. You can also download [student_chat.py](examples/student_chat.py) and run it on its own. It needs only the OpenAI client and the Python standard library.
+
+For a warm worker, ordinary OpenAI code works directly.
 
 ```python
 from openai import OpenAI
@@ -21,7 +30,7 @@ for event in stream:
         print(event.choices[0].delta.content or "", end="", flush=True)
 ```
 
-Omit `stream=True` for a single JSON completion. Students use the same endpoint when GPU jobs move or AWS instances change. A cold model can return HTTP 503 during startup. A saturated pool returns HTTP 429 with a retry hint.
+Omit `stream=True` and read `reply.choices[0].message.content` for a single JSON completion. A model listed in the catalog can still be waiting for a GPU. The default SDK can exhaust its retries during startup. The student example retries only HTTP 503 carrying `X-TokenFlow-Admission: waiting-for-worker`, which means TokenFlow has an enabled pool for the model and rejected that attempt before forwarding the prompt. A saturated pool returns HTTP 429. Transport errors, worker errors and interruptions after streaming begins surface to the caller.
 
 ## Run the platform
 

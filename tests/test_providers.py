@@ -2,6 +2,7 @@ import asyncio
 from argparse import Namespace
 import json
 from pathlib import Path
+import shlex
 from unittest.mock import MagicMock
 
 import pytest
@@ -30,8 +31,58 @@ def cloud_pool():
                              "subnet_id": "subnet-123", "security_group_ids": ["sg-123"]})
 
 
-def test_slurm_submission_adoption_and_scoped_termination(tmp_path, monkeypatch):
-    pool = hpc_pool()
+REVISION = "abcdef12" * 5
+
+
+@pytest.mark.parametrize(("directory", "revision", "cached"), [
+    ("models--org--chat-1.5B", REVISION, True),
+    ("models--gpt2", REVISION, True),
+    ("ordinary", REVISION, False),
+    ("models--", REVISION, False),
+    ("datasets--org--data", REVISION, False),
+    ("models--org--model", "main", False),
+    ("models--org--model", REVISION + "/subdirectory", False),
+])
+def test_local_checkpoint_mount_in_both_provider_commands(directory, revision, cached):
+    repo = f"/shared model cache/{directory}"
+    path = f"{repo}/snapshots/{revision}"
+    source = repo if cached else path
+    checkpoint = f"/checkpoint/snapshots/{revision}" if cached else "/checkpoint"
+    hpc = hpc_pool().model_copy(update={"checkpoint": path})
+    cloud = cloud_pool().model_copy(update={"checkpoint": path})
+
+    batch = batch_script(hpc, SlurmOptions.model_validate(hpc.options), Path("/state"))
+    native = shlex.split(batch[batch.rindex("\napptainer exec "):].replace("\\\n", " "))
+    docker = shlex.split(bootstrap(cloud, CloudOptions.model_validate(cloud.options)).splitlines()[-1])
+    assert f"{source}:/checkpoint:ro" in native
+    assert f"type=bind,src={source},dst=/checkpoint,readonly" in docker
+    for args in (native, docker):
+        assert args[args.index("--checkpoint") + 1] == checkpoint
+
+
+def test_cloud_hub_model_id_and_snapshot_mount_boundaries():
+    pool = cloud_pool().model_copy(update={"checkpoint": "org/model"})
+    opts = CloudOptions.model_validate(pool.options)
+    docker = shlex.split(bootstrap(pool, opts).splitlines()[-1])
+    assert docker[docker.index("--checkpoint") + 1] == "org/model"
+    assert not any("dst=/checkpoint" in arg for arg in docker)
+
+    repo = "/data/models--org--model"
+    path = f"{repo}/snapshots/{REVISION}"
+    for root in (repo, "/data"):
+        CloudProvisioner.validate_pool(pool.model_copy(update={
+            "checkpoint": path, "options": {**pool.options, "checkpoint_mount": root},
+        }))
+    for root in (path, f"{repo}/snapshots"):
+        with pytest.raises(ValueError, match="checkpoint_mount"):
+            CloudProvisioner.validate_pool(pool.model_copy(update={
+                "checkpoint": path, "options": {**pool.options, "checkpoint_mount": root},
+            }))
+
+
+@pytest.mark.parametrize("backend", ["vllm", "sglang"])
+def test_slurm_submission_adoption_and_scoped_termination(tmp_path, monkeypatch, backend):
+    pool = hpc_pool().model_copy(update={"backend": backend})
     provider = SlurmProvisioner("deployment", "operator-secret")
     state = tmp_path / "private-state"
     # Slurm runs on POSIX. Map its configured shared path to a local fixture.
@@ -55,8 +106,12 @@ def test_slurm_submission_adoption_and_scoped_termination(tmp_path, monkeypatch)
     assert worker_token("operator-secret", KEY) not in script
     assert "apptainer exec --cleanenv --nv" in script
     name = next(arg.removeprefix("--job-name=") for arg in args if arg.startswith("--job-name="))
-    assert (state / name / "key").read_text() == worker_token("operator-secret", KEY)
-    queue = f"123|{name}|RUNNING|ins081\n124|unrelated|RUNNING|ins081"
+    token = worker_token("operator-secret", KEY)
+    assert (state / name / "key").read_text() == token
+    if backend == "sglang":
+        assert (state / name / "sglang.yaml").read_text() == f'api-key: "{token}"\n'
+        assert "APPTAINERENV_SGLANG_JIT_CACHE_DIR=/work/cache/sglang/jit" in script
+    queue = f"123|{name}|RUNNING|ins081|0\n124|unrelated|RUNNING|ins081|0"
     assert asyncio.run(provider.discover(pool)) == [Resource(key=KEY, external_id="123", phase="running")]
     (state / name / "port-123").write_text("44100")
     live = asyncio.run(provider.launch(pool, KEY))
@@ -84,6 +139,11 @@ def test_ambiguous_slurm_submission_never_submits_again(tmp_path, monkeypatch):
     monkeypatch.setattr(slurm, "slurm_command", command)
     with pytest.raises(TimeoutError):
         asyncio.run(provider.launch(pool, KEY))
+    with pytest.raises(RuntimeError, match="Ambiguous"):
+        asyncio.run(provider.launch(pool, KEY))
+    # An older provider could leave an empty receipt if the filesystem filled
+    # after sbatch had already accepted this job.
+    (tmp_path / (provider._prefix(pool) + KEY) / "job-id").write_text("")
     with pytest.raises(RuntimeError, match="Ambiguous"):
         asyncio.run(provider.launch(pool, KEY))
     assert len(submitted) == 1
@@ -176,11 +236,14 @@ def test_cloud_bootstrap_and_engine_args():
     args = Namespace(model="qwen", checkpoint="/checkpoint", gpus=2, capacity=4,
                      dtype="bfloat16", max_model_len=2048, backend="sglang")
     command = worker.engine_command(args, 8000, Path("/state/key"))
+    assert command[command.index("--host") + 1] == "0.0.0.0"
     assert "--enable-metrics" in command
-    assert str(Path("/state/sglang.json")) in command
-    assert command[command.index("--tp") + 1] == "2"
+    assert str(Path("/state/sglang.yaml")) in command
+    assert command[command.index("--tp-size") + 1] == "2"
+    assert command[command.index("--log-level") + 1] == "warning"
     args.backend = "vllm"
-    command = worker.engine_command(args, 8010, Path("/state/key"))
+    command = worker.engine_command(args, 8010, Path("/state/key"), "127.0.0.1")
+    assert command[command.index("--host") + 1] == "127.0.0.1"
     assert command[command.index("--middleware") + 1] == "worker.GatewayAuth"
     assert command[command.index("--max-model-len") + 1] == "2048"
 
@@ -190,3 +253,25 @@ def test_wrong_gpu_class_fails_before_launch(monkeypatch):
     assert worker.allocated_gpus(1, "l40s") == [f"GPU-{KEY}"]
     with pytest.raises(RuntimeError, match="Requested 1 L4"):
         worker.allocated_gpus(1, "L4")
+
+
+def test_loopback_sampler_binds_adjacent_to_ephemeral_engine():
+    port, server = worker.claim_ports(0, worker.metrics_handler([], None), "127.0.0.1")
+    with server:
+        assert server.server_address == ("127.0.0.1", port + 1)
+        assert port > 0
+
+
+def test_empty_worker_key_rejected_before_using_a_gpu(monkeypatch, tmp_path, capsys):
+    key = tmp_path / "key"
+    key.write_text(" \n")
+    monkeypatch.setattr(worker.sys, "argv", [
+        "worker.py", "--backend", "vllm", "--model", "test", "--checkpoint", "local",
+        "--gpus", "1", "--gpu-type", "A6000", "--capacity", "2", "--dtype", "float16",
+        "--port", "0", "--key-file", str(key), "--loopback-only",
+    ])
+    monkeypatch.setattr(worker, "allocated_gpus", lambda *_: pytest.fail("GPU probe ran"))
+    with pytest.raises(SystemExit) as error:
+        worker.main()
+    assert error.value.code == 2
+    assert "--key-file must contain a nonempty bearer key" in capsys.readouterr().err

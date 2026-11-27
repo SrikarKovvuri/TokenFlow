@@ -1,4 +1,5 @@
 import asyncio
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -9,7 +10,8 @@ from tokenflow.platform import controller as module
 from tokenflow.platform.controller import Controller
 from tokenflow.provisioner.base import PoolSpec, Resource
 from tokenflow.scheduler.selection import NoAvailableWorkerError, WorkersAtCapacityError
-from tokenflow.worker_manager.models import HealthStatus
+from tokenflow.worker_manager import registry as registry_module
+from tokenflow.worker_manager.models import HealthStatus, WorkerCreate, WorkerTelemetry, WorkerUpdate
 from tokenflow.worker_manager.registry import WorkerRegistry
 
 
@@ -160,6 +162,85 @@ def test_queued_slurm_job_keeps_priority_but_failed_startup_is_replaced(tmp_path
     asyncio.run(scenario())
 
 
+def test_single_cold_arrival_through_slurm_queue_and_model_startup(tmp_path, monkeypatch):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(module, "time", SimpleNamespace(time=lambda: now[0]))
+        monkeypatch.setattr(registry_module, "monotonic", lambda: now[0])
+        provider = Inventory()
+        registry = WorkerRegistry()
+        controller = Controller([spec(min_replicas=0)], {"slurm": provider}, registry, tmp_path / "state.db")
+        try:
+            await controller.reconcile()
+            with pytest.raises(NoAvailableWorkerError):
+                await registry.assign("qwen")  # The only arrival before readiness.
+            provider.offline = True
+            now[0] += 10
+            await controller.reconcile()
+            provider.offline = False
+            now[0] += 35  # Beyond the normal 20s demand window.
+            await controller.reconcile()
+            assert len(provider.launches) == 1
+            _, key = provider.launches[0]
+            now[0] += 3600
+            await controller.reconcile()
+            now[0] += 3600
+            await controller.reconcile()
+            assert provider.terminated == []
+            # Slurm has assigned the node. The engine publishes its endpoint
+            # after the image and model load, then the monitor probes it.
+            resource = provider.items["big"][key]
+            provider.items["big"][key] = Resource(key, resource.external_id, "running")
+            await controller.reconcile()
+            now[0] += 900
+            provider.boot("big", key)
+            await controller.reconcile()
+            [worker] = await registry.list()
+            assert worker.health_status == HealthStatus.UNKNOWN
+            await registry.set_health_status(worker.id, HealthStatus.HEALTHY, expected_base_url=str(worker.base_url))
+            await controller.reconcile()
+            now[0] += 299
+            await controller.reconcile()
+            assert (await registry.assign("qwen")).id == worker.id
+            assert len(provider.launches) == 1
+            assert provider.terminated == []
+            await registry.release(worker.id)
+            await controller.reconcile()
+            now[0] += 30
+            await controller.reconcile()
+            now[0] += 301
+            await controller.reconcile()
+            assert provider.terminated == [key]
+        finally:
+            controller.close()
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("pause_before_recovery,delay", [(False, 360), (True, 45)])
+def test_expired_or_paused_cold_arrival_does_not_launch(tmp_path, monkeypatch, pause_before_recovery, delay):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(registry_module, "monotonic", lambda: now[0])
+        provider = Inventory()
+        controller = create(tmp_path / "state.db", provider, spec(min_replicas=0))
+        try:
+            with pytest.raises(NoAvailableWorkerError):
+                await controller.registry.assign("qwen")
+            if pause_before_recovery:
+                controller.set_limits("big", 0, 0)
+                with pytest.raises(NoAvailableWorkerError):
+                    await controller.registry.assign("qwen")
+                controller.set_limits("big", 0, 1)
+            now[0] += delay
+            await controller.reconcile()
+            assert provider.launches == []
+        finally:
+            controller.close()
+
+    asyncio.run(scenario())
+
+
 def test_load_drives_scale_up_and_cooldown_prevents_immediate_scale_down(tmp_path, monkeypatch):
     async def scenario():
         now = [1_000.0]
@@ -247,6 +328,273 @@ def test_temporary_inventory_loss_recovers_same_worker_and_confirmed_termination
     asyncio.run(scenario())
 
 
+def test_shutting_down_ec2_instance_holds_its_slot_through_restart(tmp_path, monkeypatch):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(module, "time", SimpleNamespace(time=lambda: now[0], monotonic=lambda: now[0]))
+        inventory = Inventory()
+        pool = spec(provider="cloud", max_replicas=1)
+        path = tmp_path / "state.db"
+        controller = create(path, inventory, pool)
+        await controller.reconcile()
+        _, key = inventory.launches[0]
+        inventory.boot(pool.name, key)
+        await controller.reconcile()
+        [worker] = await controller.registry.list()
+        external_id = inventory.items[pool.name][key].external_id
+
+        # EC2 can start shutting down while the operator still wants a warm worker.
+        inventory.items[pool.name][key] = Resource(key, external_id, "terminating")
+        await controller.reconcile()
+        assert not (await controller.registry.get(worker.id)).enabled
+        controller.close()
+
+        now[0] += 120
+        controller = create(path, inventory, pool)
+        await controller.reconcile()
+        [resource] = controller.status()[0]["resources"]
+        assert resource["external_id"] == external_id
+        assert resource["phase"] == "terminating"
+        assert not await controller.registry.list()
+        assert len(inventory.launches) == 1
+        assert not inventory.terminated
+
+        inventory.items[pool.name][key] = Resource(key, external_id, "terminal")
+        await controller.reconcile()
+        [replacement] = controller.status()[0]["resources"]
+        assert replacement["external_id"] != external_id
+        assert len(inventory.launches) == 2
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("primary_minimum", [0, 1])
+def test_demand_spills_to_other_pool_while_preferred_slot_is_terminating(tmp_path, primary_minimum):
+    async def scenario():
+        cloud, slurm = Inventory(), Inventory()
+        cloud.items["primary"] = {"leaving": Resource("leaving", "i-leaving", "terminating")}
+        primary = spec("primary", provider="cloud", min_replicas=primary_minimum, max_replicas=1,
+                       service_time_seconds=1)
+        fallback = spec("fallback", min_replicas=0, max_replicas=1, service_time_seconds=2)
+        controller = Controller([primary, fallback], {"cloud": cloud, "slurm": slurm}, WorkerRegistry(),
+                                tmp_path / "state.db")
+        try:
+            await controller.reconcile()
+            assert not cloud.launches and not slurm.launches
+            with pytest.raises(NoAvailableWorkerError):
+                await controller.registry.assign("qwen")
+            await controller.reconcile()
+            await controller.reconcile()
+            assert cloud.launches == []  # The shutting-down VM still occupies its real slot.
+            assert len(slurm.launches) == 1
+            _, key = slurm.launches[0]
+            slurm.boot("fallback", key)
+            await controller.reconcile()
+            [worker] = await controller.registry.list()
+            await controller.registry.set_health_status(worker.id, HealthStatus.HEALTHY,
+                                                        expected_base_url=str(worker.base_url))
+            assert (await controller.registry.assign("qwen")).metadata["pool"] == "fallback"
+        finally:
+            controller.close()
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("minimum", [0, 1])
+def test_replacement_can_use_free_slot_while_another_instance_terminates(tmp_path, minimum):
+    async def scenario():
+        cloud = Inventory()
+        cloud.items["big"] = {"leaving": Resource("leaving", "i-leaving", "terminating")}
+        controller = create(tmp_path / "state.db", cloud, spec(provider="cloud", min_replicas=minimum, max_replicas=2))
+        try:
+            if not minimum:
+                await controller.reconcile()
+                assert not cloud.launches
+                with pytest.raises(NoAvailableWorkerError):
+                    await controller.registry.assign("qwen")
+            await controller.reconcile()
+            assert len(cloud.launches) == 1
+            controller.set_limits("big", 2, 2)
+            await controller.reconcile()
+            assert len(cloud.launches) == 1  # One live and one terminating fill both physical slots.
+            cloud.items["big"]["leaving"] = Resource("leaving", "i-leaving", "terminal")
+            await controller.reconcile()
+            assert len(cloud.launches) == 2
+        finally:
+            controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_reduced_ceiling_blocks_ambiguous_retry_until_a_slot_clears(tmp_path, monkeypatch):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(module, "time", SimpleNamespace(time=lambda: now[0]))
+        cloud = Inventory()
+        launch = cloud.launch
+
+        async def ambiguous(pool, key):
+            cloud.launches.append((pool.name, key))
+            raise TimeoutError("Submission outcome unknown")
+
+        monkeypatch.setattr(cloud, "launch", ambiguous)
+        slurm = Inventory()
+        pools = [spec(provider="cloud", min_replicas=1, max_replicas=2), spec("fallback", min_replicas=0)]
+        controller = Controller(pools, {"cloud": cloud, "slurm": slurm}, WorkerRegistry(), tmp_path / "state.db")
+        try:
+            await controller.reconcile()
+            [intent] = cloud.launches
+            monkeypatch.setattr(cloud, "launch", launch)
+            cloud.items["big"] = {"leaving": Resource("leaving", "i-leaving", "terminating")}
+            controller.set_limits("big", 1, 1)
+            now[0] += 6
+            with pytest.raises(NoAvailableWorkerError):
+                await controller.registry.assign("qwen")
+            await controller.reconcile()
+            assert cloud.launches == [intent]
+            assert len(slurm.launches) == 1  # A blocked intent cannot satisfy this arrival.
+            cloud.items["big"]["leaving"] = Resource("leaving", "i-leaving", "terminal")
+            await controller.reconcile()
+            assert cloud.launches == [intent, intent]  # Retry only the persisted launch key.
+        finally:
+            controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_worker_draining_an_active_request_reserves_its_physical_slot(tmp_path):
+    async def scenario():
+        cloud = Inventory()
+        controller = create(tmp_path / "state.db", cloud, spec(provider="cloud", min_replicas=1, max_replicas=2))
+        try:
+            await controller.reconcile()
+            _, old = cloud.launches[0]
+            cloud.boot("big", old)
+            await controller.reconcile()
+            [worker] = await controller.registry.list()
+            await controller.registry.set_health_status(worker.id, HealthStatus.HEALTHY,
+                                                        expected_base_url=str(worker.base_url))
+            await controller.registry.assign("qwen")
+            controller.set_limits("big", 0, 0)
+            await controller.reconcile()
+            controller.set_limits("big", 1, 2)
+            await controller.reconcile()
+            assert len(cloud.launches) == 2
+            controller.set_limits("big", 2, 2)
+            await controller.reconcile()
+            assert len(cloud.launches) == 2 and not cloud.terminated
+            await controller.registry.release(worker.id)
+            await controller.reconcile()
+            assert len(cloud.launches) == 2 and cloud.terminated == [old]
+            await controller.reconcile()  # Discovery now confirms the old instance terminated.
+            assert len(cloud.launches) == 3
+        finally:
+            controller.close()
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("keep", [0, 1])
+def test_draining_streams_do_not_launch_another_gpu_until_new_work_arrives(tmp_path, monkeypatch, keep):
+    async def scenario():
+        now = [1_000.]
+        monkeypatch.setattr(registry_module, "monotonic", lambda: now[0])
+        hpc, cloud = Inventory(), Inventory()
+        registry = WorkerRegistry()
+        count = keep + 1
+        controller = Controller(
+            [spec("hpc", capacity=1, min_replicas=count, max_replicas=count),
+             spec("aws", provider="cloud", capacity=1, min_replicas=0, max_replicas=2)],
+            {"slurm": hpc, "cloud": cloud}, registry, tmp_path / "state.db",
+        )
+        try:
+            for _ in range(count):
+                await controller.reconcile()
+            for index, (_, key) in enumerate(hpc.launches):
+                old = hpc.items["hpc"][key]
+                hpc.items["hpc"][key] = Resource(key, old.external_id, "running", f"http://gpu{index}:18000")
+            await controller.reconcile()
+            for worker in await registry.list():
+                await registry.set_health_status(worker.id, HealthStatus.HEALTHY,
+                                                 expected_base_url=str(worker.base_url))
+            streams = [await registry.assign("qwen") for _ in range(count)]
+            now[0] += 400
+            assert registry.demand_since("qwen", 300) == 0
+            controller.set_limits("hpc", keep, keep)
+            await controller.reconcile()
+            await controller.reconcile()
+            assert not cloud.launches and not hpc.terminated
+            workers = await registry.list()
+            assert sum(w.enabled for w in workers) == keep
+            assert all(w.active_requests == 1 for w in workers)
+
+            with pytest.raises(WorkersAtCapacityError if keep else NoAvailableWorkerError):
+                await registry.assign("qwen")
+            await controller.reconcile()
+            await controller.reconcile()
+            assert len(cloud.launches) == 1 and not hpc.terminated
+            for worker in streams:
+                await registry.release(worker.id)
+            await controller.reconcile()
+            assert len(hpc.terminated) == 1
+        finally:
+            controller.close()
+    asyncio.run(scenario())
+
+
+def test_wide_request_uses_one_replica_and_an_independent_arrival_can_scale_out(tmp_path):
+    async def scenario():
+        inventory = Inventory()
+        controller = create(tmp_path / "state.db", inventory, spec(min_replicas=0, max_replicas=3, capacity=2))
+        registry = controller.registry
+        try:
+            with pytest.raises(NoAvailableWorkerError):
+                await registry.assign("qwen", choices=100)
+            await controller.reconcile()
+            [(name, key)] = inventory.launches
+            inventory.boot(name, key)
+            await controller.reconcile()
+            [worker] = await registry.list()
+            await registry.set_health_status(worker.id, HealthStatus.HEALTHY, expected_base_url=str(worker.base_url))
+            wide = await registry.assign("qwen", choices=100)
+            assert wide.active_requests == 1 and registry.active_slots(wide) == 2
+            await controller.reconcile()
+            assert len(inventory.launches) == 1
+            with pytest.raises(WorkersAtCapacityError):
+                await registry.assign("qwen")
+            await controller.reconcile()
+            await controller.reconcile()
+            assert len(inventory.launches) == 2
+            await registry.release(wide.id, choices=100)
+        finally:
+            controller.close()
+    asyncio.run(scenario())
+
+
+def test_cold_arrival_can_wait_for_the_only_terminating_slot(tmp_path, monkeypatch):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(registry_module, "monotonic", lambda: now[0])
+        cloud = Inventory()
+        cloud.items["big"] = {"leaving": Resource("leaving", "i-leaving", "terminating")}
+        controller = create(tmp_path / "state.db", cloud, spec(provider="cloud", min_replicas=0, max_replicas=1))
+        try:
+            await controller.reconcile()
+            with pytest.raises(NoAvailableWorkerError):
+                await controller.registry.assign("qwen")
+            await controller.reconcile()
+            assert cloud.launches == []
+            now[0] += 45  # The original request aged out of the rolling demand window.
+            cloud.items["big"]["leaving"] = Resource("leaving", "i-leaving", "terminal")
+            await controller.reconcile()
+            assert len(cloud.launches) == 1
+        finally:
+            controller.close()
+
+    asyncio.run(scenario())
+
+
 def test_stopped_cloud_instance_hits_readiness_deadline(tmp_path, monkeypatch):
     async def scenario():
         now = [1_000.0]
@@ -311,5 +659,225 @@ def test_reused_gateway_registry_recovers_its_managed_record(tmp_path):
         assert restarted.owns_worker(reattached.id)
         assert len(inventory.launches) == 1
         restarted.close()
+
+    asyncio.run(scenario())
+
+
+def test_paused_pool_stays_paused_after_checkpoint_change(tmp_path):
+    async def scenario():
+        path = tmp_path / "state.db"
+        inventory = Inventory()
+        controller = create(path, inventory, spec())
+        controller.set_limits("big", 0, 0)
+        controller.close()
+        changed = create(path, inventory, spec(checkpoint="updated-checkpoint"))
+        await changed.reconcile()
+        assert changed.status()[0]["max_replicas"] == 0
+        assert not inventory.launches
+        changed.close()
+
+    asyncio.run(scenario())
+
+
+def test_tighter_catalog_ceiling_clamps_saved_override_and_reconciles_existing_jobs(tmp_path):
+    async def scenario():
+        path = tmp_path / "state.db"
+        inventory = Inventory()
+        controller = create(path, inventory, spec())
+        controller.set_limits("big", 2, 3)
+        await controller.reconcile()
+        await controller.reconcile()
+        assert len(inventory.launches) == 2
+        controller.close()
+        tighter = create(path, inventory, spec(max_replicas=1))
+        await tighter.reconcile()
+        assert (tighter.status()[0]["min_replicas"], tighter.status()[0]["max_replicas"]) == (1, 1)
+        assert len(inventory.terminated) == 1
+        assert len(inventory.launches) == 2
+        tighter.close()
+
+    asyncio.run(scenario())
+
+
+def test_lost_submission_reply_is_not_retried_after_demand_expires(tmp_path, monkeypatch):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(module, "time", SimpleNamespace(time=lambda: now[0]))
+        inventory = Inventory()
+        # A transport failure before the request reaches the scheduler and a
+        # lost reply after acceptance look identical at the call site.
+        async def fail_before_acceptance(pool, key):
+            inventory.launches.append((pool.name, key))
+            raise TimeoutError("submit outcome unknown")
+
+        monkeypatch.setattr(inventory, "launch", fail_before_acceptance)
+        controller = create(tmp_path / "state.db", inventory, spec(min_replicas=0))
+        with pytest.raises(NoAvailableWorkerError):
+            await controller.registry.assign("qwen")
+        await controller.reconcile()
+        assert len(inventory.launches) == 1
+        monkeypatch.setattr(controller.registry, "demand_since", lambda model, seconds: 0)
+        now[0] += 6  # First launch backoff expired; still in scale-down cooldown.
+        await controller.reconcile()
+        now[0] += 60
+        await controller.reconcile()
+        assert len(inventory.launches) == 1
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_pause_while_terminating_prevents_launch_from_old_plan(tmp_path, monkeypatch):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(module, "time", SimpleNamespace(time=lambda: now[0]))
+        inventory = Inventory()
+        controller = create(tmp_path / "state.db", inventory, spec(min_replicas=2, max_replicas=2))
+        await controller.reconcile()  # One job submitted, second slot still empty.
+
+        async def slow_termination(pool, resource):
+            inventory.terminated.append(resource.key)  # Inventory still shows the job.
+            controller.set_limits(pool.name, 0, 0)  # Operator update during the RPC.
+
+        monkeypatch.setattr(inventory, "terminate", slow_termination)
+        controller.set_limits("big", 0, 0)
+        await controller.reconcile()
+        controller.set_limits("big", 2, 2)
+        now[0] += 31
+        await controller.reconcile()
+        assert len(inventory.terminated) == 2
+        assert len(inventory.launches) == 1
+        assert controller.status()[0]["desired_replicas"] == 0
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_manual_capacity_covers_gateway_demand_until_external_load_exhausts_it(tmp_path):
+    async def scenario():
+        inventory = Inventory()
+        controller = create(tmp_path / "state.db", inventory,
+                            spec("hpc", min_replicas=0, service_time_seconds=2),
+                            spec("aws", provider="cloud", min_replicas=0, capacity=1))
+        registry = controller.registry
+        manual = await registry.create(WorkerCreate(
+            name="manual", base_url="http://manual:8000",
+            metadata={"model": "qwen", "capacity": 2, "pool": "aws"},
+        ))
+        url = str(manual.base_url)
+        await registry.set_health_status(manual.id, HealthStatus.HEALTHY, expected_base_url=url)
+        first = await registry.assign("qwen")
+        # The engine's running request includes TokenFlow's live lease.
+        await registry.set_telemetry(manual.id, WorkerTelemetry(observed_at=datetime.now(UTC), running=1),
+                                     expected_base_url=url)
+        second = await registry.assign("qwen")
+        await controller.reconcile()
+        assert not inventory.launches
+        await registry.release(first.id)
+        await registry.release(second.id)
+
+        await registry.set_telemetry(manual.id, WorkerTelemetry(observed_at=datetime.now(UTC), running=2, waiting=500),
+                                     expected_base_url=url)
+        with pytest.raises(WorkersAtCapacityError):
+            await registry.assign("qwen")
+        await controller.reconcile()
+        await controller.reconcile()
+        # The real gateway peak of two fits one HPC replica. The direct
+        # backlog of 500 stays on the manual worker that received it.
+        assert [name for name, _ in inventory.launches] == ["hpc"]
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("sample_age,expected_extra", [(0, 1), (120, 0)])
+def test_saturated_managed_engine_can_spill_into_another_provider(tmp_path, sample_age, expected_extra):
+    async def scenario():
+        slurm, cloud = Inventory(), Inventory()
+        registry = WorkerRegistry()
+        controller = Controller(
+            [spec("hpc", min_replicas=1, max_replicas=1, capacity=2),
+             spec("aws", provider="cloud", min_replicas=0, max_replicas=4, capacity=1)],
+            {"slurm": slurm, "cloud": cloud}, registry, tmp_path / "state.db",
+        )
+        await controller.reconcile()
+        _, key = slurm.launches[0]
+        slurm.boot("hpc", key)
+        await controller.reconcile()
+        [worker] = await registry.list()
+        url = str(worker.base_url)
+        await registry.set_health_status(worker.id, HealthStatus.HEALTHY, expected_base_url=url)
+        sample = WorkerTelemetry(observed_at=datetime.now(UTC) - timedelta(seconds=sample_age), running=2, waiting=500)
+        await registry.set_telemetry(worker.id, sample, expected_base_url=url)
+        await controller.reconcile()
+        assert not cloud.launches  # Direct engine traffic alone triggers no paid expansion.
+        if expected_extra:
+            with pytest.raises(WorkersAtCapacityError):
+                await registry.assign("qwen")
+        else:
+            assert (await registry.assign("qwen")).id == worker.id
+        for _ in range(4):
+            await controller.reconcile()
+        assert len(slurm.launches) == 1
+        assert len(cloud.launches) == expected_extra
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_missing_manual_capacity_does_not_block_scale_from_zero(tmp_path):
+    async def scenario():
+        inventory = Inventory()
+        controller = create(tmp_path / "state.db", inventory, spec(min_replicas=0))
+        registry = controller.registry
+        for name, model, enabled, health in [
+            ("other", "different", True, HealthStatus.HEALTHY),
+            ("disabled", "qwen", False, HealthStatus.HEALTHY),
+            ("unhealthy", "qwen", True, HealthStatus.UNHEALTHY),
+        ]:
+            worker = await registry.create(WorkerCreate(
+                name=name, base_url=f"http://{name}:8000", metadata={"model": model},
+            ))
+            await registry.set_health_status(worker.id, health, expected_base_url=str(worker.base_url))
+            if not enabled:
+                await registry.update(worker.id, WorkerUpdate(enabled=False))
+        with pytest.raises(NoAvailableWorkerError):
+            await registry.assign("qwen")
+        await controller.reconcile()
+        assert len(inventory.launches) == 1
+        controller.close()
+
+    asyncio.run(scenario())
+
+
+def test_idle_downscale_keeps_externally_busy_worker_until_operator_pauses_pool(tmp_path, monkeypatch):
+    async def scenario():
+        now = [1_000.0]
+        monkeypatch.setattr(module, "time", SimpleNamespace(time=lambda: now[0]))
+        inventory = Inventory()
+        controller = create(tmp_path / "state.db", inventory, spec(min_replicas=2, max_replicas=2))
+        await controller.reconcile()
+        await controller.reconcile()
+        keys = [key for _, key in inventory.launches]
+        for index, key in enumerate(keys):
+            item = inventory.items["big"][key]
+            inventory.items["big"][key] = Resource(key, item.external_id, "running", f"http://gpu{index}:18000")
+        await controller.reconcile()
+        for worker in await controller.registry.list():
+            await controller.registry.set_health_status(worker.id, HealthStatus.HEALTHY,
+                                                        expected_base_url=str(worker.base_url))
+            if worker.metadata["resource_key"] == keys[1]:
+                await controller.registry.set_telemetry(worker.id, WorkerTelemetry(observed_at=datetime.now(UTC), running=1),
+                                                        expected_base_url=str(worker.base_url))
+        controller.set_limits("big", 0, 2)
+        await controller.reconcile()
+        now[0] += 11
+        await controller.reconcile()
+        assert inventory.terminated == [keys[0]]
+        controller.set_limits("big", 0, 0)
+        await controller.reconcile()
+        assert inventory.terminated == keys
+        assert len(inventory.launches) == 2
+        controller.close()
 
     asyncio.run(scenario())

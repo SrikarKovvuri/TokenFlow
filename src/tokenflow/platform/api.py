@@ -3,10 +3,11 @@ from typing import Self
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from tokenflow.scheduler.http import InferenceRoute
 from tokenflow.worker_manager.models import HealthStatus
 
 
-router = APIRouter()
+router = APIRouter(route_class=InferenceRoute)
 admin_router = APIRouter()
 
 

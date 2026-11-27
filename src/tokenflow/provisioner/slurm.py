@@ -1,6 +1,7 @@
 """Run single-node Apptainer workers through Slurm's native client commands."""
 
 import asyncio
+from contextlib import suppress
 import hashlib
 import hmac
 import json
@@ -9,12 +10,13 @@ from pathlib import Path
 import re
 import shlex
 import subprocess
+import tempfile
 from typing import Annotated
 
 from pydantic import AfterValidator, Field, StringConstraints
 
 from tokenflow.provisioner.base import PoolSpec, Resource
-from tokenflow.provisioner.launch import EngineOptions, check_mount_path, worker_args, worker_script
+from tokenflow.provisioner.launch import EngineOptions, check_mount_path, local_checkpoint_paths, worker_args, worker_script
 
 
 SlurmName = Annotated[str, StringConstraints(pattern=r"^[a-zA-Z0-9_.-]+$")]
@@ -41,7 +43,14 @@ class SubmissionRejected(RuntimeError):
 
 
 def slurm_command(*args: str, script: str | None = None) -> str:
-    result = subprocess.run(args, input=script, text=True, capture_output=True, timeout=30)
+    # The CLI consumes these defaults before --export=NIL applies to the job.
+    # An inherited array, federation target or queue filter breaks pool accounting.
+    env = {
+        name: value for name, value in os.environ.items()
+        if not name.startswith(("SBATCH_", "SQUEUE_", "SCANCEL_"))
+        and name not in {"SLURM_CLUSTERS", "SLURM_HINT", "SLURM_EXIT_ERROR"}
+    }
+    result = subprocess.run(args, input=script, text=True, capture_output=True, timeout=30, env=env)
     if result.returncode != 0:
         detail = result.stderr.strip()
         # A failed process alone is insufficient: the RPC reply could have been
@@ -66,13 +75,22 @@ def private_directory(path: Path) -> None:
         raise ValueError(f"Slurm state must be a private directory (0700) owned by this user: {path}")
 
 
-def private_file(path: Path, value: str) -> None:
-    with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as output:
-        output.write(value)
+def write_private_file(path: Path, value: str) -> None:
+    # mkstemp creates a 0600 file on the same filesystem. Only a complete,
+    # successfully closed credential or receipt becomes visible at its final path.
+    fd, staging = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}-")
+    try:
+        with os.fdopen(fd, "w") as output:
+            output.write(value)
+        os.replace(staging, path)
+    finally:
+        with suppress(FileNotFoundError):
+            os.unlink(staging)
 
 
 def batch_script(pool: PoolSpec, opts: SlurmOptions, state: Path) -> str:
-    args = worker_args(pool, opts, 0, "/checkpoint")
+    source, checkpoint = local_checkpoint_paths(pool.checkpoint)
+    args = worker_args(pool, opts, 0, checkpoint)
     module = f"module load {shlex.quote(opts.apptainer_module)}" if opts.apptainer_module else ""
     # Pass only this job's derived credential on the private shared mount. Slurm
     # can expose submitted scripts to administrators, so scripts contain no keys.
@@ -89,12 +107,17 @@ cat > "$work/runtime/worker.py" <<'TOKENFLOW_PY'
 TOKENFLOW_PY
 export APPTAINERENV_XDG_CACHE_HOME=/work/cache APPTAINERENV_HF_HOME=/work/cache/huggingface
 export APPTAINERENV_VLLM_CACHE_ROOT=/work/cache/vllm APPTAINERENV_TRITON_CACHE_DIR=/work/cache/triton
+export APPTAINERENV_SGLANG_CACHE_DIR=/work/cache/sglang APPTAINERENV_SGLANG_JIT_CACHE_DIR=/work/cache/sglang/jit
 export APPTAINERENV_TORCHINDUCTOR_CACHE_DIR=/work/cache/inductor APPTAINERENV_CUDA_CACHE_PATH=/work/cache/cuda
 export APPTAINERENV_CUDA_VISIBLE_DEVICES="${{CUDA_VISIBLE_DEVICES:?Slurm must expose the allocated devices}}"
+port_file="/state/port-$SLURM_JOB_ID"
+if [[ "${{SLURM_RESTART_COUNT:-0}}" != 0 ]]; then
+    port_file+="-restart-$SLURM_RESTART_COUNT"
+fi
 apptainer exec --cleanenv --nv --pwd /work --bind "$work/runtime:/work" \\
-  --bind {shlex.quote(str(state) + ":/state")} --bind {shlex.quote(pool.checkpoint + ":/checkpoint:ro")} \\
+  --bind {shlex.quote(str(state) + ":/state")} --bind {shlex.quote(source + ":/checkpoint:ro")} \\
   {shlex.quote(pool.image)} python3 /work/worker.py {shlex.join(args)} \\
-  --key-file /state/key --port-file "/state/port-$SLURM_JOB_ID"
+  --key-file /state/key --port-file "$port_file"
 """
 
 
@@ -118,13 +141,16 @@ class SlurmProvisioner:
     def _discover(self, pool: PoolSpec) -> list[Resource]:
         state_dir = Path(SlurmOptions.model_validate(pool.options).state_dir)
         prefix = self._prefix(pool)
-        rows = slurm_command("squeue", "--local", "--me", "--noheader", "--states=all", "--format=%i|%j|%T|%B")
+        rows = slurm_command(
+            "squeue", "--local", "--me", "--noheader", "--states=all",
+            "--Format=JobID:0|,Name:0|,State:0|,BatchHost:0|,RestartCnt:0",
+        )
         resources = []
         for row in rows.splitlines():
             fields = row.strip().split("|")
-            if len(fields) != 4:
+            if len(fields) != 5:
                 continue
-            job_id, name, state, host = fields
+            job_id, name, state, host, restarts = fields
             if not name.startswith(prefix):
                 continue
             key = name[len(prefix):]
@@ -132,16 +158,25 @@ class SlurmProvisioner:
                 continue
             resource = Resource(key=key, external_id=job_id, phase="pending")
             if state in {"COMPLETED", "FAILED", "TIMEOUT", "CANCELLED", "NODE_FAIL",
-                         "OUT_OF_MEMORY", "DEADLINE", "BOOT_FAIL", "PREEMPTED", "COMPLETING"}:
+                         "OUT_OF_MEMORY", "DEADLINE", "BOOT_FAIL", "PREEMPTED", "REVOKED"}:
                 resource = Resource(key=key, external_id=job_id, phase="terminal")
+            elif state in {"CONFIGURING", "COMPLETING", "STOPPED"}:
+                # Slurm still has an allocation. Hold its slot without routing
+                # while nodes boot, stop, or finish their epilog and release GPUs.
+                resource = Resource(key=key, external_id=job_id, phase="running")
             elif state == "RUNNING":
                 # The GPU is allocated and its startup clock has begun even when
                 # the engine has not published a usable address yet.
                 resource = Resource(key=key, external_id=job_id, phase="running")
-                port_file = state_dir / name / f"port-{job_id}"
+                # A site may requeue onto a different host under the same job ID.
+                # The original filename remains valid for first attempts on upgrade.
+                if not restarts.isdecimal():
+                    raise ValueError(f"Invalid Slurm restart count for job {job_id}: {restarts!r}")
+                suffix = "" if restarts == "0" else f"-restart-{restarts}"
+                port_file = state_dir / name / f"port-{job_id}{suffix}"
                 try:
                     port = int(port_file.read_text())
-                except FileNotFoundError:
+                except (FileNotFoundError, ValueError):
                     pass
                 else:
                     if 1024 <= port <= 65534 and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.-]*", host):
@@ -165,7 +200,7 @@ class SlurmProvisioner:
         private_directory(state)
         claim = state / "submitting"
         try:
-            private_file(claim, "")
+            claim.touch(mode=0o600, exist_ok=False)
         except FileExistsError:
             # sbatch has no client token. A persisted intent plus a missing reply
             # is ambiguous: issuing another sbatch here could allocate twice.
@@ -174,7 +209,9 @@ class SlurmProvisioner:
                     return existing
             receipt = state / "job-id"
             if receipt.exists():
-                return Resource(key=key, external_id=receipt.read_text().strip(), phase="pending")
+                job_id = receipt.read_text().strip()
+                if job_id.isdecimal():
+                    return Resource(key=key, external_id=job_id, phase="pending")
             raise RuntimeError(f"Ambiguous Slurm submission. Inspect {state} and queue before retrying.")
 
         args = ["sbatch", "--parsable", "--no-requeue", "--export=NIL", f"--job-name={name}",
@@ -186,10 +223,9 @@ class SlurmProvisioner:
             args.append(f"--qos={opts.qos}")
         try:
             token = worker_token(self.worker_secret, key)
-            if not (state / "key").exists():
-                private_file(state / "key", token)
-            if pool.backend == "sglang" and not (state / "sglang.json").exists():
-                private_file(state / "sglang.json", json.dumps({"api-key": token}))
+            write_private_file(state / "key", token)
+            if pool.backend == "sglang":
+                write_private_file(state / "sglang.yaml", f"api-key: {json.dumps(token)}\n")
             body = batch_script(pool, opts, state)
         except Exception:
             claim.unlink()  # No Slurm submission has been attempted.
@@ -202,7 +238,7 @@ class SlurmProvisioner:
         job_id = reply.split(";", 1)[0]
         if not job_id.isdecimal():
             raise RuntimeError(f"Unexpected sbatch response for {name}: {reply!r}")
-        private_file(state / "job-id", job_id)
+        write_private_file(state / "job-id", job_id)
         return Resource(key=key, external_id=job_id, phase="pending")
 
     async def launch(self, pool: PoolSpec, key: str) -> Resource:

@@ -31,14 +31,18 @@ class Controller:
         self.startup_timeout = startup_timeout_seconds
         self.state = State(state_path, pools)
         self._lock = asyncio.Lock()
-        self._workers = self.state.registrations()
+        # Adopt each durable identity only after its provider confirms a running
+        # endpoint. A reused registry may still hold observations from the old lifespan.
+        for worker_id in self.state.worker_ids():
+            registry.discard(worker_id)
+        self._workers: dict[str, UUID] = {}
         self._origins: dict[str, dict[tuple, str]] = {}
         self._models = {pool.model for pool in pools}
         self._missing_since: dict[tuple[str, str], float] = {}
         self._down_since: dict[str, float] = {}
         self._desired: dict[str, int] = {}
         self._discovery_errors: dict[str, str] = {}
-        registry.track_demand(self._models)
+        self._track_scalable_models()
 
     def close(self) -> None:
         # Allocations outlive a gateway restart. On startup, discovery reattaches them.
@@ -57,6 +61,15 @@ class Controller:
         if not 0 <= minimum <= maximum <= pool.max_replicas:
             raise ValueError(f"Expected 0 <= minimum <= maximum <= {pool.max_replicas}")
         self.state.limits(pool_name, minimum, maximum)
+        self._track_scalable_models()
+
+    def _track_scalable_models(self) -> None:
+        self._scalable_models = {pool.model for pool in self.pools.values() if self._limits(pool)[1] > 0}
+        self.registry.track_demand(self._scalable_models)
+
+    def accepts_cold_demand(self, model: str) -> bool:
+        """An enabled pool can supply or recover a worker for this alias."""
+        return model in self._scalable_models
 
     def _limits(self, pool: PoolSpec) -> tuple[int, int]:
         row = self.state.policy(pool.name)
@@ -72,12 +85,12 @@ class Controller:
             result.append({
                 "name": pool.name, "provider": pool.provider, "model": pool.model,
                 "min_replicas": minimum, "max_replicas": maximum,
-                "desired_replicas": self._desired.get(pool.name, minimum),
+                "desired_replicas": min(maximum, max(minimum, self._desired.get(pool.name, minimum))),
                 "last_error": self._discovery_errors.get(pool.name) or policy["error"],
                 "retry_at": policy["retry_at"] or None,
                 "resources": [
                     {"key": item.key, "external_id": item.external_id,
-                     "phase": "draining" if item.retiring else item.phase,
+                     "phase": "draining" if item.retiring and item.phase != "terminating" else item.phase,
                      "created": item.created, "last_seen": item.last_seen,
                      "worker_id": self._workers.get(item.key)}
                     for item in self.state.allocations(pool.name)
@@ -173,13 +186,15 @@ class Controller:
                 item = Allocation(key, pool.name, now, now)
             if item.external_id and item.external_id != resource.external_id:
                 raise ValueError(f"Allocation {key} changed provider identity")
+            if resource.phase == "terminating" and not item.retiring:
+                if key in saved:
+                    self.state.failure(pool.name, now, f"Allocation {resource.external_id} is terminating")
+                item.retiring = True
             item.external_id = resource.external_id
             item.last_seen = now
             item.phase = resource.phase
             item.base_url = str(resource.base_url) if resource.base_url else None
             await self._sync_worker(pool, item, now)
-            worker_id = self._workers.get(item.key)
-            item.worker_id = str(worker_id) if worker_id else None
             self.state.save(item)
 
         # Allow eventual consistency after launch/termination; withhold routing to
@@ -220,7 +235,7 @@ class Controller:
                 try:
                     worker = await self.registry.create(WorkerCreate(
                         name=f"{pool.name}-{item.key[:12]}", base_url=item.base_url, metadata=metadata,
-                    ))
+                    ), worker_id=UUID(item.worker_id) if item.worker_id else None)
                 except DuplicateWorkerError:
                     # A draining or manual record still owns this address. Other
                     # workers continue serving while this one awaits registration.
@@ -228,6 +243,7 @@ class Controller:
                         logger.warning("Pool %s cannot register an occupied address: %s", pool.name, item.base_url)
                 else:
                     self._workers[item.key] = worker.id
+                    item.worker_id = str(worker.id)
                     # On restart the health monitor has yet to poll this address.
                     item.unready_since = now
             else:
@@ -295,38 +311,104 @@ class Controller:
         await self._unregister(item.key)
         self.state.remove(item.key)
 
+    def _surplus(self, pool: PoolSpec, live: list[Allocation], keep: int, workers: dict[UUID, Worker]) -> list[Allocation]:
+        """Choose the same drain candidates for the supply estimate and the resize."""
+        if keep >= len(live):
+            return []
+        if keep == 0:
+            return live
+
+        def drain_order(item: Allocation) -> tuple:
+            worker = workers.get(self._workers.get(item.key))
+            slots = pool.capacity
+            if worker and worker.enabled and worker.health_status == HealthStatus.HEALTHY:
+                slots = self.registry.capacity_for_gateway(worker)
+            return (slots < pool.capacity, slots, self.registry.active_slots(worker) if worker else 0,
+                    item.ever_ready, -item.created)
+
+        return sorted(live, key=drain_order)[:len(live) - keep]
+
     def _targets(self, pools: list[PoolSpec], workers: dict[UUID, Worker]) -> dict[str, int]:
         limits = {p.name: self._limits(p) for p in pools}
-        targets = {name: minimum for name, (minimum, _) in limits.items()}
-        current = {p.name: sum(not a.retiring for a in self.state.allocations(p.name)) for p in pools}
+        can_launch = {p.name: limits[p.name][1] > 0 and self.state.policy(p.name)["retry_at"] <= time.time()
+                      for p in pools}
+        targets: dict[str, int] = {}
+        # Snapshot ready-worker capacity using the same freshness and engine-load
+        # rules as admission. Pending allocations count toward future capacity.
+        ready = {w.id: self.registry.capacity_for_gateway(w) for w in workers.values()
+                 if w.enabled and w.health_status == HealthStatus.HEALTHY}
+        managed_ids = set(self._workers.values())
+        supplying_ids = set(ready) - managed_ids
+        supply = {}
+        available_replicas = {}
+        for pool in pools:
+            allocations = self.state.allocations(pool.name)
+            minimum, maximum = limits[pool.name]
+            intent_fits = len(allocations) <= maximum
+            live = [item for item in allocations if not item.retiring]
+            surplus = {item.key for item in self._surplus(pool, live, maximum, workers)}
+            supplying_ids.update(self._workers[item.key] for item in live
+                                 if item.key not in surplus and item.key in self._workers)
+            slots = [ready.get(self._workers.get(item.key), pool.capacity)
+                     for item in allocations if not item.retiring
+                     and (item.external_id or intent_fits)]
+            # Retain existing workers serving direct traffic during ordinary
+            # downscaling. An operator's hard ceiling still takes precedence.
+            busy = sorted((count for count in slots if count < pool.capacity), reverse=True)
+            targets[pool.name] = min(maximum, max(minimum, len(busy)))
+            supply[pool.name] = busy + [pool.capacity] * (len(slots) - len(busy))
+            # A draining allocation occupies a slot until the provider releases
+            # it. Only existing supply and genuinely free slots can cover demand.
+            free_slots = max(0, maximum - len(allocations)) if can_launch[pool.name] else 0
+            available_replicas[pool.name] = min(maximum, len(slots) + free_slots)
         window = min(300, max(1, self.interval * 2))
         for model in self._models:
             candidates = [p for p in pools if p.model == model]
-            active = sum(w.active_requests for w in workers.values() if w.metadata.get("model") == model)
-            demand = max(active, self.registry.demand_since(model, window))
-            shortfall = demand - sum(targets[p.name] * p.capacity for p in candidates)
-            # Prefer current capacity. For further expansion, choose the pool with
-            # the highest configured request capacity per second per GPU.
+            serving = [w for w in workers.values() if w.metadata.get("model") == model]
+            active = sum(self.registry.active_slots(w) for w in serving)
+            # A request already executing on a draining or unavailable worker
+            # stays there. Only new work can use capacity in a different pool.
+            placed_elsewhere = sum(self.registry.active_slots(w) for w in serving if w.id not in supplying_ids)
+            manual_slots = sum(ready.get(w.id, 0) for w in serving if w.id not in managed_ids)
+            can_supply = manual_slots > 0 or any(
+                can_launch[p.name] and available_replicas[p.name] > 0 for p in candidates
+            )
+            cold = can_supply and self.registry.take_cold_arrival(model)
+            offered = max(active, self.registry.demand_since(model, window))
+            shortfall = max(offered - placed_elsewhere, int(cold)) - manual_slots
+            for pool in candidates:
+                floor = min(targets[pool.name], available_replicas[pool.name])
+                existing = supply[pool.name]
+                shortfall -= sum(existing[:floor]) + max(0, floor - len(existing)) * pool.capacity
+
+            # First use existing workers, including cold starts, before funding
+            # extra replicas in order of configured per-GPU serving capacity.
             candidates.sort(key=lambda p: -p.capacity / (p.service_time_seconds * p.gpu_count))
-            for existing_only in (True, False):
-                for pool in candidates:
+            for pool in candidates:
+                for slots in supply[pool.name][targets[pool.name]:limits[pool.name][1]]:
                     if shortfall <= 0:
                         break
-                    cap = limits[pool.name][1]
-                    if existing_only:
-                        cap = min(cap, current[pool.name])
-                    elif self.state.policy(pool.name)["retry_at"] > time.time():
-                        continue
-                    add = min(max(0, cap - targets[pool.name]), math.ceil(shortfall / pool.capacity))
-                    targets[pool.name] += add
-                    shortfall -= add * pool.capacity
+                    targets[pool.name] += 1
+                    shortfall -= slots
+            for pool in candidates:
+                if shortfall <= 0:
+                    break
+                if not can_launch[pool.name]:
+                    continue
+                room = max(0, available_replicas[pool.name] - targets[pool.name])
+                add = min(room, math.ceil(shortfall / pool.capacity))
+                targets[pool.name] += add
+                shortfall -= add * pool.capacity
         return targets
 
     async def _resize(self, pool: PoolSpec, target: int, workers: dict[UUID, Worker]) -> None:
         now = time.time()
         allocations = self.state.allocations(pool.name)
         live = [item for item in allocations if not item.retiring]
-        _, maximum = self._limits(pool)
+        limits = self._limits(pool)
+        minimum, maximum = limits
+        requested = min(maximum, max(minimum, target))
+        target = requested
         if target < len(live) and len(live) <= maximum:
             since = self._down_since.setdefault(pool.name, now)
             if now - since < self.idle:
@@ -334,19 +416,14 @@ class Controller:
             elif maximum:
                 # A scale-from-zero request should have a chance to become ready
                 # before its short demand window is forgotten.
-                target = max(target, sum(not item.ever_ready for item in live))
+                target = max(target, sum(bool(item.external_id) and not item.ever_ready for item in live))
         else:
             self._down_since.pop(pool.name, None)
         target = min(maximum, target)
         self._desired[pool.name] = target
-        if target < len(live):
-            def drain_order(item: Allocation) -> tuple:
-                worker = workers.get(self._workers.get(item.key))
-                return (worker.active_requests if worker else 0, item.ever_ready, -item.created)
-
-            for item in sorted(live, key=drain_order)[:len(live) - target]:
-                item.retiring = True
-                self.state.save(item)
+        for item in self._surplus(pool, live, target, workers):
+            item.retiring = True
+            self.state.save(item)
 
         for item in allocations:
             if item.retiring:
@@ -354,8 +431,11 @@ class Controller:
                 worker_id = self._workers.get(item.key)
                 if worker_id and (await self.registry.get(worker_id)).active_requests:
                     continue
-                if (item.external_id and (pool.name, item.key) not in self._missing_since
-                        and now >= item.terminate_after):
+                if (
+                    item.external_id and item.phase != "terminating"
+                    and (pool.name, item.key) not in self._missing_since
+                    and now >= item.terminate_after
+                ):
                     # A repeated terminate is harmless (e.g. controller restart
                     # after the provider accepted it but before SQLite committed).
                     item.terminate_after = now + self._inventory_grace()
@@ -364,12 +444,18 @@ class Controller:
                         key=item.key, external_id=item.external_id, phase=item.phase, base_url=item.base_url,
                     ))
 
-        if self.state.policy(pool.name)["retry_at"] > now:
+        # Termination awaits a provider RPC. The operator may have paused or
+        # reduced the pool while that call was in flight.
+        if self._limits(pool) != limits or self.state.policy(pool.name)["retry_at"] > now:
             return
         unsubmitted = next((a for a in allocations if not a.external_id and not a.retiring), None)
         if unsubmitted:
-            await self._launch(pool, unsubmitted)
-        elif len(allocations) < target:
+            # Retaining an already accepted cold start during the idle cooldown
+            # must not initiate a paid retry after the original demand expires.
+            confirmed = sum(bool(a.external_id) and not a.retiring for a in allocations)
+            if confirmed < requested and len(allocations) <= maximum:
+                await self._launch(pool, unsubmitted)
+        elif len(live) < requested and len(allocations) < maximum:
             # Only one new allocation per pool per poll. Terminating and unresolved
             # launches both occupy a slot until inventory confirms their outcome.
             item = Allocation(uuid4().hex, pool.name, now, now)

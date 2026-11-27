@@ -1,0 +1,66 @@
+# TokenFlow operator access in AWS
+
+Start with **bootstrap** to inspect credits, GPU quota, prices and regional inventory. Add **workers** when an administrator has approved a specific AMI, instance type, private subnet, security group and TokenFlow pool. The renderer writes an IAM inline policy locally. An Identity Center administrator assigns the permission set to the one AWS account that owns the workload.
+
+## 1. Render the initial permission set
+
+In **Windows PowerShell**, from the TokenFlow repo root:
+
+```powershell
+$account = Read-Host "12-digit AWS account ID shown in your access portal"
+$policy = Join-Path $env:TEMP "tokenflow-operator.json"
+python scripts/aws_operator_policy.py bootstrap --account-id $account --region us-east-1 --output $policy
+Get-Content -Raw $policy
+```
+
+This grants inspection of the account's credits, price catalog queries through the US East (N. Virginia) endpoint, named EC2 inventory and CloudWatch metric reads in the deployment region, and access to the On-Demand G/VT quota and its request history. EC2 inventory, CloudWatch metric reads and billing credit reads have account-level visibility. TokenFlow adds no billing, identity or infrastructure write permissions in this mode. [Billing actions](https://docs.aws.amazon.com/service-authorization/latest/reference/list_billing.html), [Price List endpoints](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/using-price-list-query-api.html), [CloudWatch actions](https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazoncloudwatch.html)
+
+If the operator should submit quota requests, add `--allow-quota-request` when rendering and provision the updated permission set. The resulting permission applies to EC2 quota `L-DB2E81BA` in that account and region. AWS exposes no IAM condition for the requested numeric value. An administrator can file the request directly and leave the operator on the read-only bootstrap policy. The account may first need its Service Quotas service-linked role, which an administrator can prepare separately. The Windows operator walkthrough checks existing requests before asking for four total vCPUs. [G/VT request walkthrough](AWS_SIGN_IN.md#request-four-total-on-demand-gvt-vcpus-in-us-east-1), [quota conditions](https://docs.aws.amazon.com/service-authorization/latest/reference/list_service-quotas.html), [request prerequisites](https://docs.aws.amazon.com/servicequotas/latest/userguide/request-quota-increase.html)
+
+## 2. Assign and verify access
+
+1. In the **organization instance of IAM Identity Center**, open **Multi-account permissions → Permission sets → Create permission set → Custom permission set**. Name it `TokenFlowOperator` and paste the rendered JSON under **Inline policy**. Use this as the sole permissions policy for the set. [Create a permission set](https://docs.aws.amazon.com/singlesignon/latest/userguide/howtocreatepermissionset.html)
+2. Under **AWS accounts**, select the workload account and choose **Assign users or groups**. Select the operator or operator group and `TokenFlowOperator`. After changing an existing set, provision its updated permissions to the assigned account. [Account assignments](https://docs.aws.amazon.com/singlesignon/latest/userguide/assignusers.html), [Update a permission set](https://docs.aws.amazon.com/singlesignon/latest/userguide/howtoviewandchangepermissionset.html)
+3. In PowerShell, sign in through the access portal, select that account and permission set, and check the resulting role and quota.
+
+```powershell
+aws configure sso --profile default
+aws sso login --profile default
+aws sts get-caller-identity --profile default
+aws service-quotas get-service-quota --profile default --region us-east-1 --service-code ec2 --quota-code L-DB2E81BA --query 'Quota.{Name:QuotaName,vCPUs:Value}'
+aws service-quotas list-requested-service-quota-change-history-by-quota --profile default --region us-east-1 --service-code ec2 --quota-code L-DB2E81BA --query 'RequestedQuotas[].{Requested:DesiredValue,Status:Status,Created:Created}'
+```
+
+An empty history means the query returned no recorded requests for this quota. The applied value from `get-service-quota` determines available quota before subtracting usage. The bootstrap policy can also read the regional On-Demand P quota. With the TokenFlow AWS extra installed, `tokenflow aws-status --expected-account $account` reports the identity, promotional balances, both GPU limits and G/VT request history together. [Quota history by quota](https://docs.aws.amazon.com/cli/latest/reference/service-quotas/list-requested-service-quota-change-history-by-quota.html)
+
+## 3. Add one worker pool
+
+Use the same PowerShell session and approved values from the deployment catalog:
+
+```powershell
+$ami = Read-Host "Approved GPU AMI ID"
+$subnet = Read-Host "Approved private subnet ID"
+$group = Read-Host "Approved worker security group ID"
+$namespace = Read-Host "Exact TokenFlow deployment namespace"
+$pool = Read-Host "Exact TokenFlow pool name"
+python scripts/aws_operator_policy.py workers --account-id $account --region us-east-1 --namespace $namespace --pool $pool --ami $ami --subnet $subnet --security-group $group --instance-type g4dn.xlarge --output $policy
+```
+
+Review and provision the replacement inline policy. Instance launches require the configured type, namespace, pool, name tag, a 32-character resource key and IMDSv2. EC2 separately authorizes the approved AMI, subnet, security groups, private interface and newly allocated EBS disks. Repeat `--security-group` for each approved group. Termination requires the same namespace, pool and key tags. Tag writes apply only during launch. Reserve these tag names for TokenFlow across other roles that can create or change EC2 tags. [EC2 launch authorization](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ExamplePolicies_EC2.html), [Tag-on-create authorization](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/supported-iam-actions-tagging.html)
+
+TokenFlow tags the **instance** during `RunInstances`. Its EBS volumes and network interface are authorized as resources of that launch. For cleanup and cost checks, obtain their IDs through the instance's block-device mappings and network interfaces. IAM matches the resource key's 32-character length. The provisioner validates its hexadecimal format during discovery.
+
+The worker policy assumes an AMI and model that can run without an instance profile. A profile for gated artifacts requires a separate grant on its specific role. Billing limits, total runtime, aggregate disks and total replica count need separate controls. Keep the generated account-specific JSON outside source control.
+
+## 4. Scope the single-GPU integration test
+
+For the guarded T4 test, render a policy for the exact namespace the launcher will use. Use the physical role name for `CleanupRole` shown under **Resources** in the approved CloudFormation stack. An administrator installs the stack separately.
+
+```powershell
+$run = 'tf-test-' + [guid]::NewGuid().ToString('N').Substring(0, 16)
+$guard = 'tokenflow-gpu-test-guard'
+$role = Read-Host "Physical IAM role name for CleanupRole"
+python scripts/aws_operator_policy.py live-test --account-id $account --region us-east-1 --namespace $run --ami $ami --subnet $subnet --security-group $group --guard-stack $guard --guard-role $role --output $policy
+```
+
+Use the `$run` value for `--namespace` on the control host. This policy permits private `g4dn.xlarge` launches with exactly that namespace, inspection of the named stack and guard role, and verification and stopping of the named execution. AWS authorizes starting an execution at the state machine level. Anyone with this grant can start the guard with other execution names, so grant it only to trusted test operators. Keep student inference access separate. The launcher limits the test to one instance and checks the cost estimate before launch. [Step Functions resource permissions](https://docs.aws.amazon.com/service-authorization/latest/reference/list_stepfunctions.html), [live test instructions](AWS_LIVE_TEST.md)

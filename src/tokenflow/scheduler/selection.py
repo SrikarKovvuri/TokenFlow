@@ -15,40 +15,40 @@ class WorkersAtCapacityError(Exception):
 
 
 def choose_worker(
-    workers: list[tuple[Worker, int]], model: str, *, telemetry_age_seconds: float = 30
+    workers: list[tuple[Worker, int]], model: str, *, choices: int = 1, telemetry_age_seconds: float = 30
 ) -> Worker:
     """Estimate delay from outstanding work, parallel capacity and service time.
 
-    Gateway assignments and engine counts overlap. The larger count protects
-    against both a stale idle scrape and load sent directly to the worker.
+    Account for gateway leases plus the engine's estimated external load.
     Equal delay favors more KV headroom, then a less busy GPU. Unknown gauges
     use a neutral midpoint. Identical candidates retain registration order.
     """
     now = datetime.now(UTC)
     candidates = []
     has_healthy = False
-    for worker, active in workers:
+    for worker, reserved_sequences in workers:
         if (not worker.enabled or worker.health_status != HealthStatus.HEALTHY
                 or worker.metadata.get("model") != model):
             continue
         has_healthy = True
-        telemetry = worker.telemetry
-        if telemetry and (now - telemetry.observed_at).total_seconds() > telemetry_age_seconds:
-            telemetry = None
-        outstanding = active
+        telemetry = worker.fresh_telemetry(now, telemetry_age_seconds)
+        capacity = worker.capacity
+        gateway_capacity = worker.gateway_capacity(telemetry)
+        # One HTTP request stays on one replica. A request wider than an
+        # entire worker may use that worker exclusively and run in waves.
+        needed = min(choices, capacity)
+        if reserved_sequences + needed > gateway_capacity:
+            continue
+        outstanding = reserved_sequences + (capacity - gateway_capacity)
         kv = gpu = 0.5
         if telemetry:
-            outstanding = max(active, (telemetry.running or 0) + (telemetry.waiting or 0))
             if telemetry.kv_cache_usage is not None:
                 kv = telemetry.kv_cache_usage
             if telemetry.gpu_utilization is not None:
                 gpu = telemetry.gpu_utilization
-        capacity = worker.metadata.get("capacity", 32)
-        if outstanding >= capacity:
-            continue
         service_time = worker.metadata.get("service_time_seconds", 1.0)
         estimated_wait = service_time * (outstanding / capacity)
-        candidates.append(((service_time + estimated_wait, kv, gpu), worker))
+        candidates.append(((service_time + estimated_wait, -needed, kv, gpu), worker))
     if candidates:
         return min(candidates, key=lambda candidate: candidate[0])[1]
     if has_healthy:

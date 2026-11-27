@@ -3,14 +3,15 @@
 import asyncio
 import hashlib
 from ipaddress import IPv4Address
+from pathlib import PurePosixPath
 import re
 import shlex
-from typing import Annotated
+from typing import Annotated, Literal
 
-from pydantic import Field, StringConstraints
+from pydantic import AfterValidator, Field, StringConstraints
 
 from tokenflow.provisioner.base import PoolSpec, Resource
-from tokenflow.provisioner.launch import EngineOptions, check_mount_path, worker_args, worker_script
+from tokenflow.provisioner.launch import EngineOptions, check_mount_path, local_checkpoint_paths, worker_args, worker_script
 
 
 class CloudOptions(EngineOptions):
@@ -19,30 +20,59 @@ class CloudOptions(EngineOptions):
     ami_id: Annotated[str, StringConstraints(pattern=r"^ami-[a-f0-9]+$")]
     subnet_id: Annotated[str, StringConstraints(pattern=r"^subnet-[a-f0-9]+$")]
     security_group_ids: list[Annotated[str, StringConstraints(pattern=r"^sg-[a-f0-9]+$")]] = Field(min_length=1)
+    image_pull_policy: Literal["missing", "never"] = "missing"
+    checkpoint_mount: Annotated[str, AfterValidator(check_mount_path)] | None = None
     iam_instance_profile: Annotated[str, StringConstraints(pattern=r"^[a-zA-Z0-9+=,.@_-]+$")] | None = None
 
 
 def bootstrap(pool: PoolSpec, opts: CloudOptions) -> str:
     script = "/var/lib/tokenflow/worker.py"
     checkpoint = pool.checkpoint
+    source = None
+    if checkpoint.startswith("/"):
+        source, checkpoint = local_checkpoint_paths(checkpoint)
+    mount = ""
+    if opts.checkpoint_mount:
+        root = PurePosixPath(opts.checkpoint_mount)
+        target = PurePosixPath(source or "")
+        if ".." in target.parts or ".." in root.parts or not target.is_relative_to(root):
+            raise ValueError("checkpoint must be on the configured checkpoint_mount")
+        # A delayed network mount can leave an empty mountpoint on the root disk.
+        # Keep Docker behind the mount on reboots as well as this first launch.
+        mount = f"""checkpoint_mount={shlex.quote(opts.checkpoint_mount)}
+mount_unit=$(systemd-escape --path --suffix=mount "$checkpoint_mount")
+install -d -m 0755 /etc/systemd/system/docker.service.d
+printf '[Unit]\\nRequires=%s\\nAfter=%s\\n' "$mount_unit" "$mount_unit" > /etc/systemd/system/docker.service.d/tokenflow-checkpoint.conf
+systemctl daemon-reload
+systemctl start -- "$mount_unit"
+mountpoint --quiet -- "$checkpoint_mount"
+"""
     docker = ["docker", "run", "--detach", "--name", "tokenflow-worker", "--restart=unless-stopped",
+              f"--pull={opts.image_pull_policy}",
               "--gpus", "all", "--shm-size=8g", "--log-opt", "max-size=25m", "--log-opt", "max-file=3",
               "--env", "CUDA_VISIBLE_DEVICES=" + ",".join(str(i) for i in range(pool.gpu_count)),
               "--publish", f"{pool.port}:{pool.port}", "--publish", f"{pool.port + 1}:{pool.port + 1}",
               "--mount", f"type=bind,src={script},dst=/worker.py,readonly"]
-    if checkpoint.startswith("/"):
-        docker.extend(["--mount", f"type=bind,src={checkpoint},dst=/checkpoint,readonly"])
-        checkpoint = "/checkpoint"
+    if source:
+        docker.extend(["--mount", f"type=bind,src={source},dst=/checkpoint,readonly"])
     docker.extend(["--entrypoint", "python3", pool.image, "/worker.py"])
     docker.extend(worker_args(pool, opts, pool.port, checkpoint))
     data = f"""#!/bin/bash
 set -euo pipefail
+on_exit() {{
+    status=$?
+    if (( status != 0 )); then
+        echo "TokenFlow worker bootstrap failed (exit $status). Powering off." >&2
+        systemctl --no-block poweroff || true
+    fi
+}}
+trap on_exit EXIT
 umask 022
 install -d -m 0755 /var/lib/tokenflow
 cat > {script} <<'TOKENFLOW_PY'
 {worker_script()}
 TOKENFLOW_PY
-systemctl enable --now docker
+{mount}systemctl enable --now docker
 {shlex.join(docker)}
 """
     if len(data.encode()) > 16 * 1024:
@@ -51,8 +81,9 @@ systemctl enable --now docker
 
 
 class CloudProvisioner:
-    def __init__(self, namespace: str):
+    def __init__(self, namespace: str, *, session=None):
         self.namespace = namespace
+        self._session = session
         self._clients = {}
 
     @staticmethod
@@ -71,7 +102,8 @@ class CloudProvisioner:
                 from botocore.config import Config
             except ImportError as exc:
                 raise RuntimeError("Install tokenflow[aws] to enable EC2 pools") from exc
-            self._clients[region] = boto3.client(
+            sdk = self._session if self._session is not None else boto3
+            self._clients[region] = sdk.client(
                 "ec2", region_name=region,
                 config=Config(connect_timeout=5, read_timeout=30, retries={"total_max_attempts": 3}),
             )
@@ -88,8 +120,10 @@ class CloudProvisioner:
         if not re.fullmatch(r"[0-9a-f]{32}", key):
             return None
         state = instance["State"]["Name"]
-        if state in {"terminated", "shutting-down"}:
+        if state == "terminated":
             return Resource(key=key, external_id=instance["InstanceId"], phase="terminal")
+        if state == "shutting-down":
+            return Resource(key=key, external_id=instance["InstanceId"], phase="terminating")
         if state == "running" and instance.get("PrivateIpAddress"):
             ip = IPv4Address(instance["PrivateIpAddress"])
             return Resource(key=key, external_id=instance["InstanceId"], phase="running",
@@ -127,6 +161,7 @@ class CloudProvisioner:
         tags = self._tags(pool) | {"TokenFlowKey": key, "Name": f"tokenflow-{pool.name}"}
         params = {
             "MinCount": 1, "MaxCount": 1, "ImageId": opts.ami_id, "InstanceType": opts.instance_type,
+            "InstanceInitiatedShutdownBehavior": "terminate",
             "NetworkInterfaces": [{"DeviceIndex": 0, "SubnetId": opts.subnet_id,
                                    "Groups": opts.security_group_ids, "AssociatePublicIpAddress": False,
                                    "DeleteOnTermination": True}],
@@ -148,7 +183,7 @@ class CloudProvisioner:
     def _terminate(self, pool: PoolSpec, resource: Resource) -> None:
         opts = CloudOptions.model_validate(pool.options)
         for owned in self._discover(pool, resource.key):
-            if owned.external_id == resource.external_id and owned.phase != "terminal":
+            if owned.external_id == resource.external_id and owned.phase not in {"terminating", "terminal"}:
                 self._client(opts.region).terminate_instances(InstanceIds=[owned.external_id])
                 return
 

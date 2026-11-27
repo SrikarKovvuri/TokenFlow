@@ -66,7 +66,13 @@ def create_app(
 
             client_options = dict(transport=worker_transport, trust_env=False, event_hooks=hooks)
             worker_client = await stack.enter_async_context(
-                httpx.AsyncClient(timeout=timeout, **client_options)
+                httpx.AsyncClient(
+                    timeout=timeout,
+                    # Worker slots bound live requests across the fleet. A second
+                    # global limit would let busy streams block an idle replica.
+                    limits=httpx.Limits(max_connections=None, max_keepalive_connections=20),
+                    **client_options,
+                )
             )
             # A fresh connection per probe avoids stale keep-alive sockets across
             # SSH tunnels and keeps health polling independent of inference traffic.
@@ -83,6 +89,7 @@ def create_app(
                     health_client,
                     interval_seconds=settings.worker_health_interval_seconds,
                     timeout_seconds=settings.worker_health_timeout_seconds,
+                    managed_worker=application.state.controller.owns_worker if application.state.controller else None,
                 )
                 tasks.append(asyncio.create_task(monitor.run(), name="health-monitor"))
             if application.state.controller:
@@ -106,6 +113,7 @@ def create_app(
         lifespan=lifespan,
     )
     application.state.worker_registry = registry
+    application.state.max_inference_body_bytes = settings.max_inference_body_bytes
     application.state.platform_config = None
     application.state.controller = None
 
