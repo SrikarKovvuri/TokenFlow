@@ -63,7 +63,7 @@ An NVML loader error points to NVIDIA library visibility inside the SIF. A
 missing `torch` import points to the image's Python environment. Both checks
 can fail even when `nvidia-smi` works directly on the host.
 
-For SGLang, select `backend: sglang` and stage an engine image compatible with the host driver and GPU. The CUDA 12.9 multi-architecture image for the reference release is `lmsysorg/sglang:v0.5.19-cu129@sha256:59e11312666e1c5c155210ea335589b91daa0d70848521b390b93b1b1e8fb0ef`. EC2 accepts the OCI reference directly. Slurm requires the compute-readable path to the converted SIF. The release configuration checks run on CPU. Verify model generation and streaming on the target GPU before opening the pool to students. [SGLang release](https://github.com/sgl-project/sglang/releases/tag/v0.5.19), [publisher's image tag](https://hub.docker.com/r/lmsysorg/sglang/tags?name=v0.5.19-cu129)
+For SGLang, select `backend: sglang` and stage an engine image compatible with the host driver and GPU. The CUDA 12.9 multi-architecture image for the reference release is `lmsysorg/sglang:v0.5.19-cu129@sha256:59e11312666e1c5c155210ea335589b91daa0d70848521b390b93b1b1e8fb0ef`. EC2 accepts the OCI reference directly. Slurm requires the compute-readable path to the converted SIF. Verify model generation and streaming on the target GPU before opening the pool to students. [SGLang release](https://github.com/sgl-project/sglang/releases/tag/v0.5.19), [publisher's image tag](https://hub.docker.com/r/lmsysorg/sglang/tags?name=v0.5.19-cu129)
 
 To repeat the offline SGLang compatibility check, download the CPython 3.12 Linux x86-64 wheel with the command below. Set `TOKENFLOW_SGLANG_TEST_WHEEL` to its path and run `python -m pytest tests/test_sglang_release.py` in the gateway test environment with PyYAML installed. The test verifies the wheel's hash and exercises its config loader and bearer authorization decisions. [Published wheel](https://pypi.org/project/sglang/0.5.19/#files)
 
@@ -119,3 +119,13 @@ OpenAI SDK JSON and streaming responses, token counts, and engine and GPU
 telemetry. To save timestamped samples, set `TOKENFLOW_TEST_SGLANG_EVIDENCE`
 to a new JSON file in an existing directory under `experiments/results/`.
 The caller owns the worker and its cleanup.
+
+The CUDA 12.9 image above passed this test on a single RTX 4060 Laptop GPU
+under WSL2 with TinyLlama in FP16, a 256-token context, and capacity for two
+sequences. A two-choice request returned both choices. The single-choice JSON
+and streaming requests each returned 64 completion tokens for the 30-token
+prompt. The client received the first content chunk while the gateway still
+held a worker slot. The run captured 107 physical GPU utilization samples
+alongside SGLang's running, waiting, and cache gauges. Provider inventory was
+emulated for this local test. Slurm allocation and EC2 provisioning require
+their own live checks.
