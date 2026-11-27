@@ -1,0 +1,189 @@
+TokenFlow on Columbia Insomnia
+=============================
+
+A student uses an OpenAI client, an inference key, a model alias and a gateway URL
+ending in /v1. The operator owns the service host, Slurm account, checkpoint,
+container, and trusted network route. See README.md for the student example and
+docs/PLATFORM.md and docs/PROVIDERS.md for the operator APIs. A permanent service
+host requires site approval. The procedure here uses temporary CPU compute jobs
+for the controllers and separate GPU compute jobs for the engines.
+
+1. Connect once from Windows
+----------------------------
+
+Connect the Columbia VPN. Open Ubuntu WSL in Windows Terminal. Check the
+cluster host key with your trusted Columbia host-key record on initial login.
+Enter your password and Duo only in the SSH prompt. Keep the control socket
+private. No credentials need to be copied to another agent.
+
+    login=YOUR_UNI@insomnia.rcs.columbia.edu
+    session=$(mktemp -d /tmp/tokenflow-ssh.XXXXXXXX)
+    sock="$session/ctl"
+    ssh -M -S "$sock" -o ControlPersist=10m -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -fN "$login"
+    ssh -S "$sock" -O check "$login"
+    ssh -S "$sock" -o BatchMode=yes "$login" 'hostname'
+
+Run the commands that use these variables in the same WSL shell. Windows
+OpenSSH and Ubuntu OpenSSH use separate known_hosts files. If Windows has the
+verified entry, use its file as UserKnownHostsFile or copy that file into the
+private session directory before connecting. The socket reuses your existing
+authenticated transport. A disconnection or VPN expiry can require Duo again.
+Checking the queue every five minutes keeps this session in use and shows
+progress. Submitted batch jobs continue if SSH disconnects.
+
+2. Check prerequisites on Insomnia
+----------------------------------
+
+On a login shell, keep commands short. Heavy work and long-running gateways
+belong in allocations. For noninteractive SSH, use the site's login environment
+with bash -lc. On the installation tested here SLURM_CONF=/etc/slurm/slurm.conf.
+
+    squeue --me
+    sinfo -N -p burst -o '%N %G %t'
+    sacctmgr -nP show assoc where user="$USER" format=account,qos
+    ls -lh "$HOME/vllm-runtime/containers/vllm.sif"
+    ls "$HOME/vllm-runtime/models/qwen2.5-14b-instruct/config.json"
+
+This sweep uses account edu, partition/QoS burst, one node per worker and
+GRES gpu:A6000:N. The inspected nodes advertised up to eight A6000s each.
+Other advertised GPUs and counts vary. Qwen2.5-14B-Instruct has 40 query heads
+and 8 KV heads, compatible with TP sizes 1, 2, 4 and 8. Allocation depends on
+availability of simultaneous devices on a single node. Inspect the actual job
+with scontrol show job JOBID. Slurm's prospective start times can change.
+
+The real 0.5B lifecycle test used Slurm GPU job 14123626. TokenFlow discovered a
+healthy worker, streamed six content chunks, received GPU telemetry, then set
+the pool limits to zero. Slurm recorded cancellation from the intentional drain.
+The first 14B probe hit its 1,000-second readiness deadline during weight loading.
+Allow for shared-storage reads, Apptainer unpacking and kernel compilation.
+
+3. Stage one reproducible snapshot
+----------------------------------
+
+From your local WSL TokenFlow checkout, use a fresh campaign directory on
+the shared edu project filesystem. It is visible to login and compute nodes.
+The examples use git archive so the published files are exactly the commit you
+select. Use a commit containing the managed sweep scripts listed below.
+
+    uni=${login%@*}
+    campaign=/insomnia001/depts/edu/users/$uni/tp-$(date -u +%Y%m%dT%H%M%SZ)
+    ssh -S "$sock" "$login" "umask 077 && mkdir '$campaign'"
+    git archive --format=tar.gz HEAD src experiments/hpc_tp_controller.py experiments/hpc_tp_load.py experiments/vllm_metrics.py scripts/hpc-tp-controller.sh > "$session/source.tgz"
+    scp -o ControlPath="$sock" "$session/source.tgz" "$login:$campaign/"
+    ssh -S "$sock" "$login" "cd '$campaign' && tar xzf source.tgz && bash -n scripts/hpc-tp-controller.sh"
+    git rev-parse HEAD
+
+Record that commit, pool configuration and actual allocation alongside results.
+Keep credential files, private SQLite state and worker job directories private.
+Keep model weights in existing storage and set job caches to node-local TMPDIR.
+An image that reports missing squashfuse will unpack the SIF on each cold start.
+A 14B checkpoint on a busy shared filesystem can take many minutes to read.
+
+4. Submit and observe
+---------------------
+
+In an authenticated Insomnia login shell, cd to the staged campaign. Each
+controller needs python3.12 and ensurepip in the host compute environment,
+Slurm clients, project storage and a route to compute-node worker ports.
+Controller packages install in node-local storage. On nodes whose system
+Python cannot load sqlite3_deserialize, the controller uses a job-local SQLite
+wheel. Some nodes lack python3.12 entirely. If one of those is selected use
+--nodes=1 --nodelist=<verified-control-node> on the CPU submission. ins043
+supported the interpreter in the November 2026 sweep.
+
+Example for one TP size and one engine sequence cap:
+
+    sbatch --parsable --output=control-%j.log scripts/hpc-tp-controller.sh 4 64
+
+The first number sets GPUs used by one vLLM engine. The second configures
+vLLM max-num-seqs and TokenFlow admission capacity. Repeat for TP 1, 2, 4, 8
+and caps 16, 64. Use --dependency=afterany:CONTROLLER_ID to run the second cap
+after the first for that width. Check the existing submission ledger before
+retrying. Each controller uses an isolated namespace and provisions at most one
+GPU worker. Fresh source snapshots and controller job IDs give independent
+directories. A controller can wait for a GPU allocation; it uses CPU resources
+while waiting. The queued worker and the CPU controller have different job IDs.
+
+    squeue --me -o '%i %T %M %R %j'
+    squeue --start --me
+    tail -n 12 control-CONTROLLER_ID.log
+    cat results/CONTROLLER_ID/workers/*/job-id
+    sacct -X -j CONTROLLER_ID,GPU_JOB_ID --format=JobID,State,Elapsed,AllocTRES,End
+
+The gateway binds an OS-assigned loopback port on its CPU node. The Slurm
+provider submits the worker with a derived credential, runs Apptainer, and
+publishes its port after the engine returns the expected alias. The gateway
+registers the private node address and polls health, engine metrics and the
+adjacent GPU exporter. The controller waits for a real telemetry sample,
+captures topology, runs the load through the gateway, sets both pool limits
+to zero and verifies the worker disappeared from Slurm and the registry.
+
+5. Evidence and interpretation
+-----------------------------
+
+The default workload uses Qwen 14B BF16, the same seeded synthetic prompts,
+a 2,048-token context limit and 256 output tokens per completed request.
+Client concurrency is 1, 2, 4, 8, 16 and additionally 32 and 64 for the
+64-sequence engine. The scheduler dynamically batches active requests.
+Offered concurrency, configured maximum sequences and observed batch size
+are distinct. Engine running/waiting counts describe sampled active load.
+Three shuffled repetitions per cell follow two fixed warmups. A cell runs
+for at least 30 seconds and launches at least max(12, 2*concurrency) requests.
+Trials within a configuration share a warm engine and its release defaults.
+
+    results/CONTROLLER_ID/config.json                pool and provisioner options
+    results/CONTROLLER_ID/checkpoint.json            checkpoint JSON hashes
+    results/CONTROLLER_ID/worker.json                registered device IDs and engine version
+    results/CONTROLLER_ID/topology.txt               physical link matrix
+    results/CONTROLLER_ID/gpu.csv                    UTC node samples every ~500 ms
+    results/CONTROLLER_ID/engine.jsonl.gz            epoch-stamped raw Prometheus and parsed gauges
+    results/CONTROLLER_ID/trial-*/c-*/requests.jsonl individual streamed requests
+    results/CONTROLLER_ID/trial-*/c-*/summary.json   complete cell time window and metrics
+    results/CONTROLLER_ID/release.json               verified drain and Slurm accounting
+
+GPU CSV columns are timestamp, index, UUID, GPU utilization %, memory-controller
+utilization %, used/total MiB, watts, SM/memory clocks in MHz and temperature C.
+Only allocated UUIDs are sampled. Join UTC sample times to start_epoch and
+end_epoch. Keep startup and post-run idle separate from in-cell idle.
+Utilization estimates the fraction of time with a kernel executing. Neither
+sampled idle time nor throughput establishes memory, compute or communication
+bottlenecks. TTFT is first visible content. TPOT is approximate request-level
+time per output token; SSE chunks can contain more than one token. Compare
+matched cells at equal load, engine cap, prompt, model, and topology. Report
+coverage and failed or unobserved cells alongside any comparison.
+
+6. Download, diagnose and finish
+--------------------------------
+
+Copy results with the same SSH socket. Save large traces to a drive with room.
+For an incremental WSL copy, create a private local directory and use rsync:
+
+    dest=/mnt/d/TokenFlow-experiments/$(basename "$campaign")
+    mkdir -p "$dest"
+    rsync -rt --partial -e "ssh -S $sock -o BatchMode=yes" --exclude=workers --exclude='state.sqlite*' --exclude=src --exclude='*.tgz' "$login:$campaign/" "$dest/"
+
+For an attended campaign, the local watcher checks Slurm accounting and copies
+updates every five minutes. Keep WSL, VPN and the laptop running for local
+monitoring. Reconnect and restart the watcher after a network interruption.
+
+    bash scripts/hpc-watch-tp.sh "$login" "$sock" "$campaign" "$dest"
+    python experiments/summarize_hpc_tp.py "$dest"
+
+The summary CSV has one row per measured cell and allocated GPU. Request
+throughput is repeated across the device rows for that cell. Idle seconds are
+estimated only across sampled intervals up to two seconds apart. Consult the
+coverage fraction, engine sample count, and separate utilization percentage.
+
+On failure inspect the CPU and worker logs, the Slurm accounting states and
+the last completed per-cell summary. A registered resource, a passed warmup
+or a zero exit code alone cannot verify a complete sweep. A logically complete
+configuration has 15 cells at cap 16 or 21 at cap 64, with successful raw requests,
+both telemetry sources during each cell and a confirmed release.
+
+If a controller is interrupted, check its exact job IDs and scoped worker name
+using its prefix and job-id receipt. Cancel only the jobs belonging to that test.
+Confirm workers and controller are absent from squeue and have terminal accounting
+records. Preserve raw output across retries. Close the temporary SSH connection
+after the last status check and transfer.
+
+    ssh -S "$sock" -O exit "$login"
